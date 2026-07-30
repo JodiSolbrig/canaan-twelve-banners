@@ -1,0 +1,77 @@
+type Props = {
+  open: boolean;
+  onClose: () => void;
+};
+
+export function PlayerAidModal({ open, onClose }: Props) {
+  if (!open) return null;
+  return (
+    <div className="modal-overlay" onClick={onClose} role="presentation">
+      <div className="modal panel" onClick={(e) => e.stopPropagation()} role="dialog">
+        <h2>Player Aid</h2>
+        <p style={{ color: 'var(--ink-dim)', fontSize: '0.9rem' }}>
+          Canaan: Tribes of the Covenant — Twelve Banners
+        </p>
+
+        <h3 style={{ color: 'var(--bronze)', marginTop: '0.75rem' }}>Resources & tracks</h3>
+        <ul>
+          <li>
+            <strong>Any</strong> Faith, Warrior, or Goods can place Influence on{' '}
+            <strong>any</strong> track (1 resource = 1 token).
+          </li>
+          <li>
+            Preferred affinity: <strong>Warriors → Military</strong>,{' '}
+            <strong>Faith → Moral</strong>, <strong>Goods → Provision</strong> (spent first
+            when auto-paying).
+          </li>
+          <li>
+            <strong>Loyalty</strong> — resilience & primary tie-breaker. <strong>Glory</strong>{' '}
+            — victory points.
+          </li>
+        </ul>
+
+        <h3 style={{ color: 'var(--bronze)', marginTop: '0.75rem' }}>Round sequence</h3>
+        <ul>
+          <li>Draw & reveal 1 Crisis card</li>
+          <li>Place Influence (face-down) + take 1 Standard or Unique Action</li>
+          <li>Reveal Influence → determine Champions</li>
+          <li>Resolve tracks → Covenant changes</li>
+          <li>Champion rewards → clean up</li>
+        </ul>
+        <h3 style={{ color: 'var(--bronze)' }}>Standard actions</h3>
+        <ul>
+          <li>
+            <strong>Place Influence</strong> — 1 Faith/Warrior/Goods = 1 token on any track
+          </li>
+          <li>
+            <strong>Recruit</strong> — 1 Goods → 2 Warriors, or Faith → +1 Warrior
+          </li>
+          <li>
+            <strong>Gather</strong> — 1 Warrior or Faith → 2 Goods
+          </li>
+          <li>
+            <strong>Pray</strong> — Rest → 2 Faith, or 1 Goods → Faith + Loyalty
+          </li>
+          <li>
+            <strong>Convert</strong> — 2:1 resource trades
+          </li>
+          <li>
+            <strong>Rest & Recover</strong> — +1 Loyalty (capped at starting) and peek at the
+            top Crisis card
+          </li>
+        </ul>
+        <h3 style={{ color: 'var(--bronze)' }}>Winning</h3>
+        <ul>
+          <li>Highest Glory at game end</li>
+          <li>Tie-break: Loyalty → remaining resources → Championships</li>
+        </ul>
+        <p style={{ color: 'var(--ink-dim)', fontSize: '0.85rem' }}>
+          Tip: hover buttons, resources, and track titles for more detail.
+        </p>
+        <button type="button" className="btn btn-primary" onClick={onClose}>
+          Close
+        </button>
+      </div>
+    </div>
+  );
+}

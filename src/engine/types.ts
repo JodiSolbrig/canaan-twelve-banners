@@ -1,0 +1,197 @@
+export type TrackId = 'military' | 'moral' | 'provision';
+export type ResourceKey = 'faith' | 'warriors' | 'goods' | 'loyalty' | 'glory';
+
+export type Phase =
+  | 'setup'
+  | 'crisisReveal'
+  | 'crisisChoice' // Angel of the Lord / interactive crisis
+  | 'placement'
+  | 'action'
+  | 'reveal'
+  | 'resolve'
+  | 'gameEnd';
+
+export type TribeId =
+  | 'Judah'
+  | 'Benjamin'
+  | 'Levi'
+  | 'Ephraim'
+  | 'Manasseh'
+  | 'Reuben'
+  | 'Simeon'
+  | 'Dan'
+  | 'Naphtali'
+  | 'Gad'
+  | 'Asher'
+  | 'Issachar'
+  | 'Zebulun';
+
+export type Resources = {
+  faith: number;
+  warriors: number;
+  goods: number;
+  loyalty: number;
+  glory: number;
+};
+
+export type InfluenceToken = {
+  id: string;
+  playerId: string;
+  track: TrackId;
+  value: number;
+  temporary: boolean;
+  faceDown: boolean;
+};
+
+export type PlayerState = {
+  id: string;
+  tribe: TribeId;
+  isHuman: boolean;
+  resources: Resources;
+  startingLoyalty: number;
+  influencePool: number;
+  championships: number;
+  leaderLevel: number; // 0–3 unlocked
+  oncePerGameUsed: Record<string, boolean>;
+  oncePerRoundUsed: Record<string, boolean>;
+  /** Protect next loyalty loss */
+  standFirm: boolean;
+  /** Reduce next covenant drop by 1 (Levi) */
+  covenantProtect: boolean;
+  /** Reduce covenant penalty on a failed track by 1 (Manasseh) */
+  holdTheLine: boolean;
+  /** Gad Overcomer pending */
+  overcomerAvailable: boolean;
+  /** Free military token next round (Simeon) */
+  freeMilitaryNextRound: number;
+  /** Temporary influence to give next round (Naphtali) */
+  pendingTempInfluenceGift: number;
+  /** Peeked crisis cards for UI */
+  peekedCrisis: CrisisCardDef[] | null;
+};
+
+export type CrisisSeverity =
+  | 'Mild'
+  | 'Mild-Positive'
+  | 'Moderate'
+  | 'Escalating'
+  | 'Escalating-Positive/Warning'
+  | 'Heavy';
+
+export type CrisisCardDef = {
+  id: number;
+  name: string;
+  flavor: string;
+  severity: CrisisSeverity;
+  effect: string;
+};
+
+export type TribeDef = {
+  id: TribeId;
+  faith: number;
+  warriors: number;
+  goods: number;
+  loyalty: number;
+  playstyle: string;
+  uniqueName: string;
+  uniqueCost: string;
+  uniqueEffect: string;
+  color: string;
+  bias: TrackId;
+  upgrades: [string, string, string];
+};
+
+export type LogEntry = {
+  id: string;
+  round: number;
+  text: string;
+  tone?: 'info' | 'good' | 'bad' | 'crisis';
+};
+
+export type TrackResolution = {
+  track: TrackId;
+  total: number;
+  threshold: number;
+  success: boolean;
+  championId: string | null;
+  zone: 'low' | 'normal' | 'high';
+};
+
+export type GameState = {
+  players: PlayerState[];
+  turnOrder: string[];
+  firstPlayerIndex: number;
+  currentActorIndex: number;
+  round: number;
+  maxRounds: number;
+  phase: Phase;
+  covenant: number;
+  brokenClock: boolean; // final round after broken
+  crisisDeck: CrisisCardDef[];
+  crisisDiscard: CrisisCardDef[];
+  activeCrisis: CrisisCardDef | null;
+  tokens: InfluenceToken[];
+  log: LogEntry[];
+  trackResults: TrackResolution[] | null;
+  winners: string[] | null;
+  /** First champion this round (Cry of the Oppressed) */
+  firstChampionId: string | null;
+  gloryFromChampionsThisRound: Record<string, number>;
+  pendingCrisisChoice: null | {
+    type: 'angel';
+    options: CrisisCardDef[];
+  };
+  seed: number;
+  tuningSnapshot: import('../config/tuning').TuningConfig;
+};
+
+export type PlacementPlan = Partial<Record<TrackId, number>>;
+
+export type StandardActionType =
+  | 'placeInfluence'
+  | 'recruit'
+  | 'gather'
+  | 'pray'
+  | 'convert'
+  | 'rest'
+  | 'pass'
+  | 'unique';
+
+export type PlayerAction =
+  | { type: 'confirmPlacement'; plan: PlacementPlan }
+  | {
+      type: 'standard';
+      action: Exclude<StandardActionType, 'unique' | 'placeInfluence'>;
+      recruitMode?: 'goods' | 'faith';
+      gatherSpend?: 'warriors' | 'faith';
+      prayMode?: 'rest' | 'goods';
+      convert?: { from: 'faith' | 'warriors' | 'goods'; to: 'faith' | 'warriors' | 'goods' };
+    }
+  | { type: 'placeInfluence'; plan: PlacementPlan }
+  | {
+      type: 'unique';
+      tribe: TribeId;
+      // tribe-specific payloads
+      targetPlayerId?: string;
+      track?: TrackId;
+      tokenId?: string;
+      toTrack?: TrackId;
+      leviMode?: 'raise' | 'protect';
+      ephraimMode?: 'doubleGoods' | 'goodsPlusFaith' | 'goodsPlusWarriors';
+      manassehSpend?: 'warriors' | 'faith';
+      asherMode?: 'faith' | 'rest';
+      zebulunConverts?: Array<{
+        from: 'faith' | 'warriors' | 'goods';
+        to: 'faith' | 'warriors' | 'goods';
+      }>;
+      issacharOrder?: [number, number]; // deck indices after peek — reorder top two
+    }
+  | {
+      type: 'crisisChoice';
+      angel: {
+        topId: number;
+        bottomId: number;
+        covenantDelta: 1 | -1;
+      };
+    }
+  | { type: 'advance' }; // for auto phases / human done

@@ -1,0 +1,348 @@
+import type { TuningConfig } from '../config/tuning';
+import type {
+  GameState,
+  LogEntry,
+  PlayerState,
+  Resources,
+  TrackId,
+} from './types';
+
+let logCounter = 0;
+let tokenCounter = 0;
+
+export function nextTokenId(): string {
+  tokenCounter += 1;
+  return `tok-${tokenCounter}`;
+}
+
+export function resetIdCounters(): void {
+  logCounter = 0;
+  tokenCounter = 0;
+}
+
+export function addLog(
+  state: GameState,
+  text: string,
+  tone: LogEntry['tone'] = 'info',
+): GameState {
+  logCounter += 1;
+  return {
+    ...state,
+    log: [
+      { id: `log-${logCounter}`, round: state.round, text, tone },
+      ...state.log,
+    ].slice(0, 80),
+  };
+}
+
+export function clamp(n: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, n));
+}
+
+export function getPlayer(state: GameState, id: string): PlayerState {
+  const p = state.players.find((x) => x.id === id);
+  if (!p) throw new Error(`Player ${id} not found`);
+  return p;
+}
+
+export function updatePlayer(
+  state: GameState,
+  id: string,
+  fn: (p: PlayerState) => PlayerState,
+): GameState {
+  return {
+    ...state,
+    players: state.players.map((p) => (p.id === id ? fn(p) : p)),
+  };
+}
+
+export function mutateResources(
+  r: Resources,
+  delta: Partial<Resources>,
+): Resources {
+  return {
+    faith: Math.max(0, r.faith + (delta.faith ?? 0)),
+    warriors: Math.max(0, r.warriors + (delta.warriors ?? 0)),
+    goods: Math.max(0, r.goods + (delta.goods ?? 0)),
+    loyalty: Math.max(0, r.loyalty + (delta.loyalty ?? 0)),
+    glory: Math.max(0, r.glory + (delta.glory ?? 0)),
+  };
+}
+
+export function baseThreshold(state: GameState, track: TrackId): number {
+  const t = state.tuningSnapshot;
+  const n = state.players.length;
+  let thr =
+    t.thresholdBase === 'fixed' ? t.thresholdFixed : n;
+  if (n <= 3) thr += t.smallGroupThresholdBonus;
+
+  const c = state.activeCrisis?.id;
+  if (track === 'provision' && c === 2) thr += 1;
+  if ((track === 'military' || track === 'moral') && c === 6) thr += 1;
+  return thr;
+}
+
+export function getTrackTotals(
+  state: GameState,
+): Record<TrackId, Record<string, number>> {
+  const tracks: TrackId[] = ['military', 'moral', 'provision'];
+  const result = Object.fromEntries(
+    tracks.map((tr) => [tr, {} as Record<string, number>]),
+  ) as Record<TrackId, Record<string, number>>;
+
+  for (const tok of state.tokens) {
+    result[tok.track][tok.playerId] =
+      (result[tok.track][tok.playerId] ?? 0) + tok.value;
+  }
+
+  // Passive modifiers that affect counting at reveal time
+  for (const p of state.players) {
+    // Dan Samson I: 3 military tokens count as 4
+    if (p.leaderLevel >= 1 && p.tribe === 'Dan') {
+      const milCount = state.tokens.filter(
+        (t) => t.playerId === p.id && t.track === 'military' && !t.temporary,
+      ).length;
+      if (milCount >= 3) {
+        result.military[p.id] = (result.military[p.id] ?? 0) + 1;
+      }
+    }
+    // Judah Othniel II: +1 military once if used flag
+    if (
+      p.tribe === 'Judah' &&
+      p.leaderLevel >= 2 &&
+      p.oncePerRoundUsed['othnielII']
+    ) {
+      result.military[p.id] = (result.military[p.id] ?? 0) + 1;
+    }
+    // Gad Enduring Defense: when military low — applied after we know zone; handled in resolve
+    // Benjamin Ehud II
+    if (
+      p.tribe === 'Benjamin' &&
+      p.leaderLevel >= 2 &&
+      p.oncePerRoundUsed['ehudII']
+    ) {
+      result.military[p.id] = (result.military[p.id] ?? 0) + 1;
+    }
+  }
+
+  return result;
+}
+
+export function trackZone(
+  total: number,
+  threshold: number,
+  offset: number,
+): 'low' | 'normal' | 'high' {
+  if (total < threshold) return 'low';
+  if (total >= threshold + offset) return 'high';
+  return 'normal';
+}
+
+export function covenantZone(
+  covenant: number,
+  tuning: TuningConfig,
+): 'strength' | 'warning' | 'judgment' | 'broken' {
+  if (covenant >= tuning.zoneStrengthMin) return 'strength';
+  if (covenant >= tuning.zoneWarningMin) return 'warning';
+  if (covenant >= tuning.zoneJudgmentMin) return 'judgment';
+  return 'broken';
+}
+
+export function loyaltyLossAmount(state: GameState, base: number): number {
+  let amt = base;
+  if (state.activeCrisis?.id === 10) amt += 1;
+  return amt;
+}
+
+export function applyLoyaltyLoss(
+  state: GameState,
+  playerId: string,
+  baseAmount: number,
+  reason: string,
+): GameState {
+  let amount = loyaltyLossAmount(state, baseAmount);
+  let s = state;
+  let p = getPlayer(s, playerId);
+
+  if (p.standFirm) {
+    s = updatePlayer(s, playerId, (pl) => ({ ...pl, standFirm: false }));
+    s = addLog(s, `${p.tribe} Stand Firm blocks Loyalty loss (${reason}).`, 'good');
+    return s;
+  }
+
+  if (p.tribe === 'Gad' && p.leaderLevel >= 1) {
+    amount = Math.max(0, amount - 1);
+  }
+
+  if (amount <= 0) return s;
+
+  s = updatePlayer(s, playerId, (pl) => ({
+    ...pl,
+    resources: mutateResources(pl.resources, { loyalty: -amount }),
+  }));
+  s = addLog(
+    s,
+    `${getPlayer(s, playerId).tribe} loses ${amount} Loyalty (${reason}).`,
+    'bad',
+  );
+  return s;
+}
+
+export function applyCovenantDrop(
+  state: GameState,
+  amount: number,
+  reason: string,
+): GameState {
+  let drop = amount;
+  let s = state;
+
+  // Levi protect
+  const protector = s.players.find((p) => p.covenantProtect);
+  if (protector && drop > 0) {
+    drop -= 1;
+    s = updatePlayer(s, protector.id, (p) => ({ ...p, covenantProtect: false }));
+    s = addLog(s, `${protector.tribe} Intercede protects the Covenant.`, 'good');
+  }
+
+  // Manasseh Hold the Line reduces one failed-track penalty
+  const holder = s.players.find((p) => p.holdTheLine);
+  if (holder && drop > 0 && reason.includes('failed')) {
+    drop -= 1;
+    s = updatePlayer(s, holder.id, (p) => ({ ...p, holdTheLine: false }));
+    s = addLog(s, `${holder.tribe} Hold the Line softens the drop.`, 'good');
+  }
+
+  if (drop <= 0) return s;
+
+  const next = clamp(s.covenant - drop, 0, s.tuningSnapshot.covenantMax);
+  s = { ...s, covenant: next };
+  s = addLog(s, `Covenant Meter ${s.covenant + drop} → ${next} (${reason}).`, 'bad');
+  return s;
+}
+
+export function raiseCovenant(state: GameState, amount: number, reason: string): GameState {
+  const next = clamp(state.covenant + amount, 0, state.tuningSnapshot.covenantMax);
+  let s: GameState = { ...state, covenant: next };
+  s = addLog(s, `Covenant Meter → ${next} (${reason}).`, 'good');
+  return s;
+}
+
+export function grantGlory(
+  state: GameState,
+  playerId: string,
+  amount: number,
+  fromChampion: boolean,
+): GameState {
+  let gain = amount;
+  if (fromChampion && state.activeCrisis?.id === 14) {
+    const already = state.gloryFromChampionsThisRound[playerId] ?? 0;
+    gain = Math.min(gain, Math.max(0, 1 - already));
+  }
+  if (gain <= 0) return state;
+
+  let s = updatePlayer(state, playerId, (p) => ({
+    ...p,
+    resources: mutateResources(p.resources, { glory: gain }),
+  }));
+  if (fromChampion) {
+    s = {
+      ...s,
+      gloryFromChampionsThisRound: {
+        ...s.gloryFromChampionsThisRound,
+        [playerId]: (s.gloryFromChampionsThisRound[playerId] ?? 0) + gain,
+      },
+    };
+  }
+  // Leader unlocks
+  s = checkLeaderUnlocks(s, playerId);
+  return s;
+}
+
+export function checkLeaderUnlocks(state: GameState, playerId: string): GameState {
+  const thresholds = state.tuningSnapshot.leaderUnlockGlory;
+  return updatePlayer(state, playerId, (p) => {
+    let level = p.leaderLevel;
+    for (let i = 0; i < 3; i++) {
+      if (p.resources.glory >= thresholds[i] && level < i + 1) {
+        level = i + 1;
+      }
+    }
+    if (level === p.leaderLevel) return p;
+
+    let next = { ...p, leaderLevel: level };
+    // Ephraim Abdon I at level 2
+    if (p.tribe === 'Ephraim' && level >= 2 && p.leaderLevel < 2) {
+      next = {
+        ...next,
+        resources: mutateResources(next.resources, { goods: 1 }),
+      };
+    }
+    return next;
+  });
+}
+
+export function currentActor(state: GameState): PlayerState | null {
+  if (state.phase !== 'placement' && state.phase !== 'action') return null;
+  const id = state.turnOrder[state.currentActorIndex];
+  return id ? getPlayer(state, id) : null;
+}
+
+export function spendForInfluence(
+  resources: Resources,
+  count: number,
+  track: TrackId,
+  crisisId: number | null,
+  prefer?: Array<'faith' | 'warriors' | 'goods'>,
+): { resources: Resources; spentFaith: number; ok: boolean; ironChariotUnpaid: number } {
+  // Thematic spend order: Warriors→Military, Faith→Moral, Goods→Provision
+  const order =
+    prefer ??
+    (track === 'military'
+      ? (['warriors', 'goods', 'faith'] as const)
+      : track === 'moral'
+        ? (['faith', 'goods', 'warriors'] as const)
+        : (['goods', 'faith', 'warriors'] as const));
+
+  let r = { ...resources };
+  let remaining = count;
+  let spentFaith = 0;
+  let ironChariotUnpaid = 0;
+
+  while (remaining > 0) {
+    let paid = false;
+    for (const key of order) {
+      if (r[key] > 0) {
+        r[key] -= 1;
+        if (key === 'faith') spentFaith += 1;
+        paid = true;
+        break;
+      }
+    }
+    if (!paid) return { resources: r, spentFaith, ok: false, ironChariotUnpaid };
+
+    if (track === 'military' && crisisId === 3) {
+      if (r.warriors > 0) r.warriors -= 1;
+      else ironChariotUnpaid += 1;
+    }
+    remaining -= 1;
+  }
+  return { resources: r, spentFaith, ok: true, ironChariotUnpaid };
+}
+
+export function mulberry32(a: number): () => number {
+  return function () {
+    let t = (a += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+export function shuffle<T>(arr: T[], rng: () => number): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
