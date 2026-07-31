@@ -7,7 +7,8 @@ import {
 } from '../data/gameData';
 import type { TribeId } from '../engine/types';
 import type { TuningConfig } from '../config/tuning';
-import { LeaderProgress, leaderEarnSummary } from './LeaderProgress';
+import { LeaderProgress } from './LeaderProgress';
+import { leaderEarnSummary } from './leaderHelp';
 import { HELP } from './helpText';
 import { Tip } from './Tip';
 
@@ -62,7 +63,7 @@ export function SetupScreen({ tuning, onStart }: Props) {
               <div className="meta">
                 F{t.faith} W{t.warriors} G{t.goods} L{t.loyalty}
               </div>
-              <div className="meta income-meta">+{formatTribeIncome(t.income)}/rd</div>
+              <div className="meta income-meta">+{formatTribeIncome(t.income)} r2+</div>
             </button>
           ))}
         </div>
@@ -78,7 +79,7 @@ export function SetupScreen({ tuning, onStart }: Props) {
         </div>
         <Tip text={`${HELP.income} ${selected.income.note}.`} wide className="tip-below tip-block">
           <div className="tribe-income-callout" style={{ cursor: 'help' }}>
-            <div className="tribe-income-label">Each round</div>
+            <div className="tribe-income-label">Income (rounds 2+)</div>
             <div className="tribe-income-value">+{formatTribeIncome(selected.income)}</div>
             <div className="tribe-income-note">{selected.income.note}</div>
           </div>

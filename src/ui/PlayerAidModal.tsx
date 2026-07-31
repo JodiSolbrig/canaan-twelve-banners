@@ -1,5 +1,5 @@
 import { DEFAULT_TUNING } from '../config/tuning';
-import { leaderEarnSummary } from './LeaderProgress';
+import { leaderEarnSummary } from './leaderHelp';
 
 type Props = {
   open: boolean;
@@ -41,8 +41,8 @@ export function PlayerAidModal({
         <h3 style={{ color: 'var(--bronze)', marginTop: '0.75rem' }}>Round income</h3>
         <ul>
           <li>
-            At the start of each round, every tribe collects its unique income (Faith, Warriors,
-            Goods, and sometimes Loyalty).
+            At the start of rounds 2+, every tribe collects its unique income (Faith, Warriors,
+            Goods, and sometimes Loyalty). Round 1 uses printed starting resources only.
           </li>
           <li>
             Loyalty income only applies when below your starting Loyalty. Your tribe’s amount is

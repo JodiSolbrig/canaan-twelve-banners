@@ -1,4 +1,5 @@
 import { TRIBE_BY_ID } from '../data/gameData';
+import { rankPlayers } from '../engine';
 import type { GameState } from '../engine/types';
 
 type Props = {
@@ -23,18 +24,7 @@ function endReason(state: GameState): { title: string; detail: string } {
 }
 
 export function EndScreen({ state, onRematch, onSetup }: Props) {
-  const ranked = [...state.players].sort((a, b) => {
-    if (b.resources.glory !== a.resources.glory) {
-      return b.resources.glory - a.resources.glory;
-    }
-    if (b.resources.loyalty !== a.resources.loyalty) {
-      return b.resources.loyalty - a.resources.loyalty;
-    }
-    const ra = a.resources.faith + a.resources.warriors + a.resources.goods;
-    const rb = b.resources.faith + b.resources.warriors + b.resources.goods;
-    if (rb !== ra) return rb - ra;
-    return b.championships - a.championships;
-  });
+  const ranked = rankPlayers(state.players);
   const winnerNames =
     state.winners?.map((id) => {
       const p = state.players.find((x) => x.id === id)!;

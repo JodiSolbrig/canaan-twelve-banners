@@ -2,7 +2,7 @@ import { formatTribeIncome, TRACK_LABELS, TRIBE_BY_ID } from '../data/gameData';
 import { baseThreshold, covenantZone, trackZone } from '../engine/helpers';
 import type { GameState, TrackId } from '../engine/types';
 import { HELP, TRACK_AFFINITY } from './helpText';
-import { formatLeaderTip } from './LeaderProgress';
+import { formatLeaderTip } from './leaderHelp';
 import { Tip } from './Tip';
 
 const TRACKS: TrackId[] = ['military', 'moral', 'provision'];
@@ -154,7 +154,7 @@ export function PlayersStrip({
           const tip = [
             `${def.id}: ${def.playstyle}`,
             `Unique — ${def.uniqueName} (${def.uniqueCost}): ${def.uniqueEffect}`,
-            `Each round: +${formatTribeIncome(def.income)} (${def.income.note})`,
+            `Income (r2+): +${formatTribeIncome(def.income)} (${def.income.note})`,
             '',
             formatLeaderTip(def, p.leaderLevel, thresholds),
           ].join('\n');

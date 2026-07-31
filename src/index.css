@@ -903,6 +903,10 @@ h3 {
   color: var(--ink-dim);
 }
 
+.leader-upgrade.planned .leader-upgrade-status {
+  font-style: italic;
+}
+
 .leader-upgrade.flash {
   animation: leader-upgrade-flash 1.2s ease 2;
 }

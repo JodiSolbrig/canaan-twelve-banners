@@ -1,5 +1,6 @@
-import type { TuningConfig } from '../config/tuning';
-import { startRound } from './createGame';
+/**
+ * Reveal → resolve tracks → champion rewards → advance round or end game.
+ */
 import {
   addLog,
   applyCovenantDrop,
@@ -12,12 +13,14 @@ import {
   grantGlory,
   mutateResources,
   raiseCovenant,
+  rankPlayers,
+  sameStanding,
+  TRACKS,
   trackZone,
   updatePlayer,
 } from './helpers';
+import { startRound } from './round';
 import type { GameState, TrackId, TrackResolution } from './types';
-
-const TRACKS: TrackId[] = ['military', 'moral', 'provision'];
 
 export function revealTokens(state: GameState): GameState {
   let s: GameState = {
@@ -258,15 +261,8 @@ export function resolveRound(state: GameState): GameState {
     };
   }
 
-  // Advance round or end
-  const lastRound =
-    s.round >= s.maxRounds || (s.brokenClock && s.round >= s.maxRounds);
-  // If brokenClock just set this round, play one more full round
-  const shouldEnd =
-    s.round >= s.maxRounds ||
-    (state.brokenClock && true); // if already on broken clock from previous round, end after this
-
-  // Clarify: if brokenClock was already true at start of round, this was final. If just set, continue one more.
+  // End after scheduled rounds, or after the final round of a Broken Covenant clock.
+  // If Broken was first triggered this round, play one more full round.
   const wasAlreadyBroken = state.brokenClock;
   if (wasAlreadyBroken || s.round >= s.maxRounds) {
     return endGame(s);
@@ -278,8 +274,6 @@ export function resolveRound(state: GameState): GameState {
     firstPlayerIndex: (s.firstPlayerIndex + 1) % s.turnOrder.length,
     turnOrder: rotate(s.turnOrder, 1),
   };
-  void lastRound;
-  void shouldEnd;
   return startRound(s);
 }
 
@@ -366,28 +360,16 @@ function awardChampion(state: GameState, res: TrackResolution): GameState {
       s = addLog(s, `${pl.tribe} pays Philistine Razor (lose 1 ${discard}).`, 'bad');
     }
   }
-  // Benjamin free recruit (Ehud III)
+  // Benjamin Ehud III — free Recruit = net +2 Warriors at no cost
   if (champ.tribe === 'Benjamin' && champ.leaderLevel >= 3 && res.track === 'military') {
     s = updatePlayer(s, res.championId, (p) => ({
       ...p,
-      resources: mutateResources(p.resources, { warriors: 2, goods: -0 }),
+      resources: mutateResources(p.resources, { warriors: 2 }),
     }));
-    // free recruit as +2 warriors without cost for simplicity if no goods
-    const pl = getPlayer(s, res.championId);
-    if (pl.resources.goods >= 1) {
-      s = updatePlayer(s, res.championId, (p) => ({
-        ...p,
-        resources: mutateResources(p.resources, { goods: -1, warriors: 2 }),
-      }));
-    } else {
-      s = updatePlayer(s, res.championId, (p) => ({
-        ...p,
-        resources: mutateResources(p.resources, { warriors: 1 }),
-      }));
-    }
     s = addLog(s, `${champ.tribe} free Recruit (Ehud III).`, 'good');
   }
 
+  // Idempotent safety net (grantGlory already checks unlocks).
   s = checkLeaderUnlocks(s, res.championId);
   return s;
 }
@@ -414,27 +396,9 @@ export function endGame(state: GameState): GameState {
     }
   }
 
-  const ranked = [...s.players].sort((a, b) => {
-    if (b.resources.glory !== a.resources.glory) {
-      return b.resources.glory - a.resources.glory;
-    }
-    if (b.resources.loyalty !== a.resources.loyalty) {
-      return b.resources.loyalty - a.resources.loyalty;
-    }
-    const ra = a.resources.faith + a.resources.warriors + a.resources.goods;
-    const rb = b.resources.faith + b.resources.warriors + b.resources.goods;
-    if (rb !== ra) return rb - ra;
-    return b.championships - a.championships;
-  });
-
+  const ranked = rankPlayers(s.players);
   const top = ranked[0]!;
-  const winners = ranked
-    .filter(
-      (p) =>
-        p.resources.glory === top.resources.glory &&
-        p.resources.loyalty === top.resources.loyalty,
-    )
-    .map((p) => p.id);
+  const winners = ranked.filter((p) => sameStanding(p, top)).map((p) => p.id);
 
   s = {
     ...s,
@@ -474,5 +438,3 @@ export function applyAngelChoice(
   else s = applyCovenantDrop(s, 1, 'Angel of the Lord');
   return s;
 }
-
-void (null as unknown as TuningConfig);

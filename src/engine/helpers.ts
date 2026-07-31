@@ -1,3 +1,10 @@
+/**
+ * Pure helpers shared across the rules engine.
+ *
+ * Conventions:
+ * - All Glory gains that can unlock leaders must go through `grantGlory`.
+ * - Mutators return a new `GameState` (shallow immutable updates).
+ */
 import type { TuningConfig } from '../config/tuning';
 import { formatTribeIncome, TRIBE_BY_ID } from '../data/gameData';
 import type {
@@ -10,6 +17,9 @@ import type {
 
 let logCounter = 0;
 let tokenCounter = 0;
+
+/** Shared track id list — prefer this over redeclaring in each module. */
+export const TRACKS: TrackId[] = ['military', 'moral', 'provision'];
 
 export function nextTokenId(): string {
   tokenCounter += 1;
@@ -86,9 +96,8 @@ export function baseThreshold(state: GameState, track: TrackId): number {
 export function getTrackTotals(
   state: GameState,
 ): Record<TrackId, Record<string, number>> {
-  const tracks: TrackId[] = ['military', 'moral', 'provision'];
   const result = Object.fromEntries(
-    tracks.map((tr) => [tr, {} as Record<string, number>]),
+    TRACKS.map((tr) => [tr, {} as Record<string, number>]),
   ) as Record<TrackId, Record<string, number>>;
 
   for (const tok of state.tokens) {
@@ -137,6 +146,45 @@ export function trackZone(
   if (total < threshold) return 'low';
   if (total >= threshold + offset) return 'high';
   return 'normal';
+}
+
+/** Sum of face-up/face-down token values currently on a track. */
+export function trackInfluenceTotal(state: GameState, track: TrackId): number {
+  return state.tokens
+    .filter((t) => t.track === track)
+    .reduce((a, t) => a + t.value, 0);
+}
+
+/**
+ * Whether a track is currently in the Low zone (total < threshold).
+ * Used by uniques that check zones before reveal (Raid, Skirmish).
+ */
+export function isTrackLow(state: GameState, track: TrackId): boolean {
+  const total = trackInfluenceTotal(state, track);
+  const thr = baseThreshold(state, track);
+  return trackZone(total, thr, state.tuningSnapshot.lowHighOffset) === 'low';
+}
+
+/** End-game / standings order: Glory → Loyalty → resource sum → Championships. */
+export function compareStandings(a: PlayerState, b: PlayerState): number {
+  if (b.resources.glory !== a.resources.glory) {
+    return b.resources.glory - a.resources.glory;
+  }
+  if (b.resources.loyalty !== a.resources.loyalty) {
+    return b.resources.loyalty - a.resources.loyalty;
+  }
+  const ra = a.resources.faith + a.resources.warriors + a.resources.goods;
+  const rb = b.resources.faith + b.resources.warriors + b.resources.goods;
+  if (rb !== ra) return rb - ra;
+  return b.championships - a.championships;
+}
+
+export function rankPlayers(players: PlayerState[]): PlayerState[] {
+  return [...players].sort(compareStandings);
+}
+
+export function sameStanding(a: PlayerState, b: PlayerState): boolean {
+  return compareStandings(a, b) === 0;
 }
 
 export function covenantZone(
@@ -259,7 +307,10 @@ export function grantGlory(
   return s;
 }
 
-/** Grant each tribe its per-round income (Loyalty capped at starting max). */
+/**
+ * Grant each tribe its per-round income (Loyalty capped at starting max).
+ * Invoked from `startRound` for rounds 2+ only so starting stocks match the tribe table.
+ */
 export function applyRoundIncome(state: GameState): GameState {
   let s = state;
   for (const p of state.players) {

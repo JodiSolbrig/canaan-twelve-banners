@@ -1,9 +1,13 @@
+/**
+ * Standard actions, unique tribe actions, and action-phase Place Influence.
+ */
 import { TRIBE_BY_ID } from '../data/gameData';
 import {
   addLog,
   applyLoyaltyLoss,
   getPlayer,
   grantGlory,
+  isTrackLow,
   mutateResources,
   nextTokenId,
   raiseCovenant,
@@ -195,12 +199,8 @@ export function applyUniqueAction(
         ...pl,
         resources: mutateResources(pl.resources, { warriors: -1 }),
       }));
-      // Zone check uses current tokens (pre-reveal) — approximate with provisional totals
-      const milTotal = s.tokens
-        .filter((t) => t.track === 'military')
-        .reduce((a, t) => a + t.value, 0);
-      const thr = Math.max(2, s.players.length);
-      const low = milTotal < thr;
+      // Zone check uses current board totals vs the same threshold as resolution.
+      const low = isTrackLow(s, 'military');
       if (low) {
         s = applyLoyaltyLoss(s, playerId, 1, 'Raid in Low zone');
         s = updatePlayer(s, playerId, (pl) => ({
@@ -275,11 +275,7 @@ export function applyUniqueAction(
         ...pl,
         resources: mutateResources(pl.resources, { warriors: -1 }),
       }));
-      const milTotal = s.tokens
-        .filter((t) => t.track === 'military')
-        .reduce((a, t) => a + t.value, 0);
-      const thr = Math.max(2, s.players.length);
-      if (milTotal < thr) {
+      if (isTrackLow(s, 'military')) {
         s = updatePlayer(s, playerId, (pl) => ({
           ...pl,
           resources: mutateResources(pl.resources, { goods: 1 }),

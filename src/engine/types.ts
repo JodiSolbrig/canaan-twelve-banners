@@ -1,8 +1,11 @@
 export type TrackId = 'military' | 'moral' | 'provision';
 export type ResourceKey = 'faith' | 'warriors' | 'goods' | 'loyalty' | 'glory';
 
+/**
+ * Core phase machine driven by `dispatch` + `revealTokens` / `startRound`.
+ * Setup is handled outside the engine (React `App` screen).
+ */
 export type Phase =
-  | 'setup'
   | 'crisisReveal'
   | 'crisisChoice' // Angel of the Lord / interactive crisis
   | 'placement'
@@ -111,7 +114,7 @@ export type TribeDef = {
   color: string;
   bias: TrackId;
   upgrades: [string, string, string];
-  /** Collected automatically at the start of every round */
+  /** Collected automatically at the start of rounds 2+ (not round 1). */
   income: TribeIncome;
 };
 
@@ -161,21 +164,20 @@ export type GameState = {
 
 export type PlacementPlan = Partial<Record<TrackId, number>>;
 
+/** Standard action kinds handled by `applyStandardAction` (not unique / placeInfluence). */
 export type StandardActionType =
-  | 'placeInfluence'
   | 'recruit'
   | 'gather'
   | 'pray'
   | 'convert'
   | 'rest'
-  | 'pass'
-  | 'unique';
+  | 'pass';
 
 export type PlayerAction =
   | { type: 'confirmPlacement'; plan: PlacementPlan }
   | {
       type: 'standard';
-      action: Exclude<StandardActionType, 'unique' | 'placeInfluence'>;
+      action: StandardActionType;
       recruitMode?: 'goods' | 'faith';
       gatherSpend?: 'warriors' | 'faith';
       prayMode?: 'rest' | 'goods';

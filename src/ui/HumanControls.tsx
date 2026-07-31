@@ -177,7 +177,7 @@ export function HumanControls({ state, onAction, flashLeaderLevel = null }: Prop
           className="tribe-income-callout"
           style={{ ['--tribe-color' as string]: def.color, cursor: 'help' }}
         >
-          <div className="tribe-income-label">Round income</div>
+          <div className="tribe-income-label">Income (rounds 2+)</div>
           <div className="tribe-income-value">+{formatTribeIncome(def.income)}</div>
           <div className="tribe-income-note">{def.income.note}</div>
         </div>

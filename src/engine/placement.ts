@@ -1,13 +1,16 @@
+/**
+ * Face-down Influence placement and actor-turn advancement.
+ */
+import { TRIBE_BY_ID } from '../data/gameData';
 import {
   addLog,
   getPlayer,
   nextTokenId,
   spendForInfluence,
+  TRACKS,
   updatePlayer,
 } from './helpers';
-import type { GameState, PlacementPlan, TrackId } from './types';
-
-const TRACKS: TrackId[] = ['military', 'moral', 'provision'];
+import type { GameState, PlacementPlan } from './types';
 
 export function applyPlacement(
   state: GameState,
@@ -92,12 +95,13 @@ export function applyPlacement(
     }
   }
 
-  // Pending temp gift from Naphtali
+  // Pending temp gift (Naphtali II / support gifts) — consumed here when set.
   if (p.pendingTempInfluenceGift > 0) {
+    const bias = TRIBE_BY_ID[p.tribe].bias;
     newTokens.push({
       id: nextTokenId(),
       playerId,
-      track: p.tribe === 'Naphtali' ? 'moral' : TRIBE_BIAS_FALLBACK(p.tribe),
+      track: bias,
       value: p.pendingTempInfluenceGift,
       temporary: true,
       faceDown: true,
@@ -121,12 +125,6 @@ export function applyPlacement(
     s = addLog(s, `${p.tribe} places no Influence.`, 'info');
   }
   return s;
-}
-
-function TRIBE_BIAS_FALLBACK(tribe: string): TrackId {
-  if (['Asher', 'Ephraim', 'Zebulun'].includes(tribe)) return 'provision';
-  if (['Levi', 'Issachar', 'Naphtali'].includes(tribe)) return 'moral';
-  return 'military';
 }
 
 export function advanceActorOrPhase(

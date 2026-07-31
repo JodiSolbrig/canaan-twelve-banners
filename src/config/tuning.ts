@@ -19,7 +19,10 @@ export type TuningConfig = {
   /** Extra threshold for 2–3 players */
   smallGroupThresholdBonus: number;
   lowHighOffset: number;
-  /** Free placement phase then one action */
+  /**
+   * Intended: free placement then one action.
+   * Not read by the engine yet — placement+action loop is always on.
+   */
   freePlacementPhase: boolean;
   failedTrackLoyaltyLoss: number;
   championRewards: Record<TrackId, ChampionReward>;

@@ -1,3 +1,11 @@
+/**
+ * Public engine API.
+ *
+ * Flow: `createGame` → (UI) crisis advance → placement → action →
+ * `revealTokens` / resolve → `startRound` or `endGame`.
+ *
+ * Prefer importing from this barrel rather than deep paths when adding UI/AI code.
+ */
 import {
   applyPlaceInfluenceAction,
   applyStandardAction,
@@ -8,6 +16,7 @@ import { applyAngelChoice, revealTokens } from './resolve';
 import { addLog, currentActor } from './helpers';
 import type { GameState, PlayerAction } from './types';
 
+/** Apply one legal player/system action; returns next immutable state. */
 export function dispatch(state: GameState, action: PlayerAction): GameState {
   if (state.phase === 'gameEnd') return state;
 
@@ -89,5 +98,6 @@ export function dispatch(state: GameState, action: PlayerAction): GameState {
 }
 
 export { createGame } from './createGame';
-export { currentActor, getPlayer } from './helpers';
+export { startRound } from './round';
+export { currentActor, getPlayer, rankPlayers, compareStandings } from './helpers';
 export type * from './types';

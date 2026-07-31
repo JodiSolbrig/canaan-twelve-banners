@@ -17,7 +17,7 @@ export const HELP = {
     'Each tribe has three Leader upgrades. Reach 3 / 6 / 9 Glory to unlock levels I / II / III. Effects are unique per tribe and stay active once unlocked.',
 
   income:
-    'Collected automatically at the start of every round. Amounts differ by tribe. Loyalty income only applies when you are below your starting Loyalty.',
+    'Collected automatically at the start of rounds 2+. Round 1 uses your printed starting resources only. Amounts differ by tribe. Loyalty income only applies when you are below your starting Loyalty.',
 
   military:
     'Military track — combat and defense. Highest Influence becomes Champion (+1 Glory, +1 Warrior by default). Prefer spending Warriors here, but Faith or Goods also work.',

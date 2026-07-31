@@ -1,7 +1,11 @@
+import { isLeaderUpgradeActive } from '../data/leaderImpl';
 import type { TribeDef } from '../engine/types';
+import {
+  leaderEarnSummary,
+  ROMAN,
+  upgradeStatusLabel,
+} from './leaderHelp';
 import { Tip } from './Tip';
-
-const ROMAN = ['I', 'II', 'III'] as const;
 
 type Props = {
   tribe: TribeDef;
@@ -13,28 +17,6 @@ type Props = {
   /** Highlight a freshly unlocked level (1–3) */
   flashLevel?: number | null;
 };
-
-export function leaderEarnSummary(thresholds: [number, number, number]): string {
-  return `Leader upgrades unlock at ${thresholds[0]}, ${thresholds[1]}, and ${thresholds[2]} Glory (levels I–III). Each tribe has three unique upgrades.`;
-}
-
-export function formatLeaderTip(
-  def: TribeDef,
-  leaderLevel: number,
-  thresholds: [number, number, number],
-): string {
-  const lines = [
-    `${def.id} — Leader ${leaderLevel}/3`,
-    leaderEarnSummary(thresholds),
-    '',
-    ...def.upgrades.map((text, i) => {
-      const unlocked = leaderLevel >= i + 1;
-      const mark = unlocked ? '✓' : `at ${thresholds[i]} Glory`;
-      return `${ROMAN[i]} [${mark}] ${text}`;
-    }),
-  ];
-  return lines.join('\n');
-}
 
 export function LeaderProgress({
   tribe,
@@ -67,6 +49,7 @@ export function LeaderProgress({
           const level = i + 1;
           const unlocked = leaderLevel >= level;
           const next = !unlocked && leaderLevel === i;
+          const active = isLeaderUpgradeActive(tribe.id, level);
           return (
             <li
               key={level}
@@ -75,6 +58,7 @@ export function LeaderProgress({
                 unlocked ? 'unlocked' : 'locked',
                 next ? 'next' : '',
                 flashLevel === level ? 'flash' : '',
+                !active ? 'planned' : '',
               ]
                 .filter(Boolean)
                 .join(' ')}
@@ -85,9 +69,7 @@ export function LeaderProgress({
               <span className="leader-upgrade-body">
                 <span className="leader-upgrade-text">{text}</span>
                 <span className="leader-upgrade-status">
-                  {unlocked
-                    ? 'Unlocked'
-                    : `Earn at ${thresholds[i]} Glory`}
+                  {upgradeStatusLabel(tribe.id, level, unlocked, thresholds[i]!)}
                 </span>
               </span>
             </li>
