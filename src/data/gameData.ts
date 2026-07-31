@@ -1,4 +1,15 @@
-import type { CrisisCardDef, TribeDef, TribeId, TrackId } from '../engine/types';
+import type {
+  CrisisCardDef,
+  TribeDef,
+  TribeId,
+  TribeIncome,
+  TrackId,
+} from '../engine/types';
+
+/** Human-readable income line, e.g. "1 Faith + 1 Warrior". */
+export function formatTribeIncome(income: TribeIncome): string {
+  return income.label;
+}
 
 export const TRIBE_COLORS: Record<TribeId, string> = {
   Judah: '#c9a227',
@@ -56,6 +67,12 @@ export const TRIBES: TribeDef[] = [
       'Othniel II – Wholehearted Charge: Military tokens +1 once/round.',
       'Othniel III – First in Line: Once/game move 1 token after reveal.',
     ],
+    income: {
+      faith: 1,
+      warriors: 1,
+      label: '1 Faith + 1 Warrior',
+      note: 'Leadership / lion',
+    },
   },
   {
     id: 'Benjamin',
@@ -74,6 +91,7 @@ export const TRIBES: TribeDef[] = [
       'Ehud II – Hidden Dagger: 1 Warrior as 2 Military Influence once/round.',
       'Ehud III – Deliverer’s Legacy: Free Recruit after Military Champion.',
     ],
+    income: { warriors: 2, label: '2 Warriors', note: 'Aggressive combat' },
   },
   {
     id: 'Levi',
@@ -92,6 +110,7 @@ export const TRIBES: TribeDef[] = [
       'Phinehas II – Intercession: Spend 1 Faith to prevent 1 Covenant loss.',
       'Phinehas III – Sacred Inquiry: Once/game peek next Crisis after placement.',
     ],
+    income: { faith: 2, label: '2 Faith', note: 'Priestly / Covenant' },
   },
   {
     id: 'Ephraim',
@@ -110,6 +129,12 @@ export const TRIBES: TribeDef[] = [
       'Abdon I – Many Sons: +1 Goods permanently when unlocked.',
       'Abdon II – Landed Authority: Convert 2 Goods → 1 Faith/Warrior once/round.',
     ],
+    income: {
+      goods: 1,
+      faith: 1,
+      label: '1 Goods + 1 Faith',
+      note: 'Economic + prophetic',
+    },
   },
   {
     id: 'Manasseh',
@@ -128,6 +153,12 @@ export const TRIBES: TribeDef[] = [
       'Jair – Thirty Towns: +1 Goods when Provision is High.',
       'Jephthah – Outcast’s Resolve: −1 Loyalty loss on failed investment.',
     ],
+    income: {
+      warriors: 1,
+      loyalty: 1,
+      label: '1 Warrior + 1 Loyalty (if below max)',
+      note: 'Stabilizer / tank',
+    },
   },
   {
     id: 'Reuben',
@@ -146,6 +177,12 @@ export const TRIBES: TribeDef[] = [
       'Pathfinder: Invest 2+ on a track → +1 temp on second track.',
       'Bold Claim: Once/game +1 Glory if second-most on a track.',
     ],
+    income: {
+      warriors: 1,
+      goods: 1,
+      label: '1 Warrior + 1 Goods',
+      note: 'Pastoral / early momentum',
+    },
   },
   {
     id: 'Simeon',
@@ -164,6 +201,7 @@ export const TRIBES: TribeDef[] = [
       'Furious Assault: Free Military token next round after failure.',
       'Raid Leader: Convert Goods ↔ Warrior 1:1 once/round.',
     ],
+    income: { warriors: 2, label: '2 Warriors', note: 'Skirmisher' },
   },
   {
     id: 'Dan',
@@ -182,6 +220,12 @@ export const TRIBES: TribeDef[] = [
       'Riddle & Cunning: Move 1 token after reveal once/round.',
       'Final Stand: Once/game spend 2 Warriors to ignore Covenant loss.',
     ],
+    income: {
+      warriors: 1,
+      faith: 1,
+      label: '1 Warrior + 1 Faith',
+      note: 'Strongman / trickster',
+    },
   },
   {
     id: 'Naphtali',
@@ -200,6 +244,12 @@ export const TRIBES: TribeDef[] = [
       'Swift Response: Give temp Influence to another next round.',
       'Northern Alliance: Once/game two tokens on different tracks +1.',
     ],
+    income: {
+      faith: 1,
+      goods: 1,
+      label: '1 Faith + 1 Goods',
+      note: 'Flexible support',
+    },
   },
   {
     id: 'Gad',
@@ -218,6 +268,7 @@ export const TRIBES: TribeDef[] = [
       'Enduring Defense: Military Low → your tokens +1.',
       'Overcomer: Once/game ignore one setback.',
     ],
+    income: { warriors: 2, label: '2 Warriors', note: 'Frontline tank' },
   },
   {
     id: 'Asher',
@@ -236,6 +287,7 @@ export const TRIBES: TribeDef[] = [
       'Fertile Blessing: Gather/Harvest +1 Goods once/round.',
       'Rich Harvest: Once/game double Goods from one gain.',
     ],
+    income: { goods: 2, label: '2 Goods', note: 'Coastal abundance' },
   },
   {
     id: 'Issachar',
@@ -254,6 +306,12 @@ export const TRIBES: TribeDef[] = [
       'Strategic Insight: Champion → +1 Faith.',
       'Wise Counsel: Once/game force another to move 1 token.',
     ],
+    income: {
+      faith: 1,
+      goods: 1,
+      label: '1 Faith + 1 Goods',
+      note: 'Strategic / understanding',
+    },
   },
   {
     id: 'Zebulun',
@@ -272,6 +330,12 @@ export const TRIBES: TribeDef[] = [
       'Commerce Route: Provision Champion → +1 Glory.',
       'Profitable Venture: Once/game double Goods gained.',
     ],
+    income: {
+      goods: 1,
+      warriors: 1,
+      label: '1 Goods + 1 Warrior',
+      note: 'Merchant / trade',
+    },
   },
 ];
 

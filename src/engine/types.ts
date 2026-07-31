@@ -86,6 +86,18 @@ export type CrisisCardDef = {
   effect: string;
 };
 
+/** Resources gained at the start of each round. Loyalty is capped at starting max. */
+export type TribeIncome = {
+  faith?: number;
+  warriors?: number;
+  goods?: number;
+  loyalty?: number;
+  /** Display line matching rules copy, e.g. "1 Faith + 1 Warrior" */
+  label: string;
+  /** Short thematic note for UI */
+  note: string;
+};
+
 export type TribeDef = {
   id: TribeId;
   faith: number;
@@ -99,6 +111,8 @@ export type TribeDef = {
   color: string;
   bias: TrackId;
   upgrades: [string, string, string];
+  /** Collected automatically at the start of every round */
+  income: TribeIncome;
 };
 
 export type LogEntry = {

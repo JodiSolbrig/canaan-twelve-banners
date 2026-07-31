@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { TRACK_LABELS, TRIBE_BY_ID } from '../data/gameData';
+import { formatTribeIncome, TRACK_LABELS, TRIBE_BY_ID } from '../data/gameData';
 import { currentActor, getPlayer } from '../engine';
 import type { GameState, PlacementPlan, PlayerAction, TrackId } from '../engine/types';
 import { HELP, RESOURCE_HELP, TRACK_AFFINITY } from './helpText';
+import { LeaderProgress } from './LeaderProgress';
 import { Tip } from './Tip';
 
 const TRACKS: TrackId[] = ['military', 'moral', 'provision'];
@@ -10,9 +11,10 @@ const TRACKS: TrackId[] = ['military', 'moral', 'provision'];
 type Props = {
   state: GameState;
   onAction: (a: PlayerAction) => void;
+  flashLeaderLevel?: number | null;
 };
 
-export function HumanControls({ state, onAction }: Props) {
+export function HumanControls({ state, onAction, flashLeaderLevel = null }: Props) {
   const actor = currentActor(state);
   const human = state.players.find((p) => p.isHuman)!;
   const def = TRIBE_BY_ID[human.tribe];
@@ -45,6 +47,15 @@ export function HumanControls({ state, onAction }: Props) {
   const [repoToken, setRepoToken] = useState('');
   const [repoTrack, setRepoTrack] = useState<TrackId>('moral');
   const [asherMode, setAsherMode] = useState<'faith' | 'rest'>('rest');
+  const [placingMore, setPlacingMore] = useState(false);
+
+  useEffect(() => {
+    if (state.phase !== 'action') setPlacingMore(false);
+  }, [state.phase, state.round]);
+
+  const affordablePool =
+    human.resources.faith + human.resources.warriors + human.resources.goods;
+  const plannedTotal = TRACKS.reduce((n, t) => n + (plan[t] ?? 0), 0);
 
   const phaseLabel: Record<string, string> = {
     crisisReveal: 'Crisis revealed',
@@ -156,6 +167,29 @@ export function HumanControls({ state, onAction }: Props) {
           </Tip>
         ))}
       </div>
+
+      <Tip
+        text={`${HELP.income} ${def.income.note}.`}
+        wide
+        className="tip-below tip-block"
+      >
+        <div
+          className="tribe-income-callout"
+          style={{ ['--tribe-color' as string]: def.color, cursor: 'help' }}
+        >
+          <div className="tribe-income-label">Round income</div>
+          <div className="tribe-income-value">+{formatTribeIncome(def.income)}</div>
+          <div className="tribe-income-note">{def.income.note}</div>
+        </div>
+      </Tip>
+
+      <LeaderProgress
+        tribe={def}
+        leaderLevel={human.leaderLevel}
+        glory={human.resources.glory}
+        thresholds={state.tuningSnapshot.leaderUnlockGlory}
+        flashLevel={flashLeaderLevel}
+      />
 
       {human.peekedCrisis && human.peekedCrisis.length > 0 && (
         <div className="peek-box">
@@ -333,8 +367,11 @@ export function HumanControls({ state, onAction }: Props) {
             <Tip text={HELP.placeMore} wide className="tip-below">
               <button
                 type="button"
-                className="btn"
-                onClick={() => onAction({ type: 'placeInfluence', plan })}
+                className={`btn${placingMore ? ' btn-primary' : ''}`}
+                onClick={() => {
+                  setPlan({ military: 0, moral: 0, provision: 0 });
+                  setPlacingMore((v) => !v);
+                }}
               >
                 Place more Influence
               </button>
@@ -349,6 +386,72 @@ export function HumanControls({ state, onAction }: Props) {
               </button>
             </Tip>
           </div>
+
+          {placingMore && (
+            <div className="placement-controls" style={{ marginTop: '0.75rem' }}>
+              <div className="help-callout">
+                Spend your action to place more face-down Influence. You have{' '}
+                <strong>{affordablePool}</strong> spendable resources (Faith + Warriors +
+                Goods). Prefer Warriors→Military, Faith→Moral, Goods→Provision.
+              </div>
+              {TRACKS.map((t) => (
+                <div key={t} className="placement-row">
+                  <Tip text={TRACK_AFFINITY[t].tip} wide>
+                    <label style={{ width: '9rem', cursor: 'help' }}>
+                      {TRACK_LABELS[t]}
+                      <span className="track-affinity">
+                        {' '}
+                        ({TRACK_AFFINITY[t].preferred})
+                      </span>
+                    </label>
+                  </Tip>
+                  <input
+                    type="number"
+                    min={0}
+                    max={affordablePool}
+                    value={plan[t] ?? 0}
+                    onChange={(e) =>
+                      setPlan({
+                        ...plan,
+                        [t]: Math.max(0, Number(e.target.value) || 0),
+                      })
+                    }
+                    aria-label={`Extra ${TRACK_LABELS[t]} tokens`}
+                  />
+                </div>
+              ))}
+              <div className="field-row" style={{ marginTop: '0.35rem' }}>
+                <Tip text={HELP.placeInfluence} wide className="tip-below">
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    disabled={plannedTotal < 1 || plannedTotal > affordablePool}
+                    onClick={() => {
+                      onAction({ type: 'placeInfluence', plan });
+                      setPlacingMore(false);
+                    }}
+                  >
+                    Confirm extra Influence ({plannedTotal})
+                  </button>
+                </Tip>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => {
+                    setPlacingMore(false);
+                    setPlan({ military: 0, moral: 0, provision: 0 });
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+              {plannedTotal > affordablePool && (
+                <div style={{ color: 'var(--danger)', fontSize: '0.85rem' }}>
+                  Not enough resources for {plannedTotal} tokens.
+                </div>
+              )}
+            </div>
+          )}
 
           {human.tribe === 'Judah' && (
             <div className="field-row" style={{ marginTop: '0.5rem' }}>

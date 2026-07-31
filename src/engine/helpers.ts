@@ -1,4 +1,5 @@
 import type { TuningConfig } from '../config/tuning';
+import { formatTribeIncome, TRIBE_BY_ID } from '../data/gameData';
 import type {
   GameState,
   LogEntry,
@@ -258,20 +259,50 @@ export function grantGlory(
   return s;
 }
 
+/** Grant each tribe its per-round income (Loyalty capped at starting max). */
+export function applyRoundIncome(state: GameState): GameState {
+  let s = state;
+  for (const p of state.players) {
+    const def = TRIBE_BY_ID[p.tribe];
+    const inc = def.income;
+    s = updatePlayer(s, p.id, (pl) => {
+      let r = mutateResources(pl.resources, {
+        faith: inc.faith ?? 0,
+        warriors: inc.warriors ?? 0,
+        goods: inc.goods ?? 0,
+      });
+      if (inc.loyalty && r.loyalty < pl.startingLoyalty) {
+        const gain = Math.min(inc.loyalty, pl.startingLoyalty - r.loyalty);
+        r = mutateResources(r, { loyalty: gain });
+      }
+      return { ...pl, resources: r };
+    });
+    s = addLog(
+      s,
+      `${p.tribe} collects income (+${formatTribeIncome(inc)}).`,
+      'info',
+    );
+  }
+  return s;
+}
+
 export function checkLeaderUnlocks(state: GameState, playerId: string): GameState {
   const thresholds = state.tuningSnapshot.leaderUnlockGlory;
-  return updatePlayer(state, playerId, (p) => {
-    let level = p.leaderLevel;
-    for (let i = 0; i < 3; i++) {
-      if (p.resources.glory >= thresholds[i] && level < i + 1) {
-        level = i + 1;
-      }
+  const p = getPlayer(state, playerId);
+  const prevLevel = p.leaderLevel;
+  let level = prevLevel;
+  for (let i = 0; i < 3; i++) {
+    if (p.resources.glory >= thresholds[i] && level < i + 1) {
+      level = i + 1;
     }
-    if (level === p.leaderLevel) return p;
+  }
+  if (level === prevLevel) return state;
 
-    let next = { ...p, leaderLevel: level };
+  const def = TRIBE_BY_ID[p.tribe];
+  let s = updatePlayer(state, playerId, (pl) => {
+    let next = { ...pl, leaderLevel: level };
     // Ephraim Abdon I at level 2
-    if (p.tribe === 'Ephraim' && level >= 2 && p.leaderLevel < 2) {
+    if (pl.tribe === 'Ephraim' && level >= 2 && prevLevel < 2) {
       next = {
         ...next,
         resources: mutateResources(next.resources, { goods: 1 }),
@@ -279,6 +310,19 @@ export function checkLeaderUnlocks(state: GameState, playerId: string): GameStat
     }
     return next;
   });
+
+  const roman = ['I', 'II', 'III'] as const;
+  for (let lvl = prevLevel + 1; lvl <= level; lvl++) {
+    const upgrade = def.upgrades[lvl - 1] ?? `Leader ${roman[lvl - 1]}`;
+    const bonus =
+      p.tribe === 'Ephraim' && lvl === 2 ? ' (+1 Goods granted)' : '';
+    s = addLog(
+      s,
+      `${p.tribe} unlocks Leader ${roman[lvl - 1]}${bonus} — ${upgrade}`,
+      'good',
+    );
+  }
+  return s;
 }
 
 export function currentActor(state: GameState): PlayerState | null {

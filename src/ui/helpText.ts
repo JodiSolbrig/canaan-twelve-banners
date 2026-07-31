@@ -11,7 +11,13 @@ export const HELP = {
   loyalty:
     'Loyalty is resilience. Primary tie-breaker for Champions and final score. Lost to Crises and failed tracks. Cannot normally exceed your starting Loyalty.',
   glory:
-    'Glory is victory points. Highest Glory at game end wins. Earned mainly from becoming track Champion and some unique actions.',
+    'Glory is victory points. Highest Glory at game end wins. Earned mainly from becoming track Champion and some unique actions. Reaching Glory thresholds (usually 3 / 6 / 9) unlocks Leader upgrades I–III — see your Leader panel for your tribe’s effects.',
+
+  leader:
+    'Each tribe has three Leader upgrades. Reach 3 / 6 / 9 Glory to unlock levels I / II / III. Effects are unique per tribe and stay active once unlocked.',
+
+  income:
+    'Collected automatically at the start of every round. Amounts differ by tribe. Loyalty income only applies when you are below your starting Loyalty.',
 
   military:
     'Military track — combat and defense. Highest Influence becomes Champion (+1 Glory, +1 Warrior by default). Prefer spending Warriors here, but Faith or Goods also work.',
@@ -30,7 +36,7 @@ export const HELP = {
   placeInfluence:
     'Spend 1 Faith, 1 Warrior, or 1 Goods per Influence token. Place on any track(s). Tokens stay face-down until Reveal. Highest Influence on a track is Champion.',
   placeMore:
-    'Use your action this round to place additional Influence (same costs as the placement phase). Skip economy actions if you want to push a track harder.',
+    'Use your action to place additional Influence. Click this, choose how many tokens on each track, then Confirm. Costs 1 Faith, Warrior, or Goods per token (preferred affinity spent first).',
   recruit:
     'Build Warriors. Option A: spend 1 Goods → gain 2 Warriors. Option B: spend 1 Faith → net +1 Warrior (Faith is spent and returned with the Warrior gain).',
   gather:

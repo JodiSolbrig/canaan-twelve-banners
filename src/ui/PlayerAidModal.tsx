@@ -1,9 +1,17 @@
+import { DEFAULT_TUNING } from '../config/tuning';
+import { leaderEarnSummary } from './LeaderProgress';
+
 type Props = {
   open: boolean;
   onClose: () => void;
+  thresholds?: [number, number, number];
 };
 
-export function PlayerAidModal({ open, onClose }: Props) {
+export function PlayerAidModal({
+  open,
+  onClose,
+  thresholds = DEFAULT_TUNING.leaderUnlockGlory,
+}: Props) {
   if (!open) return null;
   return (
     <div className="modal-overlay" onClick={onClose} role="presentation">
@@ -26,7 +34,31 @@ export function PlayerAidModal({ open, onClose }: Props) {
           </li>
           <li>
             <strong>Loyalty</strong> — resilience & primary tie-breaker. <strong>Glory</strong>{' '}
-            — victory points.
+            — victory points (also unlocks Leader upgrades).
+          </li>
+        </ul>
+
+        <h3 style={{ color: 'var(--bronze)', marginTop: '0.75rem' }}>Round income</h3>
+        <ul>
+          <li>
+            At the start of each round, every tribe collects its unique income (Faith, Warriors,
+            Goods, and sometimes Loyalty).
+          </li>
+          <li>
+            Loyalty income only applies when below your starting Loyalty. Your tribe’s amount is
+            shown on the setup screen and under your resources during play.
+          </li>
+        </ul>
+
+        <h3 style={{ color: 'var(--bronze)', marginTop: '0.75rem' }}>Leader upgrades</h3>
+        <ul>
+          <li>{leaderEarnSummary(thresholds)}</li>
+          <li>
+            Your tribe’s three upgrades are listed under your resources during play. Hover any
+            player chip to see their progression.
+          </li>
+          <li>
+            When you unlock a level, a banner appears and the Chronicle records the upgrade.
           </li>
         </ul>
 
@@ -66,7 +98,7 @@ export function PlayerAidModal({ open, onClose }: Props) {
           <li>Tie-break: Loyalty → remaining resources → Championships</li>
         </ul>
         <p style={{ color: 'var(--ink-dim)', fontSize: '0.85rem' }}>
-          Tip: hover buttons, resources, and track titles for more detail.
+          Tip: hover buttons, resources, player chips, and track titles for more detail.
         </p>
         <button type="button" className="btn btn-primary" onClick={onClose}>
           Close

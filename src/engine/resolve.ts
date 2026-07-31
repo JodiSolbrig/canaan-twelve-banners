@@ -442,7 +442,10 @@ export function endGame(state: GameState): GameState {
     winners,
   };
   const names = winners.map((id) => getPlayer(s, id).tribe).join(' & ');
-  s = addLog(s, `Game over — ${names} triumph with Glory!`, 'good');
+  const why = state.brokenClock
+    ? 'Broken Covenant ended the contest'
+    : `All ${state.maxRounds} rounds completed`;
+  s = addLog(s, `Game over — ${why}. ${names} triumph with Glory!`, 'good');
   return s;
 }
 

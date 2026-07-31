@@ -2,6 +2,7 @@ import { cloneTuning, type TuningConfig } from '../config/tuning';
 import { CRISIS_CARDS, TRIBE_BY_ID } from '../data/gameData';
 import {
   addLog,
+  applyRoundIncome,
   mulberry32,
   resetIdCounters,
   shuffle,
@@ -155,6 +156,9 @@ export function startRound(state: GameState): GameState {
       peekedCrisis: null,
     })),
   };
+
+  // Tribe income before Crisis reveal
+  s = applyRoundIncome(s);
 
   // Draw crisis
   if (s.crisisDeck.length === 0) {

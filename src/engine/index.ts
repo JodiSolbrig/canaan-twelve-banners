@@ -45,7 +45,23 @@ export function dispatch(state: GameState, action: PlayerAction): GameState {
     if (state.phase !== 'action') return state;
     const actor = currentActor(state);
     if (!actor) return state;
+    const total =
+      (action.plan.military ?? 0) +
+      (action.plan.moral ?? 0) +
+      (action.plan.provision ?? 0);
+    if (total < 1) {
+      return addLog(
+        state,
+        'Place Influence needs at least 1 token on a track.',
+        'bad',
+      );
+    }
+    const before = state.tokens.length;
     let s = applyPlaceInfluenceAction(state, actor.id, action.plan);
+    // If nothing was placed (could not afford), do not consume the action
+    if (s.tokens.length <= before) {
+      return addLog(s, `${actor.tribe} could not afford that Influence.`, 'bad');
+    }
     s = advanceActorOrPhase(s, 'reveal');
     if (s.phase === 'reveal') s = revealTokens(s);
     return s;

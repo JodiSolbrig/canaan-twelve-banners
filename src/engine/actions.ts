@@ -3,6 +3,7 @@ import {
   addLog,
   applyLoyaltyLoss,
   getPlayer,
+  grantGlory,
   mutateResources,
   nextTokenId,
   raiseCovenant,
@@ -210,9 +211,10 @@ export function applyUniqueAction(
       } else {
         s = updatePlayer(s, playerId, (pl) => ({
           ...pl,
-          resources: mutateResources(pl.resources, { goods: 1, glory: 1 }),
+          resources: mutateResources(pl.resources, { goods: 1 }),
         }));
         s = addLog(s, `${p.tribe} Raids — +1 Goods, +1 Glory.`, 'good');
+        s = grantGlory(s, playerId, 1, false);
       }
       break;
     }
@@ -271,7 +273,7 @@ export function applyUniqueAction(
       if (p.resources.warriors < 1) return { state: addLog(s, 'Need 1 Warrior.', 'bad'), ok: false };
       s = updatePlayer(s, playerId, (pl) => ({
         ...pl,
-        resources: mutateResources(pl.resources, { warriors: -1, glory: 1 }),
+        resources: mutateResources(pl.resources, { warriors: -1 }),
       }));
       const milTotal = s.tokens
         .filter((t) => t.track === 'military')
@@ -286,6 +288,7 @@ export function applyUniqueAction(
       } else {
         s = addLog(s, `${p.tribe} Skirmishes — +1 Glory.`, 'good');
       }
+      s = grantGlory(s, playerId, 1, false);
       break;
     }
     case 'Dan': {

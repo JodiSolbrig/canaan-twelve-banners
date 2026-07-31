@@ -1,7 +1,8 @@
-import { TRACK_LABELS, TRIBE_BY_ID } from '../data/gameData';
+import { formatTribeIncome, TRACK_LABELS, TRIBE_BY_ID } from '../data/gameData';
 import { baseThreshold, covenantZone, trackZone } from '../engine/helpers';
 import type { GameState, TrackId } from '../engine/types';
 import { HELP, TRACK_AFFINITY } from './helpText';
+import { formatLeaderTip } from './LeaderProgress';
 import { Tip } from './Tip';
 
 const TRACKS: TrackId[] = ['military', 'moral', 'provision'];
@@ -132,7 +133,14 @@ export function TracksBoard({ state }: { state: GameState }) {
   );
 }
 
-export function PlayersStrip({ state }: { state: GameState }) {
+export function PlayersStrip({
+  state,
+  flashPlayerIds = [],
+}: {
+  state: GameState;
+  flashPlayerIds?: string[];
+}) {
+  const thresholds = state.tuningSnapshot.leaderUnlockGlory;
   return (
     <div className="panel">
       <h3 style={{ marginBottom: '0.5rem', color: 'var(--sand)' }}>
@@ -142,15 +150,18 @@ export function PlayersStrip({ state }: { state: GameState }) {
         {state.turnOrder.map((id) => {
           const p = state.players.find((x) => x.id === id)!;
           const def = TRIBE_BY_ID[p.tribe];
+          const flashing = flashPlayerIds.includes(id);
+          const tip = [
+            `${def.id}: ${def.playstyle}`,
+            `Unique — ${def.uniqueName} (${def.uniqueCost}): ${def.uniqueEffect}`,
+            `Each round: +${formatTribeIncome(def.income)} (${def.income.note})`,
+            '',
+            formatLeaderTip(def, p.leaderLevel, thresholds),
+          ].join('\n');
           return (
-            <Tip
-              key={id}
-              wide
-              className="tip-below tip-block"
-              text={`${def.id}: ${def.playstyle} Unique — ${def.uniqueName} (${def.uniqueCost}): ${def.uniqueEffect}`}
-            >
+            <Tip key={id} wide className="tip-below tip-block" text={tip}>
               <div
-                className={`player-chip${p.isHuman ? ' human' : ''}`}
+                className={`player-chip${p.isHuman ? ' human' : ''}${flashing ? ' leader-flash' : ''}`}
                 style={{ ['--tribe-color' as string]: def.color, width: '100%', cursor: 'help' }}
               >
                 <div>
@@ -158,7 +169,15 @@ export function PlayersStrip({ state }: { state: GameState }) {
                     {def.id}
                     {p.isHuman ? ' (You)' : ''}
                   </div>
-                  <div className="stats">
+                  <div className={`stats${flashing ? ' leader-level-pulse' : ''}`}>
+                    <span className="leader-pips" aria-label={`Leader ${p.leaderLevel} of 3`}>
+                      {[1, 2, 3].map((n) => (
+                        <span
+                          key={n}
+                          className={`leader-pip${p.leaderLevel >= n ? ' on' : ''}`}
+                        />
+                      ))}
+                    </span>
                     Leader {p.leaderLevel}/3 · Champs {p.championships}
                   </div>
                 </div>

@@ -1,18 +1,27 @@
 import { useMemo, useState } from 'react';
-import { ALL_TRIBE_IDS, TRIBES, TRIBE_BY_ID } from '../data/gameData';
+import {
+  ALL_TRIBE_IDS,
+  formatTribeIncome,
+  TRIBES,
+  TRIBE_BY_ID,
+} from '../data/gameData';
 import type { TribeId } from '../engine/types';
 import type { TuningConfig } from '../config/tuning';
+import { LeaderProgress, leaderEarnSummary } from './LeaderProgress';
+import { HELP } from './helpText';
+import { Tip } from './Tip';
 
 type Props = {
   tuning: TuningConfig;
   onStart: (opts: { humanTribe: TribeId; totalPlayers: number }) => void;
 };
 
-export function SetupScreen({ onStart }: Props) {
+export function SetupScreen({ tuning, onStart }: Props) {
   const [totalPlayers, setTotalPlayers] = useState(4);
   const [humanTribe, setHumanTribe] = useState<TribeId>('Judah');
 
   const selected = useMemo(() => TRIBE_BY_ID[humanTribe], [humanTribe]);
+  const thresholds = tuning.leaderUnlockGlory;
 
   return (
     <div className="setup-screen panel">
@@ -53,6 +62,7 @@ export function SetupScreen({ onStart }: Props) {
               <div className="meta">
                 F{t.faith} W{t.warriors} G{t.goods} L{t.loyalty}
               </div>
+              <div className="meta income-meta">+{formatTribeIncome(t.income)}/rd</div>
             </button>
           ))}
         </div>
@@ -66,6 +76,29 @@ export function SetupScreen({ onStart }: Props) {
         <div style={{ fontSize: '0.85rem', marginTop: '0.5rem' }}>
           <em>{selected.uniqueName}</em> — {selected.uniqueCost}: {selected.uniqueEffect}
         </div>
+        <Tip text={`${HELP.income} ${selected.income.note}.`} wide className="tip-below tip-block">
+          <div className="tribe-income-callout" style={{ cursor: 'help' }}>
+            <div className="tribe-income-label">Each round</div>
+            <div className="tribe-income-value">+{formatTribeIncome(selected.income)}</div>
+            <div className="tribe-income-note">{selected.income.note}</div>
+          </div>
+        </Tip>
+        <p
+          style={{
+            fontSize: '0.8rem',
+            color: 'var(--bronze)',
+            margin: '0.75rem 0 0.35rem',
+          }}
+        >
+          {leaderEarnSummary(thresholds)}
+        </p>
+        <LeaderProgress
+          tribe={selected}
+          leaderLevel={0}
+          glory={0}
+          thresholds={thresholds}
+          compact
+        />
       </div>
 
       <button
