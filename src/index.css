@@ -724,6 +724,91 @@ h3 {
   border: 1px dashed var(--panel-border);
 }
 
+/* Placement grid — tracks down the side, resources across the top */
+.placement-grid {
+  margin: 0.5rem 0;
+}
+
+.placement-legend {
+  font-size: 0.78rem;
+  color: var(--ink-dim);
+  line-height: 1.4;
+  margin-bottom: 0.5rem;
+}
+
+.placement-grid table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.82rem;
+}
+
+.placement-grid th,
+.placement-grid td {
+  padding: 0.3rem 0.4rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.placement-grid thead th {
+  color: var(--sand);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.placement-grid thead th.over {
+  color: var(--danger);
+}
+
+.placement-grid tbody th {
+  color: var(--ink);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.placement-grid .pool {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--ink-dim);
+  font-weight: 400;
+}
+
+.placement-grid input {
+  width: 3.2rem;
+}
+
+/* The affinity cell is the only one that can win the track. */
+.placement-grid td.banner-cell {
+  background: rgba(176, 141, 87, 0.12);
+  border-left: 2px solid var(--bronze);
+}
+
+.placement-grid .cell-kind {
+  display: block;
+  font-size: 0.65rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.placement-grid td.banner-cell .cell-kind {
+  color: var(--bronze);
+}
+
+.placement-grid .track-tally {
+  font-weight: 600;
+  color: var(--sand);
+}
+
+.placement-warning {
+  margin-top: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--crisis);
+}
+
+.placement-warning.danger {
+  color: var(--danger);
+}
+
 /* Tooltips */
 .tip-wrap {
   position: relative;

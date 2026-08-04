@@ -16,6 +16,7 @@ import {
   raiseCovenant,
   rankPlayers,
   sameStanding,
+  TRACK_AFFINITY_RESOURCE,
   TRACKS,
   trackZone,
   updatePlayer,
@@ -65,13 +66,15 @@ export function resolveRound(state: GameState): GameState {
     ),
   };
 
-  // Gad Enduring Defense: when Military is Low, Gad tokens count +1
+  // Gad Enduring Defense: when Military is Low, Gad's tokens count +1. Gad is a
+  // Military tribe, so the bonus is Banner strength.
   for (const p of s.players) {
     if (p.tribe === 'Gad' && p.leaderLevel >= 2) {
       const thr = baseThreshold(s, 'military');
-      const grand = Object.values(totals.military).reduce((a, b) => a + b, 0);
-      if (grand < thr && (totals.military[p.id] ?? 0) > 0) {
-        totals.military[p.id] = (totals.military[p.id] ?? 0) + 1;
+      const grand = Object.values(totals.total.military).reduce((a, b) => a + b, 0);
+      if (grand < thr && (totals.total.military[p.id] ?? 0) > 0) {
+        totals.total.military[p.id] = (totals.total.military[p.id] ?? 0) + 1;
+        totals.banner.military[p.id] = (totals.banner.military[p.id] ?? 0) + 1;
       }
     }
   }
@@ -80,8 +83,10 @@ export function resolveRound(state: GameState): GameState {
 
   for (const track of TRACKS) {
     const base = baseThreshold(s, track);
-    const byPlayer = totals[track];
+    const byPlayer = totals.total[track];
     const grand = Object.values(byPlayer).reduce((a, b) => a + b, 0);
+    const bannerByPlayer = totals.banner[track];
+    const bannerGrand = Object.values(bannerByPlayer).reduce((a, b) => a + b, 0);
 
     // Day of Midian raises what Military must beat, but not where the Low/High
     // zones sit — abilities that read zones keep measuring against the base.
@@ -91,10 +96,13 @@ export function resolveRound(state: GameState): GameState {
     results.push({
       track,
       total: grand,
+      bannerTotal: bannerGrand,
       threshold: thr,
       baseThreshold: base,
       success: grand >= thr,
-      championId: pickChampion(s, byPlayer),
+      // Supply helps a track succeed but never claims it. A track carried
+      // entirely by Supply succeeds with no Champion at all.
+      championId: pickChampion(s, bannerByPlayer),
       zone: trackZone(grand, base, tuning.lowHighOffset),
     });
   }
@@ -105,7 +113,13 @@ export function resolveRound(state: GameState): GameState {
   // Champions + rewards
   for (const res of results) {
     if (!res.championId) {
-      s = addLog(s, `${label(res.track)}: no Champion (total ${res.total}/${res.threshold}).`, 'info');
+      s = addLog(
+        s,
+        res.total > 0
+          ? `${label(res.track)}: no Champion — ${res.total}/${res.threshold} Influence, all Supply.`
+          : `${label(res.track)}: no Champion (total ${res.total}/${res.threshold}).`,
+        'info',
+      );
       continue;
     }
     const champ = getPlayer(s, res.championId);
@@ -113,9 +127,12 @@ export function resolveRound(state: GameState): GameState {
       ...p,
       championships: p.championships + 1,
     }));
+    // Report the Champion's own Banner strength — the number they actually won
+    // on. The track total includes Supply and everyone else's tokens, so using
+    // it here reads as though the Champion placed far more than they did.
     s = addLog(
       s,
-      `${champ.tribe} is ${label(res.track)} Champion (${res.total} Infl.).`,
+      `${champ.tribe} is ${label(res.track)} Champion (${totals.banner[res.track][res.championId] ?? 0} Banner of ${res.total} Infl.).`,
       'good',
     );
 
@@ -134,9 +151,9 @@ export function resolveRound(state: GameState): GameState {
 
   // Civil Strife
   if (s.activeCrisis?.id === 11) {
-    const mil = Object.entries(totals.military).sort((a, b) => b[1] - a[1]);
+    const mil = Object.entries(totals.total.military).sort((a, b) => b[1] - a[1]);
     for (const [pid] of mil.slice(0, 2)) {
-      if ((totals.military[pid] ?? 0) > 0) {
+      if ((totals.total.military[pid] ?? 0) > 0) {
         s = applyLoyaltyLoss(s, pid, 1, 'Civil Strife');
       }
     }
@@ -166,7 +183,7 @@ export function resolveRound(state: GameState): GameState {
       }
       // Day of Midian success glory
       if (res.track === 'military' && s.activeCrisis?.id === 13) {
-        for (const [pid, v] of Object.entries(totals.military)) {
+        for (const [pid, v] of Object.entries(totals.total.military)) {
           if (v > 0) s = grantGlory(s, pid, 1, false);
         }
       }
@@ -174,6 +191,7 @@ export function resolveRound(state: GameState): GameState {
       if (res.track === 'moral' && s.activeCrisis?.id === 9 && res.championId) {
         s = grantGlory(s, res.championId, 1, false);
       }
+      s = paySpoil(s, res, totals.total[res.track]);
       continue;
     }
 
@@ -183,8 +201,9 @@ export function resolveRound(state: GameState): GameState {
 
     s = applyCovenantDrop(s, drop, `${label(res.track)} failed`);
 
-    // Investors lose loyalty
-    for (const [pid, v] of Object.entries(totals[res.track])) {
+    // Only Banner contributors staked their name on the track, so only they take
+    // the Loyalty penalty. Supply is help sent at no personal risk.
+    for (const [pid, v] of Object.entries(totals.banner[res.track])) {
       if (v <= 0) continue;
       let loss = tuning.failedTrackLoyaltyLoss;
       const pl = getPlayer(s, pid);
@@ -289,6 +308,40 @@ export function advanceToNextRound(state: GameState): GameState {
     firstPlayerIndex: (state.firstPlayerIndex + 1) % state.turnOrder.length,
     turnOrder: rotate(state.turnOrder, 1),
   });
+}
+
+/**
+ * Divide the spoil of a successful track.
+ *
+ * Everyone who contributed — Banner or Supply — shares in it, except the
+ * Champion, who is already paid the richer Champion reward. This is what makes
+ * Supply worth sending: it converts an off-affinity resource into the one the
+ * track wants, at a better rate than the Convert action, in exchange for the
+ * risk that the track fails and pays nothing.
+ */
+function paySpoil(
+  state: GameState,
+  res: TrackResolution,
+  contributors: Record<string, number>,
+): GameState {
+  let s = state;
+  const amount = s.tuningSnapshot.spoilOnSuccess;
+  if (amount <= 0) return s;
+  const resource = TRACK_AFFINITY_RESOURCE[res.track];
+
+  for (const [pid, influence] of Object.entries(contributors)) {
+    if (influence <= 0 || pid === res.championId) continue;
+    s = updatePlayer(s, pid, (p) => ({
+      ...p,
+      resources: mutateResources(p.resources, { [resource]: amount }),
+    }));
+    s = addLog(
+      s,
+      `${getPlayer(s, pid).tribe} shares the spoil of ${label(res.track)} (+${amount} ${resource}).`,
+      'good',
+    );
+  }
+  return s;
 }
 
 /**

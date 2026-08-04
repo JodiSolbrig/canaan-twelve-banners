@@ -9,9 +9,13 @@ import type { TuningConfig } from '../config/tuning';
 import { formatTribeIncome, TRIBE_BY_ID } from '../data/gameData';
 import type {
   GameState,
+  InfluenceToken,
   LogEntry,
+  PlacementPlan,
   PlayerState,
   Resources,
+  ResourceSpend,
+  SpendableResource,
   TrackId,
 } from './types';
 
@@ -20,6 +24,36 @@ let tokenCounter = 0;
 
 /** Shared track id list — prefer this over redeclaring in each module. */
 export const TRACKS: TrackId[] = ['military', 'moral', 'provision'];
+
+/**
+ * The resource that plants a Banner on each track. Paying with anything else
+ * places Supply instead.
+ */
+export const TRACK_AFFINITY_RESOURCE: Record<TrackId, SpendableResource> = {
+  military: 'warriors',
+  moral: 'faith',
+  provision: 'goods',
+};
+
+/**
+ * Banner or Supply, judged against the track the token is on *now* — not the
+ * track it was placed on. Reposition moving a Warrior-paid token off Military
+ * demotes it to Supply, which is the intended cost of that ability.
+ */
+export function isBannerToken(token: InfluenceToken): boolean {
+  return token.paidWith === TRACK_AFFINITY_RESOURCE[token.track];
+}
+
+/** Total tokens a plan places on one track, across every resource. */
+export function plannedTokenCount(spend: ResourceSpend | undefined): number {
+  if (!spend) return 0;
+  return (spend.faith ?? 0) + (spend.warriors ?? 0) + (spend.goods ?? 0);
+}
+
+/** Total tokens a plan places across all tracks. */
+export function planTotal(plan: PlacementPlan): number {
+  return TRACKS.reduce((n, t) => n + plannedTokenCount(plan[t]), 0);
+}
 
 export function nextTokenId(): string {
   tokenCounter += 1;
@@ -93,49 +127,68 @@ export function baseThreshold(state: GameState, track: TrackId): number {
   return thr;
 }
 
-export function getTrackTotals(
-  state: GameState,
-): Record<TrackId, Record<string, number>> {
-  const result = Object.fromEntries(
+export type TrackTallies = {
+  /** Banner + Supply per player — measured against the success threshold. */
+  total: Record<TrackId, Record<string, number>>;
+  /** Banner only per player — Champion is decided on this. */
+  banner: Record<TrackId, Record<string, number>>;
+};
+
+function emptyTally(): Record<TrackId, Record<string, number>> {
+  return Object.fromEntries(
     TRACKS.map((tr) => [tr, {} as Record<string, number>]),
   ) as Record<TrackId, Record<string, number>>;
+}
+
+export function getTrackTotals(state: GameState): TrackTallies {
+  const total = emptyTally();
+  const banner = emptyTally();
 
   for (const tok of state.tokens) {
-    result[tok.track][tok.playerId] =
-      (result[tok.track][tok.playerId] ?? 0) + tok.value;
+    total[tok.track][tok.playerId] =
+      (total[tok.track][tok.playerId] ?? 0) + tok.value;
+    if (isBannerToken(tok)) {
+      banner[tok.track][tok.playerId] =
+        (banner[tok.track][tok.playerId] ?? 0) + tok.value;
+    }
   }
 
-  // Passive modifiers that affect counting at reveal time
+  // Passive modifiers counted at reveal time. All four below are Military
+  // bonuses belonging to Military tribes, so they add Banner strength — the
+  // bonus inherits the nature of the tokens it modifies.
+  const addMilitary = (playerId: string, amount: number) => {
+    total.military[playerId] = (total.military[playerId] ?? 0) + amount;
+    banner.military[playerId] = (banner.military[playerId] ?? 0) + amount;
+  };
+
   for (const p of state.players) {
-    // Dan Samson I: 3 military tokens count as 4
+    // Dan Samson I: three Military tokens count as four.
     if (p.leaderLevel >= 1 && p.tribe === 'Dan') {
       const milCount = state.tokens.filter(
         (t) => t.playerId === p.id && t.track === 'military' && !t.temporary,
       ).length;
-      if (milCount >= 3) {
-        result.military[p.id] = (result.military[p.id] ?? 0) + 1;
-      }
+      if (milCount >= 3) addMilitary(p.id, 1);
     }
-    // Judah Othniel II: +1 military once if used flag
+    // Judah Othniel II — armed during placement.
     if (
       p.tribe === 'Judah' &&
       p.leaderLevel >= 2 &&
       p.oncePerRoundUsed['othnielII']
     ) {
-      result.military[p.id] = (result.military[p.id] ?? 0) + 1;
+      addMilitary(p.id, 1);
     }
-    // Gad Enduring Defense: when military low — applied after we know zone; handled in resolve
-    // Benjamin Ehud II
+    // Benjamin Ehud II — armed during placement.
     if (
       p.tribe === 'Benjamin' &&
       p.leaderLevel >= 2 &&
       p.oncePerRoundUsed['ehudII']
     ) {
-      result.military[p.id] = (result.military[p.id] ?? 0) + 1;
+      addMilitary(p.id, 1);
     }
+    // Gad Enduring Defense needs the zone, so it is applied in resolve.
   }
 
-  return result;
+  return { total, banner };
 }
 
 export function trackZone(
@@ -389,48 +442,6 @@ export function currentActor(state: GameState): PlayerState | null {
   if (state.phase !== 'placement' && state.phase !== 'action') return null;
   const id = state.turnOrder[state.currentActorIndex];
   return id ? getPlayer(state, id) : null;
-}
-
-export function spendForInfluence(
-  resources: Resources,
-  count: number,
-  track: TrackId,
-  crisisId: number | null,
-  prefer?: Array<'faith' | 'warriors' | 'goods'>,
-): { resources: Resources; spentFaith: number; ok: boolean; ironChariotUnpaid: number } {
-  // Thematic spend order: Warriors→Military, Faith→Moral, Goods→Provision
-  const order =
-    prefer ??
-    (track === 'military'
-      ? (['warriors', 'goods', 'faith'] as const)
-      : track === 'moral'
-        ? (['faith', 'goods', 'warriors'] as const)
-        : (['goods', 'faith', 'warriors'] as const));
-
-  let r = { ...resources };
-  let remaining = count;
-  let spentFaith = 0;
-  let ironChariotUnpaid = 0;
-
-  while (remaining > 0) {
-    let paid = false;
-    for (const key of order) {
-      if (r[key] > 0) {
-        r[key] -= 1;
-        if (key === 'faith') spentFaith += 1;
-        paid = true;
-        break;
-      }
-    }
-    if (!paid) return { resources: r, spentFaith, ok: false, ironChariotUnpaid };
-
-    if (track === 'military' && crisisId === 3) {
-      if (r.warriors > 0) r.warriors -= 1;
-      else ironChariotUnpaid += 1;
-    }
-    remaining -= 1;
-  }
-  return { resources: r, spentFaith, ok: true, ironChariotUnpaid };
 }
 
 export function mulberry32(a: number): () => number {

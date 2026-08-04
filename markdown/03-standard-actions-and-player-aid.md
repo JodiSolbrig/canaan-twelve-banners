@@ -8,7 +8,8 @@ Available to every tribe every round. You may perform **one** standard action **
    Spend any combination of resources to place Influence tokens on the tracks.  
    - 1 Faith **or** 1 Warrior **or** 1 Goods → 1 Influence token  
    - You may place multiple tokens in one action (pay the full cost).  
-   - Tokens are placed face-down until the Reveal step.
+   - Tokens are placed face-down until the Reveal step.  
+   - **What you pay with matters** — see *Banners & Supply* below.
 
 2. **Recruit**  
    Spend 1 Goods → Gain 2 Warriors  
@@ -38,6 +39,51 @@ Available to every tribe every round. You may perform **one** standard action **
 
 ---
 
+## Banners & Supply
+
+Each track has an **affinity resource** — the thing that track is actually made of:
+
+| Track | Affinity |
+|-------|----------|
+| Military  | **Warriors** |
+| Moral     | **Faith** |
+| Provision | **Goods** |
+
+Any resource can place a token on any track, but **what paid for it decides what
+the token is**:
+
+### Banner — paid with the track's affinity resource
+Your name is on this field.
+- Counts toward the **success threshold**
+- Counts toward **Champion**
+- Takes the **Loyalty penalty** if the track fails
+
+### Supply — paid with anything else
+You sent help without marching.
+- Counts toward the **success threshold**
+- Does **not** count toward Champion
+- Takes **no penalty** if the track fails
+
+### Spoil
+When a track succeeds, every player who contributed to it — Banner or Supply —
+takes **1 of that track's affinity resource**. The Champion takes the Champion
+reward instead, which is already richer.
+
+This is what makes Supply worth sending: it turns a resource you have into one
+you need at a better rate than the Convert action, in exchange for the risk that
+the track fails and pays nothing.
+
+> **A track carried entirely by Supply succeeds with no Champion at all.** The
+> land was provisioned and no one's name is on it. This is a legal and often
+> sensible outcome.
+
+**The tension this creates.** Bannering is the only way to earn Glory, and Glory
+wins the game — but Banners are exposed. Supply is safe, profitable, and helps
+Israel, and it will never win you anything. Every placement is a choice between
+the good of the tribes and the glory of your own house.
+
+---
+
 ## Track Thresholds & Champion Rewards
 
 ### Success threshold
@@ -62,8 +108,9 @@ never changes what counts as a Low or High track:
 | threshold+2 or more | **High** |
 
 ### Champion rewards
-The player with the most Influence on a track is its Champion (ties broken by
-current Loyalty, then turn order). Each Champion gains:
+The player with the most **Banner** Influence on a track is its Champion (ties
+broken by current Loyalty, then turn order). Supply never claims a track. Each
+Champion gains:
 
 | Track | Reward |
 |-------|--------|
@@ -78,7 +125,8 @@ one player takes from Champion rewards at 1 for that round.
 ### Failure penalties
 When a track fails:
 - The Covenant Meter drops by **1** (by **2** while the meter is in Judgment).
-- Every player who placed Influence on that track loses **1 Loyalty**.
+- Every player who placed a **Banner** on that track loses **1 Loyalty**. Supply
+  contributors lose nothing — they never staked their name on it.
 
 ---
 
@@ -106,12 +154,18 @@ Faith • Warriors • Goods • Loyalty • Glory • Influence Tokens
 • **Convert** — 2 of one resource → 1 of another (see rates above)  
 • **Rest & Recover** — Gain 1 Loyalty + peek at top Crisis card
 
-**Tracks**  
-Military • Moral • Provision  
-Threshold = player count (+1 at 2–3 players)  
-Highest total Influence = Champion (ties broken by Loyalty, then turn order)  
-Champion: +1 Glory and +1 Warrior / Faith / Goods to match the track  
-Failure: Covenant −1 (−2 in Judgment) and −1 Loyalty to each investor
+**Tracks & affinity**  
+Military ← **Warriors** • Moral ← **Faith** • Provision ← **Goods**  
+Threshold = player count (+1 at 2–3 players)
+
+**Banner** (affinity resource) — counts for threshold **and** Champion; loses 1 Loyalty on failure  
+**Supply** (any other resource) — counts for threshold only; risks nothing  
+Highest **Banner** total = Champion (ties broken by Loyalty, then turn order)  
+No Banners on a successful track = **no Champion**
+
+**On success** — Champion: +1 Glory and +1 matching resource.  
+Every other contributor: +1 matching resource (spoil).  
+**On failure** — Covenant −1 (−2 in Judgment); −1 Loyalty to each Banner
 
 **Covenant Meter** (starts at 8)  
 8–10: Stable  

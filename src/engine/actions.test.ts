@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { TRIBES, uniqueCanCostFaith } from '../data/gameData';
 import { applyStandardAction, applyUniqueAction } from './actions';
+import { getTrackTotals } from './helpers';
 import { dispatch } from './index';
 import {
   idAt,
@@ -203,6 +204,23 @@ describe('unique actions', () => {
     const gift = r.state.tokens.find((t) => t.playerId === other);
     expect(gift).toMatchObject({ track: 'moral', temporary: true, value: 1 });
     expect(playerOf(r.state, me).resources.faith).toBe(2);
+  });
+
+  it('gifts Rally Influence as Supply, so it cannot hand out a Championship', () => {
+    let s = scenario({ tribes: ['Judah', 'Levi'], crisisId: null });
+    const [me, other] = s.players.map((p) => p.id) as [string, string];
+
+    const r = unique(s, me, {
+      type: 'unique',
+      tribe: 'Judah',
+      targetPlayerId: other,
+      track: 'moral',
+    });
+
+    const gift = r.state.tokens.find((t) => t.playerId === other);
+    expect(gift?.paidWith).toBeNull();
+    expect(getTrackTotals(r.state).banner.moral[other]).toBeUndefined();
+    expect(getTrackTotals(r.state).total.moral[other]).toBe(1);
   });
 
   it("defaults the Rally gift to the recipient's affinity track", () => {
@@ -487,9 +505,9 @@ describe('dispatch round flow', () => {
     s = dispatch(s, { type: 'advance' });
     expect(s.phase).toBe('placement');
 
-    s = dispatch(s, { type: 'confirmPlacement', plan: { military: 1 } });
+    s = dispatch(s, { type: 'confirmPlacement', plan: { military: { warriors: 1 } } });
     expect(s.phase).toBe('placement'); // second player still to place
-    s = dispatch(s, { type: 'confirmPlacement', plan: { moral: 1 } });
+    s = dispatch(s, { type: 'confirmPlacement', plan: { moral: { faith: 1 } } });
     expect(s.phase).toBe('action');
 
     s = dispatch(s, { type: 'standard', action: 'pass' });
@@ -517,7 +535,7 @@ describe('dispatch round flow', () => {
     s = dispatch(s, { type: 'advance' });
     expect(s.phase).toBe('action');
 
-    s = dispatch(s, { type: 'placeInfluence', plan: { military: 1 } });
+    s = dispatch(s, { type: 'placeInfluence', plan: { military: { warriors: 1 } } });
     s = dispatch(s, { type: 'standard', action: 'pass' });
     expect(s.phase).toBe('resolve');
   });
@@ -527,7 +545,7 @@ describe('dispatch round flow', () => {
     const me = idAt(s, 0);
     s = setResources(s, me, { faith: 0, warriors: 0, goods: 0 });
 
-    const next = dispatch(s, { type: 'confirmPlacement', plan: { military: 2 } });
+    const next = dispatch(s, { type: 'confirmPlacement', plan: { military: { warriors: 2 } } });
 
     expect(next.phase).toBe('placement');
     expect(next.currentActorIndex).toBe(0);

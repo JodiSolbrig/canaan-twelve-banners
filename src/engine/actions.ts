@@ -224,6 +224,9 @@ export function applyUniqueAction(
             value: 1,
             temporary: true,
             faceDown: true,
+            // Gifted Influence is Supply: Judah is sending help, not planting
+            // someone else's Banner. Otherwise Rally would hand out Championships.
+            paidWith: null,
           },
         ],
       };

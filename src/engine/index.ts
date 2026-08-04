@@ -13,7 +13,7 @@ import {
 } from './actions';
 import { advanceActorOrPhase, applyPlacement } from './placement';
 import { advanceToNextRound, applyAngelChoice, revealTokens } from './resolve';
-import { addLog, currentActor, openingPhase } from './helpers';
+import { addLog, currentActor, openingPhase, planTotal } from './helpers';
 import type { GameState, PlayerAction } from './types';
 
 /** Apply one legal player/system action; returns next immutable state. */
@@ -34,10 +34,7 @@ export function dispatch(state: GameState, action: PlayerAction): GameState {
     if (state.phase !== 'placement') return state;
     const actor = currentActor(state);
     if (!actor) return state;
-    const wanted =
-      (action.plan.military ?? 0) +
-      (action.plan.moral ?? 0) +
-      (action.plan.provision ?? 0);
+    const wanted = planTotal(action.plan);
     const before = state.tokens.length;
     let s = applyPlacement(state, actor.id, action.plan);
     // An unaffordable plan places nothing; hold the turn so it can be redone
@@ -62,11 +59,7 @@ export function dispatch(state: GameState, action: PlayerAction): GameState {
     if (state.phase !== 'action') return state;
     const actor = currentActor(state);
     if (!actor) return state;
-    const total =
-      (action.plan.military ?? 0) +
-      (action.plan.moral ?? 0) +
-      (action.plan.provision ?? 0);
-    if (total < 1) {
+    if (planTotal(action.plan) < 1) {
       return addLog(
         state,
         'Place Influence needs at least 1 token on a track.',
@@ -110,5 +103,13 @@ export function dispatch(state: GameState, action: PlayerAction): GameState {
 
 export { createGame } from './createGame';
 export { startRound } from './round';
-export { currentActor, getPlayer, rankPlayers, compareStandings } from './helpers';
+export {
+  compareStandings,
+  currentActor,
+  getPlayer,
+  isBannerToken,
+  planTotal,
+  rankPlayers,
+  TRACK_AFFINITY_RESOURCE,
+} from './helpers';
 export type * from './types';

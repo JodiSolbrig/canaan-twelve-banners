@@ -79,6 +79,128 @@ describe('Champion determination', () => {
   });
 });
 
+describe('Banner and Supply at resolution', () => {
+  it('lets Supply clear the threshold but never claim the track', () => {
+    let s = scenario({ tribes: ['Benjamin', 'Asher'], crisisId: null });
+    const [benjamin, asher] = s.players.map((p) => p.id) as [string, string];
+    s = withTokens(s, [
+      { playerId: benjamin, track: 'military', count: 2 }, // Banner
+      { playerId: asher, track: 'military', count: 4, paidWith: 'goods' }, // Supply
+    ]);
+
+    s = resolveRound(s);
+
+    const r = trackResult(s, 'military');
+    expect(r.total).toBe(6);
+    expect(r.bannerTotal).toBe(2);
+    expect(r.success).toBe(true);
+    // Asher out-placed Benjamin 4 to 2 and still cannot be Champion.
+    expect(r.championId).toBe(benjamin);
+  });
+
+  it('succeeds with no Champion when only Supply carried the track', () => {
+    let s = scenario({ tribes: ['Benjamin', 'Levi'], crisisId: null });
+    const [benjamin, levi] = s.players.map((p) => p.id) as [string, string];
+    s = withTokens(s, [
+      { playerId: benjamin, track: 'provision', count: 2, paidWith: 'warriors' },
+      { playerId: levi, track: 'provision', count: 2, paidWith: 'faith' },
+    ]);
+
+    s = resolveRound(s);
+
+    const r = trackResult(s, 'provision');
+    expect(r.success).toBe(true);
+    expect(r.bannerTotal).toBe(0);
+    expect(r.championId).toBeNull();
+    // Nobody claimed it, so no Glory was awarded for it.
+    expect(playerOf(s, benjamin).resources.glory).toBe(0);
+    expect(playerOf(s, levi).resources.glory).toBe(0);
+  });
+
+  it('charges the failure penalty to Banner contributors only', () => {
+    let s = scenario({ tribes: ['Benjamin', 'Asher'], covenant: 10, crisisId: null });
+    const [benjamin, asher] = s.players.map((p) => p.id) as [string, string];
+    s = withTokens(s, [
+      { playerId: benjamin, track: 'military', count: 1 }, // Banner — staked
+      { playerId: asher, track: 'military', count: 1, paidWith: 'goods' }, // Supply — safe
+      // A successful Provision keeps the Warning-zone penalty, which would hit
+      // everyone, from muddying the result.
+      { playerId: asher, track: 'provision', count: 3 },
+    ]);
+    const benLoyalty = playerOf(s, benjamin).resources.loyalty;
+    const asherLoyalty = playerOf(s, asher).resources.loyalty;
+
+    s = resolveRound(s);
+
+    expect(trackResult(s, 'military').success).toBe(false);
+    expect(trackResult(s, 'provision').success).toBe(true);
+    expect(playerOf(s, benjamin).resources.loyalty).toBe(benLoyalty - 1);
+    expect(playerOf(s, asher).resources.loyalty).toBe(asherLoyalty);
+  });
+});
+
+describe('spoil', () => {
+  it('pays every non-Champion contributor the affinity resource', () => {
+    let s = scenario({ tribes: ['Benjamin', 'Asher'], crisisId: null });
+    const [benjamin, asher] = s.players.map((p) => p.id) as [string, string];
+    s = setResources(s, asher, { warriors: 0 });
+    s = withTokens(s, [
+      { playerId: benjamin, track: 'military', count: 3 },
+      { playerId: asher, track: 'military', count: 1, paidWith: 'goods' },
+    ]);
+
+    s = resolveRound(s);
+
+    expect(trackResult(s, 'military').championId).toBe(benjamin);
+    // Asher turned 1 Goods into 1 Warrior by supplying a track it could not win.
+    expect(playerOf(s, asher).resources.warriors).toBe(1);
+  });
+
+  it('pays nothing when the track fails', () => {
+    let s = scenario({ tribes: ['Benjamin', 'Asher'], crisisId: null });
+    const asher = idAt(s, 1);
+    s = setResources(s, asher, { warriors: 0 });
+    s = withTokens(s, [
+      { playerId: asher, track: 'military', count: 1, paidWith: 'goods' },
+    ]);
+
+    s = resolveRound(s);
+
+    expect(trackResult(s, 'military').success).toBe(false);
+    expect(playerOf(s, asher).resources.warriors).toBe(0);
+  });
+
+  it('does not double-pay the Champion on top of the Champion reward', () => {
+    let s = scenario({ tribes: ['Benjamin', 'Levi'], crisisId: null });
+    const benjamin = idAt(s, 0);
+    s = setResources(s, benjamin, { warriors: 0 });
+    s = withTokens(s, [{ playerId: benjamin, track: 'military', count: 3 }]);
+
+    s = resolveRound(s);
+
+    // Champion reward is +1 Warrior; the spoil must not stack on top of it.
+    expect(playerOf(s, benjamin).resources.warriors).toBe(1);
+  });
+
+  it('can be switched off by tuning', () => {
+    let s = scenario({
+      tribes: ['Benjamin', 'Asher'],
+      crisisId: null,
+      tuning: { spoilOnSuccess: 0 },
+    });
+    const [benjamin, asher] = s.players.map((p) => p.id) as [string, string];
+    s = setResources(s, asher, { warriors: 0 });
+    s = withTokens(s, [
+      { playerId: benjamin, track: 'military', count: 3 },
+      { playerId: asher, track: 'military', count: 1, paidWith: 'goods' },
+    ]);
+
+    s = resolveRound(s);
+
+    expect(playerOf(s, asher).resources.warriors).toBe(0);
+  });
+});
+
 describe('track success and failure', () => {
   it('succeeds at the threshold and fails below it', () => {
     let s = scenario({ tribes: ['Judah', 'Levi'], crisisId: null });

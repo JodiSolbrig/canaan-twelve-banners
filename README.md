@@ -54,6 +54,10 @@ listed here is implemented as written.
 
 | Rule | Design source | Prototype behaviour | Why |
 |------|---------------|---------------------|-----|
+| **Banners & Supply** | `03` §Banners & Supply — new rule, added after playtest review | The resource you pay with decides whether a token can claim Champion. Affinity = Banner (counts for Champion, exposed to the failure penalty); anything else = Supply (threshold only, no risk, shares the spoil). | The original rule made 1 Faith = 1 Warrior = 1 Goods, collapsing thirteen asymmetric tribes into "how many tokens can I afford". Now starting spreads and income define what each tribe can actually win. |
+| Gifted Influence | `01` — Judah's Rally, Naphtali's Swift Response | Gifted tokens are always **Supply** | Otherwise Rally hands out Championships. |
+| Simeon's free Military token | `01` — Furious Assault | **Banner**, placed automatically on top of the plan | It musters real warriors, and it is the payoff for having been beaten. |
+| Leader flat Influence bonuses | `01` — Othniel II, Ehud II, Samson I, Enduring Defense | Add **Banner** strength | All four are Military bonuses belonging to Military tribes; the bonus inherits the nature of the tokens it modifies. |
 | Round structure | `03` §Standard Actions — Place Influence is one of six actions, one action per round | Free placement phase **and** a full action each round (`tuning.freePlacementPhase`) | Keeps tracks contested at low player counts. Set the tuning flag to **No** to play the printed one-action round. |
 | Raid / Skirmish "Low zone" | `01` — Benjamin, Simeon | The Warrior is spent on your turn; the Low-zone outcome settles after Reveal | Checking the zone mid-round would read opponents' face-down tokens and make the result depend on seat order. |
 | Iron Chariots unpaid token | `02` card 3 — "count as –1 Influence" | The token contributes **0** | Read as "reduce this token's Influence by 1". A true −1 would make an unpaid token worse than not placing at all. |

@@ -27,6 +27,11 @@ export type TuningConfig = {
    */
   freePlacementPhase: boolean;
   failedTrackLoyaltyLoss: number;
+  /**
+   * Affinity resource paid to each non-Champion contributor when a track
+   * succeeds. This is what makes Supply worth sending; 0 disables it.
+   */
+  spoilOnSuccess: number;
   championRewards: Record<TrackId, ChampionReward>;
   roundsShort: number; // 2–4 players
   roundsStandard: number; // 5–6 players
@@ -48,6 +53,7 @@ export const DEFAULT_TUNING: TuningConfig = {
   lowHighOffset: 2,
   freePlacementPhase: true,
   failedTrackLoyaltyLoss: 1,
+  spoilOnSuccess: 1,
   championRewards: {
     military: { glory: 1, warriors: 1 },
     moral: { glory: 1, faith: 1 },

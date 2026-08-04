@@ -131,11 +131,12 @@ export default function App() {
     }
 
     // Pause on the resolved board so Champions and track results are readable
-    // before the next round clears them.
+    // before the next round clears them. Playtesting at 2.6s showed that was too
+    // short to take in three track results plus the Chronicle.
     if (state.phase === 'resolve') {
       const t = window.setTimeout(() => {
         applyAction({ type: 'advance' });
-      }, 2600);
+      }, 5000);
       return () => clearTimeout(t);
     }
 

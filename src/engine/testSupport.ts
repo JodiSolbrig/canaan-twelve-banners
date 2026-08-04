@@ -8,11 +8,12 @@
 import { DEFAULT_TUNING, type TuningConfig } from '../config/tuning';
 import { CRISIS_CARDS } from '../data/gameData';
 import { createGame } from './createGame';
-import { nextTokenId } from './helpers';
+import { nextTokenId, TRACK_AFFINITY_RESOURCE } from './helpers';
 import type {
   GameState,
   PlayerState,
   Resources,
+  SpendableResource,
   TrackId,
   TribeId,
 } from './types';
@@ -112,13 +113,29 @@ export function patchPlayer(
   };
 }
 
-/** Drop tokens straight onto a track, bypassing cost and Crisis effects. */
+/**
+ * Drop tokens straight onto a track, bypassing cost and Crisis effects.
+ *
+ * Defaults to **Banner** tokens (paid with the track's affinity resource) since
+ * that is what most tests are setting up. Pass `paidWith` for Supply, or `null`
+ * for a gifted token.
+ */
 export function withTokens(
   state: GameState,
-  specs: Array<{ playerId: string; track: TrackId; count: number; value?: number }>,
+  specs: Array<{
+    playerId: string;
+    track: TrackId;
+    count: number;
+    value?: number;
+    paidWith?: SpendableResource | null;
+  }>,
 ): GameState {
   const tokens = [...state.tokens];
   for (const spec of specs) {
+    const paidWith =
+      spec.paidWith === undefined
+        ? TRACK_AFFINITY_RESOURCE[spec.track]
+        : spec.paidWith;
     for (let i = 0; i < spec.count; i++) {
       tokens.push({
         id: nextTokenId(),
@@ -127,6 +144,7 @@ export function withTokens(
         value: spec.value ?? 1,
         temporary: false,
         faceDown: true,
+        paidWith,
       });
     }
   }
@@ -141,5 +159,21 @@ export function tokenTotal(
 ): number {
   return state.tokens
     .filter((t) => t.playerId === playerId && t.track === track)
+    .reduce((sum, t) => sum + t.value, 0);
+}
+
+/** Banner-only Influence a player has on a track — what Champion is decided on. */
+export function bannerTotal(
+  state: GameState,
+  playerId: string,
+  track: TrackId,
+): number {
+  return state.tokens
+    .filter(
+      (t) =>
+        t.playerId === playerId &&
+        t.track === track &&
+        t.paidWith === TRACK_AFFINITY_RESOURCE[track],
+    )
     .reduce((sum, t) => sum + t.value, 0);
 }

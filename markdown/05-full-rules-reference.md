@@ -44,12 +44,21 @@ Crisis is drawn. Round 1 uses printed starting resources only.
 Full table in `04-setup-scoring-and-scaling.md`.
 
 ### Tracks
-Three tracks exist: **Military**, **Moral**, **Provision**.  
-A track succeeds when total Influence on it reaches the threshold: the **number of players**, **+1** at 2–3 players.  
-Highest total Influence on a track becomes its Champion (ties broken by current Loyalty, then turn order).  
-Champion reward: **+1 Glory** plus **+1 Warrior / Faith / Goods** matching the track.  
-Failure: Covenant **−1** (−2 in Judgment) and **−1 Loyalty** to every investor.  
-Full table in `03-standard-actions-and-player-aid.md`.
+Three tracks exist: **Military** (Warriors), **Moral** (Faith), **Provision** (Goods).  
+A track succeeds when total Influence on it reaches the threshold: the **number of players**, **+1** at 2–3 players.
+
+**Banners & Supply.** Any resource places a token on any track, but the resource
+you pay with decides what it is. Paying with the track's **affinity** resource
+plants a **Banner** — it counts toward the threshold *and* toward Champion, and
+it costs you Loyalty if the track fails. Paying with anything else sends
+**Supply** — it counts toward the threshold only, claims nothing, and risks
+nothing. A track carried entirely by Supply succeeds with **no Champion**.
+
+Champion (most Banner Influence, ties by Loyalty then turn order) takes **+1 Glory**
+plus **+1** of the matching resource. Every other contributor takes **+1** of the
+matching resource as spoil.  
+Failure: Covenant **−1** (−2 in Judgment) and **−1 Loyalty** to every Banner.  
+Full details in `03-standard-actions-and-player-aid.md`.
 
 ### Standard Actions
 (See detailed list in `03-standard-actions-and-player-aid.md`)

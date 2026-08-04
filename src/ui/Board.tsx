@@ -95,10 +95,10 @@ export function TracksBoard({ state }: { state: GameState }) {
               </Tip>
               {zone ? ` · ${zone}` : ''}
               {result
-                ? ` · ${result.success ? 'Success' : 'Failure'}${
+                ? ` · ${result.success ? 'Success' : 'Failure'} · ${result.total} Infl (${result.bannerTotal} Banner)${
                     result.championId
                       ? ` · ${TRIBE_BY_ID[state.players.find((p) => p.id === result.championId)!.tribe].id}`
-                      : ''
+                      : ' · no Champion'
                   }`
                 : state.phase === 'placement' || state.phase === 'action'
                   ? ` · ${faceDownTotal} tokens`

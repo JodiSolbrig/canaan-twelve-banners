@@ -1,6 +1,9 @@
 export type TrackId = 'military' | 'moral' | 'provision';
 export type ResourceKey = 'faith' | 'warriors' | 'goods' | 'loyalty' | 'glory';
 
+/** Resources that can be spent to place Influence. */
+export type SpendableResource = 'faith' | 'warriors' | 'goods';
+
 /**
  * Core phase machine driven by `dispatch` + `revealTokens` / `startRound`.
  * Setup is handled outside the engine (React `App` screen).
@@ -44,6 +47,14 @@ export type InfluenceToken = {
   value: number;
   temporary: boolean;
   faceDown: boolean;
+  /**
+   * Which resource bought this token, or null for a gifted one.
+   *
+   * Banner/Supply is *derived* from this against the track the token currently
+   * sits on (see `isBannerToken`), never stored — so a token moved between
+   * tracks by Reposition re-evaluates automatically.
+   */
+  paidWith: SpendableResource | null;
 };
 
 export type PlayerState = {
@@ -138,7 +149,10 @@ export type LogEntry = {
 
 export type TrackResolution = {
   track: TrackId;
+  /** Banner + Supply. This is what the success threshold is measured against. */
   total: number;
+  /** Banner Influence only — what Champion is decided on. */
+  bannerTotal: number;
   /** Influence needed to succeed. Doubled on Military by Day of Midian. */
   threshold: number;
   /**
@@ -180,7 +194,20 @@ export type GameState = {
   tuningSnapshot: import('../config/tuning').TuningConfig;
 };
 
-export type PlacementPlan = Partial<Record<TrackId, number>>;
+/**
+ * What a player spends on one track. Each unit of each resource buys one
+ * Influence token, so `{ warriors: 2, goods: 1 }` places three tokens on that
+ * track — two Banner (if it is the Military track) and one Supply.
+ */
+export type ResourceSpend = Partial<Record<SpendableResource, number>>;
+
+/**
+ * A placement is an explicit statement of which resources go where. The choice
+ * of *what* pays is the core decision: the track's affinity resource plants a
+ * Banner (counts for Champion, exposed to the failure penalty), anything else
+ * sends Supply (counts only toward the threshold, and risks nothing).
+ */
+export type PlacementPlan = Partial<Record<TrackId, ResourceSpend>>;
 
 /** Standard action kinds handled by `applyStandardAction` (not unique / placeInfluence). */
 export type StandardActionType =

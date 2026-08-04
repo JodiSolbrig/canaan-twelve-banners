@@ -3,15 +3,19 @@ import {
   baseThreshold,
   currentActor,
   getPlayer,
+  planTotal,
+  TRACK_AFFINITY_RESOURCE,
 } from '../engine/helpers';
 import type {
   GameState,
   PlacementPlan,
   PlayerAction,
+  SpendableResource,
   TrackId,
 } from '../engine/types';
 
 const TRACKS: TrackId[] = ['military', 'moral', 'provision'];
+const SPENDABLE: SpendableResource[] = ['warriors', 'faith', 'goods'];
 
 export function chooseBotAction(state: GameState): PlayerAction | null {
   // The Angel of the Lord is resolved for the table, not by a seated actor, so
@@ -50,33 +54,57 @@ function planPlacement(state: GameState, playerId: string): PlacementPlan {
   const p = getPlayer(state, playerId);
   const def = TRIBE_BY_ID[p.tribe];
   const agr = state.tuningSnapshot.botAggression;
-  const budget = Math.floor(
-    (p.resources.faith + p.resources.warriors + p.resources.goods) * (0.25 + agr * 0.45),
+  const plan: PlacementPlan = {};
+
+  const pool: Record<SpendableResource, number> = {
+    faith: p.resources.faith,
+    warriors: p.resources.warriors,
+    goods: p.resources.goods,
+  };
+  let budget = Math.floor(
+    (pool.faith + pool.warriors + pool.goods) * (0.25 + agr * 0.45),
   );
-  const plan: PlacementPlan = { military: 0, moral: 0, provision: 0 };
   if (budget <= 0) return plan;
 
-  // Prefer bias track, sprinkle rest
-  const primary = def.bias;
-  const primaryCount = Math.max(1, Math.ceil(budget * 0.6));
-  const rest = budget - primaryCount;
-  plan[primary] = primaryCount;
-  const others = TRACKS.filter((t) => t !== primary);
-  if (rest > 0 && others[0]) plan[others[0]] = Math.ceil(rest / 2);
-  if (rest > 1 && others[1]) plan[others[1]] = Math.floor(rest / 2);
+  const add = (track: TrackId, res: SpendableResource, n: number) => {
+    const take = Math.max(0, Math.min(n, pool[res], budget));
+    if (take <= 0) return;
+    plan[track] = {
+      ...(plan[track] ?? {}),
+      [res]: (plan[track]?.[res] ?? 0) + take,
+    };
+    pool[res] -= take;
+    budget -= take;
+  };
 
-  // Cap by affordability roughly
-  const totalRes = p.resources.faith + p.resources.warriors + p.resources.goods;
-  let need = (plan.military ?? 0) + (plan.moral ?? 0) + (plan.provision ?? 0);
-  while (need > totalRes) {
-    for (const t of TRACKS) {
-      if ((plan[t] ?? 0) > 0 && need > totalRes) {
-        plan[t] = (plan[t] ?? 0) - 1;
-        need -= 1;
-      }
-    }
-    if (need <= 0) break;
+  // Concentrate: a thin Banner on a track it cannot win is wasted, so it commits
+  // its affinity resource to its own track and only contests elsewhere when it
+  // genuinely has the strength.
+  const primary = def.bias;
+  const primaryRes = TRACK_AFFINITY_RESOURCE[primary];
+  add(primary, primaryRes, Math.max(1, Math.ceil(budget * 0.7)));
+
+  for (const track of TRACKS) {
+    if (track === primary) continue;
+    const res = TRACK_AFFINITY_RESOURCE[track];
+    if (pool[res] >= 3) add(track, res, agr > 0.5 ? 2 : 1);
   }
+
+  // Whatever is left goes as Supply to tracks it has not claimed. A failed track
+  // drops the Covenant on everyone, so shoring up the ones it cannot win beats
+  // piling onto one it already leads — and the spoil pays it back in the very
+  // resource it is short of.
+  const unclaimed = TRACKS.filter((t) => !plan[t]?.[TRACK_AFFINITY_RESOURCE[t]]);
+  for (const track of unclaimed) {
+    for (const res of SPENDABLE) {
+      if (budget <= 0) break;
+      // Never spend what Banners its own track, and never buy Supply with the
+      // resource that would have been a Banner here.
+      if (res === primaryRes || res === TRACK_AFFINITY_RESOURCE[track]) continue;
+      add(track, res, 1);
+    }
+  }
+
   return plan;
 }
 
@@ -93,7 +121,7 @@ function chooseAction(state: GameState, playerId: string): PlayerAction {
     const noTokensYet = !state.tokens.some((t) => t.playerId === playerId);
     if (noTokensYet || Math.random() < agr) {
       const plan = planPlacement(state, playerId);
-      if (TRACKS.reduce((a, t) => a + (plan[t] ?? 0), 0) > 0) {
+      if (planTotal(plan) > 0) {
         return { type: 'placeInfluence', plan };
       }
     }
@@ -181,7 +209,7 @@ function chooseAction(state: GameState, playerId: string): PlayerAction {
   // Extra placement if aggressive and rich
   if (agr > 0.5) {
     const plan = planPlacement(state, playerId);
-    const n = TRACKS.reduce((a, t) => a + (plan[t] ?? 0), 0);
+    const n = planTotal(plan);
     if (n > 0) return { type: 'placeInfluence', plan };
   }
 

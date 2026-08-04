@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { formatTribeIncome, TRACK_LABELS, TRIBE_BY_ID } from '../data/gameData';
 import { currentActor, getPlayer } from '../engine';
 import type { GameState, PlacementPlan, PlayerAction, TrackId } from '../engine/types';
-import { HELP, RESOURCE_HELP, TRACK_AFFINITY } from './helpText';
+import { HELP, RESOURCE_HELP } from './helpText';
 import { LeaderProgress } from './LeaderProgress';
+import { PlacementGrid } from './PlacementGrid';
+import { planIsAffordable, planTokens } from './placementPlan';
 import { Tip } from './Tip';
 
 const TRACKS: TrackId[] = ['military', 'moral', 'provision'];
@@ -20,16 +22,10 @@ export function HumanControls({ state, onAction, flashLeaderLevel = null }: Prop
   const def = TRIBE_BY_ID[human.tribe];
   const isOurTurn = actor?.isHuman === true;
 
-  const [plan, setPlan] = useState<PlacementPlan>({
-    military: 0,
-    moral: 0,
-    provision: 0,
-  });
+  const [plan, setPlan] = useState<PlacementPlan>({});
 
   useEffect(() => {
-    if (state.phase === 'placement') {
-      setPlan({ military: 0, moral: 0, provision: 0 });
-    }
+    if (state.phase === 'placement') setPlan({});
   }, [state.phase, state.round]);
 
   const [recruitMode, setRecruitMode] = useState<'goods' | 'faith'>('goods');
@@ -55,9 +51,9 @@ export function HumanControls({ state, onAction, flashLeaderLevel = null }: Prop
     if (state.phase !== 'action') setPlacingMore(false);
   }, [state.phase, state.round]);
 
-  const affordablePool =
-    human.resources.faith + human.resources.warriors + human.resources.goods;
-  const plannedTotal = TRACKS.reduce((n, t) => n + (plan[t] ?? 0), 0);
+  const ironChariots = state.activeCrisis?.id === 3;
+  const plannedTotal = planTokens(plan);
+  const planAffordable = planIsAffordable(plan, human.resources, ironChariots);
 
   const phaseLabel: Record<string, string> = {
     crisisReveal: 'Crisis revealed',
@@ -203,33 +199,20 @@ export function HumanControls({ state, onAction, flashLeaderLevel = null }: Prop
       {isOurTurn && state.phase === 'placement' && (
         <div className="placement-controls">
           <div className="help-callout">{HELP.placementHint}</div>
-          {TRACKS.map((t) => (
-            <div key={t} className="placement-row">
-              <Tip text={TRACK_AFFINITY[t].tip} wide>
-                <label style={{ width: '9rem', cursor: 'help' }}>
-                  {TRACK_LABELS[t]}
-                  <span className="track-affinity"> ({TRACK_AFFINITY[t].preferred})</span>
-                </label>
-              </Tip>
-              <input
-                type="number"
-                min={0}
-                max={10}
-                value={plan[t] ?? 0}
-                onChange={(e) =>
-                  setPlan({ ...plan, [t]: Math.max(0, Number(e.target.value) || 0) })
-                }
-                aria-label={`${TRACK_LABELS[t]} tokens`}
-              />
-            </div>
-          ))}
+          <PlacementGrid
+            plan={plan}
+            onChange={setPlan}
+            resources={human.resources}
+            ironChariots={ironChariots}
+          />
           <Tip text={HELP.confirmPlacement} wide className="tip-below">
             <button
               type="button"
               className="btn btn-primary"
+              disabled={!planAffordable}
               onClick={() => onAction({ type: 'confirmPlacement', plan })}
             >
-              Confirm Placement
+              Confirm Placement ({plannedTotal})
             </button>
           </Tip>
         </div>
@@ -372,7 +355,7 @@ export function HumanControls({ state, onAction, flashLeaderLevel = null }: Prop
                 type="button"
                 className={`btn${placingMore ? ' btn-primary' : ''}`}
                 onClick={() => {
-                  setPlan({ military: 0, moral: 0, provision: 0 });
+                  setPlan({});
                   setPlacingMore((v) => !v);
                 }}
               >
@@ -395,43 +378,20 @@ export function HumanControls({ state, onAction, flashLeaderLevel = null }: Prop
               <div className="help-callout">
                 {freePlacement
                   ? 'Spend your action to place more face-down Influence.'
-                  : 'Place Influence is your action this round.'}{' '}
-                You have <strong>{affordablePool}</strong> spendable resources (Faith +
-                Warriors + Goods). Prefer Warriors→Military, Faith→Moral,
-                Goods→Provision.
+                  : 'Place Influence is your action this round.'}
               </div>
-              {TRACKS.map((t) => (
-                <div key={t} className="placement-row">
-                  <Tip text={TRACK_AFFINITY[t].tip} wide>
-                    <label style={{ width: '9rem', cursor: 'help' }}>
-                      {TRACK_LABELS[t]}
-                      <span className="track-affinity">
-                        {' '}
-                        ({TRACK_AFFINITY[t].preferred})
-                      </span>
-                    </label>
-                  </Tip>
-                  <input
-                    type="number"
-                    min={0}
-                    max={affordablePool}
-                    value={plan[t] ?? 0}
-                    onChange={(e) =>
-                      setPlan({
-                        ...plan,
-                        [t]: Math.max(0, Number(e.target.value) || 0),
-                      })
-                    }
-                    aria-label={`Extra ${TRACK_LABELS[t]} tokens`}
-                  />
-                </div>
-              ))}
+              <PlacementGrid
+                plan={plan}
+                onChange={setPlan}
+                resources={human.resources}
+                ironChariots={ironChariots}
+              />
               <div className="field-row" style={{ marginTop: '0.35rem' }}>
                 <Tip text={HELP.placeInfluence} wide className="tip-below">
                   <button
                     type="button"
                     className="btn btn-primary"
-                    disabled={plannedTotal < 1 || plannedTotal > affordablePool}
+                    disabled={plannedTotal < 1 || !planAffordable}
                     onClick={() => {
                       onAction({ type: 'placeInfluence', plan });
                       setPlacingMore(false);
@@ -445,17 +405,12 @@ export function HumanControls({ state, onAction, flashLeaderLevel = null }: Prop
                   className="btn btn-ghost"
                   onClick={() => {
                     setPlacingMore(false);
-                    setPlan({ military: 0, moral: 0, provision: 0 });
+                    setPlan({});
                   }}
                 >
                   Cancel
                 </button>
               </div>
-              {plannedTotal > affordablePool && (
-                <div style={{ color: 'var(--danger)', fontSize: '0.85rem' }}>
-                  Not enough resources for {plannedTotal} tokens.
-                </div>
-              )}
             </div>
           )}
 

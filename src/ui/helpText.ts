@@ -20,23 +20,23 @@ export const HELP = {
     'Collected automatically at the start of rounds 2+. Round 1 uses your printed starting resources only. Amounts differ by tribe. Loyalty income only applies when you are below your starting Loyalty.',
 
   military:
-    'Military track — combat and defense. Highest Influence becomes Champion (+1 Glory, +1 Warrior by default). Prefer spending Warriors here, but Faith or Goods also work.',
+    'Military track — combat and defense. Affinity: Warriors. Warriors placed here are Banners: they can win Champion (+1 Glory, +1 Warrior) but cost 1 Loyalty if the track fails. Faith or Goods placed here are Supply: they help it succeed and share the spoil, but never claim it and never risk anything.',
   moral:
-    'Moral track — faithfulness and spiritual standing. Highest Influence becomes Champion (+1 Glory, +1 Faith by default). Prefer spending Faith here, but Warriors or Goods also work.',
+    'Moral track — faithfulness and spiritual standing. Affinity: Faith. Faith placed here are Banners: they can win Champion (+1 Glory, +1 Faith) but cost 1 Loyalty if the track fails. Warriors or Goods placed here are Supply: they help it succeed and share the spoil, but never claim it and never risk anything.',
   provision:
-    'Provision track — food, trade, and abundance. Highest Influence becomes Champion (+1 Glory, +1 Goods by default). Prefer spending Goods here, but Faith or Warriors also work.',
+    'Provision track — food, trade, and abundance. Affinity: Goods. Goods placed here are Banners: they can win Champion (+1 Glory, +1 Goods) but cost 1 Loyalty if the track fails. Faith or Warriors placed here are Supply: they help it succeed and share the spoil, but never claim it and never risk anything.',
 
   covenant:
     'Shared Covenant Meter (starts at 8). Drops when tracks fail. Zones: Strength 8–10, Warning 5–7, Judgment 2–4, Broken 0–1. Broken Covenant triggers a final-round clock and Loyalty losses.',
   crisis:
     'One Crisis card is revealed each round and modifies that round only. Peek/reorder abilities (Rest & Recover, Reuben, Issachar, Dan) help you prepare.',
   threshold:
-    'Total Influence on the track must meet or exceed this number for the track to succeed. Failures drop the Covenant Meter and cost Loyalty to investors.',
+    'Total Influence on the track — Banners and Supply together — must meet or exceed this number for the track to succeed. Failures drop the Covenant Meter and cost 1 Loyalty to everyone who planted a Banner there.',
 
   placeInfluence:
-    'Spend 1 Faith, 1 Warrior, or 1 Goods per Influence token. Place on any track(s). Tokens stay face-down until Reveal. Highest Influence on a track is Champion.',
+    'Spend 1 Faith, 1 Warrior, or 1 Goods per Influence token, on any track(s). Tokens stay face-down until Reveal. Paying with the track’s own resource plants a Banner (can win Champion, risks Loyalty); anything else is Supply (helps it succeed, shares the spoil, claims nothing).',
   placeMore:
-    'Use your action to place additional Influence. Click this, choose how many tokens on each track, then Confirm. Costs 1 Faith, Warrior, or Goods per token (preferred affinity spent first).',
+    'Use your action to place more face-down Influence. Choose which resources go on which track — the affinity resource plants Banners, anything else sends Supply.',
   recruit:
     'Build Warriors. Option A: spend 1 Goods → gain 2 Warriors. Option B: spend 1 Faith → net +1 Warrior (Faith is spent and returned with the Warrior gain).',
   gather:
@@ -52,7 +52,7 @@ export const HELP = {
     'Locks in your face-down Influence for this round. You will still choose one Standard or Unique Action afterward.',
 
   placementHint:
-    'Any resource (Faith, Warriors, or Goods) can place on any track — 1 spent = 1 token. Preferred affinity: Warriors → Military, Faith → Moral, Goods → Provision. The game spends preferred resources first when auto-paying.',
+    'Any resource can place on any track — 1 spent = 1 token — but what you pay with decides what the token does. Paying with the track’s own resource (Warriors → Military, Faith → Moral, Goods → Provision) plants a Banner: it counts for Champion, and costs you 1 Loyalty if the track fails. Anything else is Supply: it helps the track succeed and shares the spoil, but never claims it and never risks anything.',
 } as const;
 
 export const TRACK_AFFINITY: Record<

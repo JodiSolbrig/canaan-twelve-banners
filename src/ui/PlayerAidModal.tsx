@@ -21,16 +21,25 @@ export function PlayerAidModal({
           Canaan: Tribes of the Covenant — Twelve Banners
         </p>
 
-        <h3 style={{ color: 'var(--bronze)', marginTop: '0.75rem' }}>Resources & tracks</h3>
+        <h3 style={{ color: 'var(--bronze)', marginTop: '0.75rem' }}>Banners & Supply</h3>
         <ul>
           <li>
-            <strong>Any</strong> Faith, Warrior, or Goods can place Influence on{' '}
-            <strong>any</strong> track (1 resource = 1 token).
+            Track affinity: <strong>Warriors → Military</strong>,{' '}
+            <strong>Faith → Moral</strong>, <strong>Goods → Provision</strong>.
           </li>
           <li>
-            Preferred affinity: <strong>Warriors → Military</strong>,{' '}
-            <strong>Faith → Moral</strong>, <strong>Goods → Provision</strong> (spent first
-            when auto-paying).
+            <strong>Banner</strong> — paid with the track’s own resource. Counts for the
+            threshold <em>and</em> for Champion, and costs you 1 Loyalty if the track
+            fails.
+          </li>
+          <li>
+            <strong>Supply</strong> — paid with anything else. Counts for the threshold
+            only: it can never win the track, and it never risks anything.
+          </li>
+          <li>
+            A track that succeeds pays <strong>1 matching resource</strong> to every
+            contributor; the Champion takes the Champion reward instead. A track carried
+            entirely by Supply succeeds with <strong>no Champion</strong>.
           </li>
           <li>
             <strong>Loyalty</strong> — resilience & primary tie-breaker. <strong>Glory</strong>{' '}
@@ -73,7 +82,8 @@ export function PlayerAidModal({
         <h3 style={{ color: 'var(--bronze)' }}>Standard actions</h3>
         <ul>
           <li>
-            <strong>Place Influence</strong> — 1 Faith/Warrior/Goods = 1 token on any track
+            <strong>Place Influence</strong> — 1 Faith/Warrior/Goods = 1 token on any
+            track (affinity = Banner, otherwise Supply)
           </li>
           <li>
             <strong>Recruit</strong> — 1 Goods → 2 Warriors, or Faith → +1 Warrior
