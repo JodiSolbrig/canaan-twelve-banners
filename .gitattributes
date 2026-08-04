@@ -1,0 +1,23 @@
+# Normalise line endings: LF in the repository *and* in working trees.
+#
+# Windows defaults to core.autocrlf=true, which rewrites every text file to CRLF
+# on checkout. That is invisible while one person works on one machine, but a
+# collaborator on macOS or Linux then sees whole-file diffs on files nobody
+# touched. `eol=lf` overrides autocrlf per-repo, so the working copy matches what
+# is stored and no conversion happens in either direction.
+* text=auto eol=lf
+
+# Binary assets must never be line-ending converted. `text=auto` detects most of
+# these on content, but being explicit means a corrupt asset can't slip through
+# on a file that happens to look like text.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.zip binary
