@@ -20,8 +20,10 @@ export type TuningConfig = {
   smallGroupThresholdBonus: number;
   lowHighOffset: number;
   /**
-   * Intended: free placement then one action.
-   * Not read by the engine yet — placement+action loop is always on.
+   * On (prototype default): every player gets a free Influence placement and
+   * then a full action each round.
+   * Off: the printed rules — one action per player per round, with Place
+   * Influence as one of the choices.
    */
   freePlacementPhase: boolean;
   failedTrackLoyaltyLoss: number;

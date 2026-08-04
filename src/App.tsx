@@ -130,6 +130,15 @@ export default function App() {
       return () => clearTimeout(t);
     }
 
+    // Pause on the resolved board so Champions and track results are readable
+    // before the next round clears them.
+    if (state.phase === 'resolve') {
+      const t = window.setTimeout(() => {
+        applyAction({ type: 'advance' });
+      }, 2600);
+      return () => clearTimeout(t);
+    }
+
     if (state.phase === 'crisisChoice') {
       return;
     }
@@ -147,13 +156,16 @@ export default function App() {
           const beforeActor = currentActor(prev)?.id;
           const beforePhase = prev.phase;
           let next = dispatch(prev, action);
-          // If action failed to progress, pass instead
+          // If the action failed to progress, fall back to something that always
+          // does, so a bot can never stall the round.
           if (
             next.phase === beforePhase &&
-            currentActor(next)?.id === beforeActor &&
-            action.type !== 'confirmPlacement'
+            currentActor(next)?.id === beforeActor
           ) {
-            next = dispatch(prev, { type: 'standard', action: 'pass' });
+            next =
+              beforePhase === 'placement'
+                ? dispatch(prev, { type: 'confirmPlacement', plan: {} })
+                : dispatch(prev, { type: 'standard', action: 'pass' });
           }
           return next;
         });

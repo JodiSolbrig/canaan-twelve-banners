@@ -12,7 +12,8 @@ Available to every tribe every round. You may perform **one** standard action **
 
 2. **Recruit**  
    Spend 1 Goods → Gain 2 Warriors  
-   *or* Spend 1 Faith → Gain 1 Warrior + 1 Faith (net +1 Warrior)
+   *or* Commit 1 Faith → Gain 1 Warrior (the Faith is returned; net +1 Warrior,
+   but you must hold at least 1 Faith to take this option)
 
 3. **Gather / Harvest**  
    Spend 1 Warrior **or** 1 Faith → Gain 2 Goods
@@ -37,6 +38,50 @@ Available to every tribe every round. You may perform **one** standard action **
 
 ---
 
+## Track Thresholds & Champion Rewards
+
+### Success threshold
+A track **succeeds** when the total Influence on it is at least the threshold:
+
+| Players | Threshold |
+|---------|-----------|
+| 2–3     | player count **+1** |
+| 4–11    | player count |
+
+Crisis cards may raise this for a single round (Midianite Swarms, The Ammonite
+Claim, The Day of Midian).
+
+### Zones
+Measured against the **unmodified** threshold, so a one-round success modifier
+never changes what counts as a Low or High track:
+
+| Total Influence | Zone |
+|-----------------|------|
+| below threshold | **Low** |
+| threshold to threshold+1 | **Normal** |
+| threshold+2 or more | **High** |
+
+### Champion rewards
+The player with the most Influence on a track is its Champion (ties broken by
+current Loyalty, then turn order). Each Champion gains:
+
+| Track | Reward |
+|-------|--------|
+| Military  | +1 Glory, +1 Warrior |
+| Moral     | +1 Glory, +1 Faith |
+| Provision | +1 Glory, +1 Goods |
+
+A track with no Influence on it has no Champion. Leader upgrades and Crisis cards
+add to these rewards; "In Those Days There Was No King" caps the total Glory any
+one player takes from Champion rewards at 1 for that round.
+
+### Failure penalties
+When a track fails:
+- The Covenant Meter drops by **1** (by **2** while the meter is in Judgment).
+- Every player who placed Influence on that track loses **1 Loyalty**.
+
+---
+
 ## One-Page Player Aid  
 *(Copy-paste friendly / print-ready summary)*
 
@@ -55,7 +100,7 @@ Faith • Warriors • Goods • Loyalty • Glory • Influence Tokens
 
 **Standard Actions (choose one)**  
 • **Place Influence** — 1 Faith/Warrior/Goods = 1 token  
-• **Recruit** — 1 Goods → 2 Warriors  *or*  1 Faith → 1 Warrior + 1 Faith  
+• **Recruit** — 1 Goods → 2 Warriors  *or*  commit 1 Faith → +1 Warrior  
 • **Gather** — 1 Warrior or 1 Faith → 2 Goods  
 • **Pray** — Rest → 2 Faith  *or*  1 Goods → 1 Faith + 1 Loyalty  
 • **Convert** — 2 of one resource → 1 of another (see rates above)  
@@ -63,7 +108,10 @@ Faith • Warriors • Goods • Loyalty • Glory • Influence Tokens
 
 **Tracks**  
 Military • Moral • Provision  
-Highest total Influence = Champion (ties broken by Loyalty, then turn order)
+Threshold = player count (+1 at 2–3 players)  
+Highest total Influence = Champion (ties broken by Loyalty, then turn order)  
+Champion: +1 Glory and +1 Warrior / Faith / Goods to match the track  
+Failure: Covenant −1 (−2 in Judgment) and −1 Loyalty to each investor
 
 **Covenant Meter** (starts at 8)  
 8–10: Stable  

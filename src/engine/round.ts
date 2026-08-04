@@ -9,6 +9,7 @@ import {
   addLog,
   applyRoundIncome,
   mulberry32,
+  openingPhase,
   shuffle,
 } from './helpers';
 import type { GameState } from './types';
@@ -28,6 +29,7 @@ export function startRound(state: GameState): GameState {
       standFirm: false,
       covenantProtect: false,
       holdTheLine: false,
+      pendingZoneUnique: null,
       peekedCrisis: null,
     })),
   };
@@ -58,7 +60,7 @@ export function startRound(state: GameState): GameState {
 
   const [card, ...rest] = s.crisisDeck;
   if (!card) {
-    s = { ...s, phase: 'placement', currentActorIndex: 0 };
+    s = { ...s, phase: openingPhase(s), currentActorIndex: 0 };
     return addLog(s, 'No Crisis cards left — proceeding.', 'info');
   }
 

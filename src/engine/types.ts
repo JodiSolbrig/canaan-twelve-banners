@@ -69,6 +69,17 @@ export type PlayerState = {
   freeMilitaryNextRound: number;
   /** Temporary influence to give next round (Naphtali) */
   pendingTempInfluenceGift: number;
+  /**
+   * Permanent addition to this tribe's per-round income, on top of its printed
+   * income line. Ephraim's Abdon I ("+1 Goods permanently") is granted here.
+   */
+  incomeBonus: { faith: number; warriors: number; goods: number };
+  /**
+   * Zone-dependent unique queued during the action phase and settled after Reveal
+   * (Benjamin Raid, Simeon Skirmish). Deferring keeps the Low-zone test from
+   * reading opponents' face-down tokens or depending on seat order.
+   */
+  pendingZoneUnique: 'raid' | 'skirmish' | null;
   /** Peeked crisis cards for UI */
   peekedCrisis: CrisisCardDef[] | null;
 };
@@ -128,7 +139,14 @@ export type LogEntry = {
 export type TrackResolution = {
   track: TrackId;
   total: number;
+  /** Influence needed to succeed. Doubled on Military by Day of Midian. */
   threshold: number;
+  /**
+   * Unmodified threshold for this track. Low/High zones are measured against
+   * this so a one-round success modifier (Day of Midian) does not warp abilities
+   * that key off zones (Raid, Skirmish, Gad Enduring Defense, Jair, Asher).
+   */
+  baseThreshold: number;
   success: boolean;
   championId: string | null;
   zone: 'low' | 'normal' | 'high';

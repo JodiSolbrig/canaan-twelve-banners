@@ -343,6 +343,15 @@ export const TRIBE_BY_ID: Record<TribeId, TribeDef> = Object.fromEntries(
   TRIBES.map((t) => [t.id, t]),
 ) as Record<TribeId, TribeDef>;
 
+/**
+ * Whether a tribe's Unique Action can be paid for with Faith.
+ * Derived from the printed cost so Micah's Idol (Crisis 7, "may not spend Faith
+ * on tribe unique actions") stays correct if a cost is ever retuned.
+ */
+export function uniqueCanCostFaith(tribe: TribeId): boolean {
+  return /faith/i.test(TRIBE_BY_ID[tribe].uniqueCost);
+}
+
 export const CRISIS_CARDS: CrisisCardDef[] = [
   {
     id: 1,
@@ -438,7 +447,7 @@ export const CRISIS_CARDS: CrisisCardDef[] = [
   {
     id: 14,
     name: 'In Those Days There Was No King',
-    flavor: '…everyone did what was right in their own eyes.',
+    flavor: '…everyone did what was right in his own eyes.',
     severity: 'Heavy',
     effect: 'Covenant −1 at end of round. Max 1 Glory from Champion rewards.',
   },

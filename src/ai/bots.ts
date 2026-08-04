@@ -14,17 +14,9 @@ import type {
 const TRACKS: TrackId[] = ['military', 'moral', 'provision'];
 
 export function chooseBotAction(state: GameState): PlayerAction | null {
-  const actor = currentActor(state);
-  if (!actor || actor.isHuman) return null;
-
-  if (state.phase === 'placement') {
-    return { type: 'confirmPlacement', plan: planPlacement(state, actor.id) };
-  }
-
-  if (state.phase === 'action') {
-    return chooseAction(state, actor.id);
-  }
-
+  // The Angel of the Lord is resolved for the table, not by a seated actor, so
+  // it has to be handled before the `currentActor` guard (which only answers
+  // during placement and action).
   if (state.phase === 'crisisChoice') {
     const opts = state.pendingCrisisChoice?.options ?? [];
     if (opts.length >= 2) {
@@ -37,6 +29,18 @@ export function chooseBotAction(state: GameState): PlayerAction | null {
         },
       };
     }
+    return null;
+  }
+
+  const actor = currentActor(state);
+  if (!actor || actor.isHuman) return null;
+
+  if (state.phase === 'placement') {
+    return { type: 'confirmPlacement', plan: planPlacement(state, actor.id) };
+  }
+
+  if (state.phase === 'action') {
+    return chooseAction(state, actor.id);
   }
 
   return null;
@@ -82,6 +86,18 @@ function chooseAction(state: GameState, playerId: string): PlayerAction {
   const agr = state.tuningSnapshot.botAggression;
   const zoneLowLoyalty = p.resources.loyalty <= 2;
   const covenantLow = state.covenant <= 4;
+
+  // Without a free placement phase, the action *is* the only way onto a track,
+  // so contesting Champions has to outrank economy and opportunistic uniques.
+  if (!state.tuningSnapshot.freePlacementPhase) {
+    const noTokensYet = !state.tokens.some((t) => t.playerId === playerId);
+    if (noTokensYet || Math.random() < agr) {
+      const plan = planPlacement(state, playerId);
+      if (TRACKS.reduce((a, t) => a + (plan[t] ?? 0), 0) > 0) {
+        return { type: 'placeInfluence', plan };
+      }
+    }
+  }
 
   // Protective uniques
   if (p.tribe === 'Gad' && p.resources.warriors >= 1 && (zoneLowLoyalty || covenantLow)) {

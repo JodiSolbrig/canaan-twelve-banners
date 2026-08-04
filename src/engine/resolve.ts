@@ -12,6 +12,7 @@ import {
   getTrackTotals,
   grantGlory,
   mutateResources,
+  openingPhase,
   raiseCovenant,
   rankPlayers,
   sameStanding,
@@ -55,6 +56,15 @@ export function resolveRound(state: GameState): GameState {
   const tuning = s.tuningSnapshot;
   const totals = getTrackTotals(s);
 
+  // Simeon's Furious Assault token is good for the round after the failure only.
+  // Expire anything unspent before this round's failures grant new ones.
+  s = {
+    ...s,
+    players: s.players.map((p) =>
+      p.freeMilitaryNextRound > 0 ? { ...p, freeMilitaryNextRound: 0 } : p,
+    ),
+  };
+
   // Gad Enduring Defense: when Military is Low, Gad tokens count +1
   for (const p of s.players) {
     if (p.tribe === 'Gad' && p.leaderLevel >= 2) {
@@ -69,30 +79,28 @@ export function resolveRound(state: GameState): GameState {
   const results: TrackResolution[] = [];
 
   for (const track of TRACKS) {
-    let thr = baseThreshold(s, track);
+    const base = baseThreshold(s, track);
     const byPlayer = totals[track];
-    let grand = Object.values(byPlayer).reduce((a, b) => a + b, 0);
+    const grand = Object.values(byPlayer).reduce((a, b) => a + b, 0);
 
-    // Day of Midian
-    if (track === 'military' && s.activeCrisis?.id === 13) {
-      thr = thr * 2;
-    }
-
-    const zone = trackZone(grand, thr, tuning.lowHighOffset);
-    let success = grand >= thr;
-    const championId = pickChampion(s, byPlayer);
+    // Day of Midian raises what Military must beat, but not where the Low/High
+    // zones sit — abilities that read zones keep measuring against the base.
+    const thr =
+      track === 'military' && s.activeCrisis?.id === 13 ? base * 2 : base;
 
     results.push({
       track,
       total: grand,
       threshold: thr,
-      success,
-      championId,
-      zone,
+      baseThreshold: base,
+      success: grand >= thr,
+      championId: pickChampion(s, byPlayer),
+      zone: trackZone(grand, base, tuning.lowHighOffset),
     });
   }
 
   s = { ...s, trackResults: results };
+  s = settleZoneUniques(s, results);
 
   // Champions + rewards
   for (const res of results) {
@@ -204,13 +212,13 @@ export function resolveRound(state: GameState): GameState {
     }
   }
 
-  // Judgment: lowest loyalty discards
+  // Judgment: lowest Loyalty discards. Everyone tied for lowest pays — otherwise
+  // who pays would depend on player array order.
   if (zone === 'judgment') {
-    const sorted = [...s.players].sort(
-      (a, b) => a.resources.loyalty - b.resources.loyalty,
-    );
-    const lowest = sorted[0];
-    if (lowest) {
+    const minLoyalty = Math.min(...s.players.map((p) => p.resources.loyalty));
+    for (const lowest of s.players.filter(
+      (p) => p.resources.loyalty === minLoyalty,
+    )) {
       const discard = lowest.resources.goods > 0 ? 'goods' : 'warriors';
       if (lowest.resources[discard] > 0) {
         s = updatePlayer(s, lowest.id, (p) => ({
@@ -268,13 +276,69 @@ export function resolveRound(state: GameState): GameState {
     return endGame(s);
   }
 
-  s = {
-    ...s,
-    round: s.round + 1,
-    firstPlayerIndex: (s.firstPlayerIndex + 1) % s.turnOrder.length,
-    turnOrder: rotate(s.turnOrder, 1),
-  };
-  return startRound(s);
+  // Hold in `resolve` so the revealed board, track results, and Champions stay
+  // readable. `advanceToNextRound` (dispatch 'advance') clears them and deals on.
+  return { ...s, phase: 'resolve' };
+}
+
+/** Rotate the first player and begin the next round. */
+export function advanceToNextRound(state: GameState): GameState {
+  return startRound({
+    ...state,
+    round: state.round + 1,
+    firstPlayerIndex: (state.firstPlayerIndex + 1) % state.turnOrder.length,
+    turnOrder: rotate(state.turnOrder, 1),
+  });
+}
+
+/**
+ * Settle Benjamin's Raid and Simeon's Skirmish now that Influence is face-up.
+ * Both were paid for during the action phase; only the Low-zone branch waited.
+ */
+function settleZoneUniques(
+  state: GameState,
+  results: TrackResolution[],
+): GameState {
+  let s = state;
+  const militaryLow =
+    results.find((r) => r.track === 'military')?.zone === 'low';
+
+  for (const player of s.players) {
+    const pending = player.pendingZoneUnique;
+    if (!pending) continue;
+    const id = player.id;
+
+    s = updatePlayer(s, id, (p) => ({ ...p, pendingZoneUnique: null }));
+
+    if (pending === 'raid') {
+      s = updatePlayer(s, id, (p) => ({
+        ...p,
+        resources: mutateResources(p.resources, { goods: 1 }),
+      }));
+      if (militaryLow) {
+        s = addLog(s, `${player.tribe} Raid hits a Low Military Track — +1 Goods, no Glory.`, 'bad');
+        s = applyLoyaltyLoss(s, id, 1, 'Raid in Low zone');
+      } else {
+        s = addLog(s, `${player.tribe} Raid succeeds — +1 Goods, +1 Glory.`, 'good');
+        s = grantGlory(s, id, 1, false);
+      }
+      continue;
+    }
+
+    // Skirmish always pays Glory; Low Military adds Goods.
+    if (militaryLow) {
+      s = updatePlayer(s, id, (p) => ({
+        ...p,
+        resources: mutateResources(p.resources, { goods: 1 }),
+      }));
+      s = addLog(s, `${player.tribe} Skirmishes a Low Military Track — +1 Glory, +1 Goods.`, 'good');
+    } else {
+      s = addLog(s, `${player.tribe} Skirmishes — +1 Glory.`, 'good');
+    }
+    s = grantGlory(s, id, 1, false);
+  }
+
+  return s;
 }
 
 function rotate<T>(arr: T[], n: number): T[] {
@@ -360,13 +424,25 @@ function awardChampion(state: GameState, res: TrackResolution): GameState {
       s = addLog(s, `${pl.tribe} pays Philistine Razor (lose 1 ${discard}).`, 'bad');
     }
   }
-  // Benjamin Ehud III — free Recruit = net +2 Warriors at no cost
+  // Benjamin Ehud III — a free *Recruit action*: the action is free, its cost is
+  // not. Takes the 1 Goods → 2 Warriors mode, else the Faith mode, else nothing.
   if (champ.tribe === 'Benjamin' && champ.leaderLevel >= 3 && res.track === 'military') {
-    s = updatePlayer(s, res.championId, (p) => ({
-      ...p,
-      resources: mutateResources(p.resources, { warriors: 2 }),
-    }));
-    s = addLog(s, `${champ.tribe} free Recruit (Ehud III).`, 'good');
+    const now = getPlayer(s, res.championId);
+    if (now.resources.goods >= 1) {
+      s = updatePlayer(s, res.championId, (p) => ({
+        ...p,
+        resources: mutateResources(p.resources, { goods: -1, warriors: 2 }),
+      }));
+      s = addLog(s, `${champ.tribe} free Recruit (Ehud III): 1 Goods → 2 Warriors.`, 'good');
+    } else if (now.resources.faith >= 1) {
+      s = updatePlayer(s, res.championId, (p) => ({
+        ...p,
+        resources: mutateResources(p.resources, { warriors: 1 }),
+      }));
+      s = addLog(s, `${champ.tribe} free Recruit (Ehud III): +1 Warrior via Faith.`, 'good');
+    } else {
+      s = addLog(s, `${champ.tribe} cannot pay for the free Recruit (Ehud III).`, 'info');
+    }
   }
 
   // Idempotent safety net (grantGlory already checks unlocks).
@@ -385,7 +461,7 @@ export function endGame(state: GameState): GameState {
         s = grantGlory(s, p.id, 1, false);
       }
       s = addLog(s, 'Covenant Strength — all gain +1 Glory.', 'good');
-    } else if (z === 'judgment' || z === 'broken') {
+    } else if (z === 'judgment') {
       for (const p of s.players) {
         s = updatePlayer(s, p.id, (pl) => ({
           ...pl,
@@ -394,6 +470,8 @@ export function endGame(state: GameState): GameState {
       }
       s = addLog(s, 'Weak Covenant — all lose 1 Glory.', 'bad');
     }
+    // Broken Covenant (0–1) carries no Glory penalty: its Loyalty losses were
+    // already applied during resolution and the rules say to "score as normal".
   }
 
   const ranked = rankPlayers(s.players);
@@ -431,7 +509,7 @@ export function applyAngelChoice(
     ...s,
     crisisDeck: [top, ...rest, bottom],
     pendingCrisisChoice: null,
-    phase: 'placement',
+    phase: openingPhase(s),
     currentActorIndex: 0,
   };
   if (covenantDelta > 0) s = raiseCovenant(s, 1, 'Angel of the Lord');

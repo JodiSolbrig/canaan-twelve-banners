@@ -148,23 +148,6 @@ export function trackZone(
   return 'normal';
 }
 
-/** Sum of face-up/face-down token values currently on a track. */
-export function trackInfluenceTotal(state: GameState, track: TrackId): number {
-  return state.tokens
-    .filter((t) => t.track === track)
-    .reduce((a, t) => a + t.value, 0);
-}
-
-/**
- * Whether a track is currently in the Low zone (total < threshold).
- * Used by uniques that check zones before reveal (Raid, Skirmish).
- */
-export function isTrackLow(state: GameState, track: TrackId): boolean {
-  const total = trackInfluenceTotal(state, track);
-  const thr = baseThreshold(state, track);
-  return trackZone(total, thr, state.tuningSnapshot.lowHighOffset) === 'low';
-}
-
 /** End-game / standings order: Glory → Loyalty → resource sum → Championships. */
 export function compareStandings(a: PlayerState, b: PlayerState): number {
   if (b.resources.glory !== a.resources.glory) {
@@ -245,10 +228,11 @@ export function applyCovenantDrop(
   let drop = amount;
   let s = state;
 
-  // Levi protect
+  // Levi Intercede: "protect it from the next drop" — cancels the drop outright,
+  // not merely softens it, so it still holds under Judgment (drop of 2).
   const protector = s.players.find((p) => p.covenantProtect);
   if (protector && drop > 0) {
-    drop -= 1;
+    drop = 0;
     s = updatePlayer(s, protector.id, (p) => ({ ...p, covenantProtect: false }));
     s = addLog(s, `${protector.tribe} Intercede protects the Covenant.`, 'good');
   }
@@ -263,9 +247,10 @@ export function applyCovenantDrop(
 
   if (drop <= 0) return s;
 
-  const next = clamp(s.covenant - drop, 0, s.tuningSnapshot.covenantMax);
+  const before = s.covenant;
+  const next = clamp(before - drop, 0, s.tuningSnapshot.covenantMax);
   s = { ...s, covenant: next };
-  s = addLog(s, `Covenant Meter ${s.covenant + drop} → ${next} (${reason}).`, 'bad');
+  s = addLog(s, `Covenant Meter ${before} → ${next} (${reason}).`, 'bad');
   return s;
 }
 
@@ -307,8 +292,18 @@ export function grantGlory(
   return s;
 }
 
+/** Renders a player's permanent income bonus as a log suffix, e.g. " +1 Goods". */
+function formatIncomeBonus(bonus: PlayerState['incomeBonus']): string {
+  const parts: string[] = [];
+  if (bonus.faith) parts.push(`${bonus.faith} Faith`);
+  if (bonus.warriors) parts.push(`${bonus.warriors} Warrior`);
+  if (bonus.goods) parts.push(`${bonus.goods} Goods`);
+  return parts.length ? ` +${parts.join(' + ')}` : '';
+}
+
 /**
- * Grant each tribe its per-round income (Loyalty capped at starting max).
+ * Grant each tribe its per-round income (Loyalty capped at starting max), plus any
+ * permanent `incomeBonus` earned from leader upgrades.
  * Invoked from `startRound` for rounds 2+ only so starting stocks match the tribe table.
  */
 export function applyRoundIncome(state: GameState): GameState {
@@ -318,9 +313,9 @@ export function applyRoundIncome(state: GameState): GameState {
     const inc = def.income;
     s = updatePlayer(s, p.id, (pl) => {
       let r = mutateResources(pl.resources, {
-        faith: inc.faith ?? 0,
-        warriors: inc.warriors ?? 0,
-        goods: inc.goods ?? 0,
+        faith: (inc.faith ?? 0) + pl.incomeBonus.faith,
+        warriors: (inc.warriors ?? 0) + pl.incomeBonus.warriors,
+        goods: (inc.goods ?? 0) + pl.incomeBonus.goods,
       });
       if (inc.loyalty && r.loyalty < pl.startingLoyalty) {
         const gain = Math.min(inc.loyalty, pl.startingLoyalty - r.loyalty);
@@ -328,9 +323,10 @@ export function applyRoundIncome(state: GameState): GameState {
       }
       return { ...pl, resources: r };
     });
+    const bonusLine = formatIncomeBonus(p.incomeBonus);
     s = addLog(
       s,
-      `${p.tribe} collects income (+${formatTribeIncome(inc)}).`,
+      `${p.tribe} collects income (+${formatTribeIncome(inc)}${bonusLine}).`,
       'info',
     );
   }
@@ -352,11 +348,12 @@ export function checkLeaderUnlocks(state: GameState, playerId: string): GameStat
   const def = TRIBE_BY_ID[p.tribe];
   let s = updatePlayer(state, playerId, (pl) => {
     let next = { ...pl, leaderLevel: level };
-    // Ephraim Abdon I at level 2
+    // Ephraim Abdon I ("+1 Goods permanently to your starting total for the rest
+    // of the game") raises per-round income rather than paying out once.
     if (pl.tribe === 'Ephraim' && level >= 2 && prevLevel < 2) {
       next = {
         ...next,
-        resources: mutateResources(next.resources, { goods: 1 }),
+        incomeBonus: { ...next.incomeBonus, goods: next.incomeBonus.goods + 1 },
       };
     }
     return next;
@@ -366,7 +363,7 @@ export function checkLeaderUnlocks(state: GameState, playerId: string): GameStat
   for (let lvl = prevLevel + 1; lvl <= level; lvl++) {
     const upgrade = def.upgrades[lvl - 1] ?? `Leader ${roman[lvl - 1]}`;
     const bonus =
-      p.tribe === 'Ephraim' && lvl === 2 ? ' (+1 Goods granted)' : '';
+      p.tribe === 'Ephraim' && lvl === 2 ? ' (+1 Goods income, permanent)' : '';
     s = addLog(
       s,
       `${p.tribe} unlocks Leader ${roman[lvl - 1]}${bonus} — ${upgrade}`,
@@ -374,6 +371,18 @@ export function checkLeaderUnlocks(state: GameState, playerId: string): GameStat
     );
   }
   return s;
+}
+
+/**
+ * The phase play enters once the Crisis is on the table.
+ *
+ * With `freePlacementPhase` on (prototype default) every player gets a free
+ * Influence placement and then a full action. With it off the round matches the
+ * printed rules: one action per player, where Place Influence is one of the
+ * options.
+ */
+export function openingPhase(state: GameState): 'placement' | 'action' {
+  return state.tuningSnapshot.freePlacementPhase ? 'placement' : 'action';
 }
 
 export function currentActor(state: GameState): PlayerState | null {

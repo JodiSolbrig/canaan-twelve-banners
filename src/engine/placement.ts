@@ -10,7 +10,44 @@ import {
   TRACKS,
   updatePlayer,
 } from './helpers';
-import type { GameState, PlacementPlan } from './types';
+import type { GameState, PlacementPlan, TrackId } from './types';
+
+/**
+ * Influence value of each token in one placement, after the Crisis cards that
+ * change what a placed token is worth. Token *count* always equals what the
+ * player paid for, so abilities that count tokens (Dan's Nazirite Strength) are
+ * unaffected; only the values move.
+ *
+ * - Crisis 1 (High Places of Baal): Faith spent on Moral is worth half, rounded
+ *   down, spread as `floor(faith/2)` tokens of 1 and the remainder at 0.
+ * - Crisis 3 (Iron Chariots): a Military token whose extra Warrior went unpaid
+ *   has its Influence reduced by 1, i.e. it contributes nothing.
+ */
+function tokenValues(
+  track: TrackId,
+  count: number,
+  crisisId: number | null,
+  spent: { spentFaith: number; ironChariotUnpaid: number },
+): number[] {
+  const values: number[] = [];
+
+  if (track === 'moral' && crisisId === 1 && spent.spentFaith > 0) {
+    const nonFaith = count - spent.spentFaith;
+    const halved = Math.floor(spent.spentFaith / 2);
+    for (let i = 0; i < nonFaith; i++) values.push(1);
+    for (let i = 0; i < spent.spentFaith; i++) values.push(i < halved ? 1 : 0);
+  } else {
+    for (let i = 0; i < count; i++) values.push(1);
+  }
+
+  if (track === 'military' && crisisId === 3) {
+    for (let i = 0; i < spent.ironChariotUnpaid && i < values.length; i++) {
+      values[values.length - 1 - i] = 0;
+    }
+  }
+
+  return values;
+}
 
 export function applyPlacement(
   state: GameState,
@@ -46,52 +83,22 @@ export function applyPlacement(
 
     if (count <= 0) continue;
 
-    const spent = spendForInfluence(
-      resources,
-      count,
-      track,
-      s.activeCrisis?.id ?? null,
-    );
+    const crisisId = s.activeCrisis?.id ?? null;
+    const spent = spendForInfluence(resources, count, track, crisisId);
     if (!spent.ok) {
       return addLog(s, `${p.tribe} cannot afford that Influence placement.`, 'bad');
     }
     resources = spent.resources;
 
-    for (let i = 0; i < count; i++) {
-      let value = 1;
-      // High Places of Baal: faith half on moral — approximate: if spent faith, half value
-      if (track === 'moral' && s.activeCrisis?.id === 1 && spent.spentFaith > 0) {
-        // Faith tokens contribute 0; floor(spentFaith/2) applied below
-        if (i < spent.spentFaith) value = 0;
-      }
-      if (track === 'military' && s.activeCrisis?.id === 3 && i < spent.ironChariotUnpaid) {
-        value = -1;
-      }
+    for (const value of tokenValues(track, count, crisisId, spent)) {
       newTokens.push({
         id: nextTokenId(),
         playerId,
         track,
-        value: value === 0 && track === 'moral' && s.activeCrisis?.id === 1 ? 0 : value < 0 ? -1 : 1,
+        value,
         temporary: false,
         faceDown: true,
       });
-    }
-
-    // High Places fix: replace faith tokens with floor(spentFaith/2) total influence
-    if (track === 'moral' && s.activeCrisis?.id === 1 && spent.spentFaith > 0) {
-      // Remove zero-value tokens we just added for faith portion and add floor/2
-      // Simpler approach already set faith tokens to 0; add floor(spentFaith/2) value to first token
-      const moralMine = newTokens.filter(
-        (t) => t.playerId === playerId && t.track === 'moral' && t.value === 0,
-      );
-      const bonus = Math.floor(spent.spentFaith / 2);
-      if (moralMine[0] && bonus > 0) {
-        moralMine[0].value = bonus;
-      }
-      // Non-faith tokens already value 1
-      const nonFaith = count - spent.spentFaith;
-      // Rebuild: for clarity leave zeros and set one token to bonus + ensure non-faith count
-      void nonFaith;
     }
   }
 
@@ -113,12 +120,25 @@ export function applyPlacement(
     ...s,
     tokens: newTokens,
   };
-  s = updatePlayer(s, playerId, (pl) => ({
-    ...pl,
-    resources,
-    freeMilitaryNextRound: 0,
-    pendingTempInfluenceGift: 0,
-  }));
+  s = updatePlayer(s, playerId, (pl) => {
+    // Both bonuses are pure upside on a placement the player already paid for,
+    // so they arm themselves rather than needing an activation prompt.
+    const once = { ...pl.oncePerRoundUsed };
+    if ((plan.military ?? 0) > 0 && pl.leaderLevel >= 2) {
+      // Judah Othniel II — Wholehearted Charge
+      if (pl.tribe === 'Judah') once['othnielII'] = true;
+      // Benjamin Ehud II — Hidden Dagger
+      if (pl.tribe === 'Benjamin') once['ehudII'] = true;
+    }
+    return {
+      ...pl,
+      resources,
+      // Keep any free Military tokens that went unused this placement.
+      freeMilitaryNextRound: freeMil,
+      pendingTempInfluenceGift: 0,
+      oncePerRoundUsed: once,
+    };
+  });
   if (placed > 0) {
     s = addLog(s, `${p.tribe} places ${placed} Influence.`, 'info');
   } else {

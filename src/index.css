@@ -132,11 +132,25 @@ h3 {
 }
 
 .panel {
+  position: relative;
   background: var(--panel);
   border: 1px solid var(--panel-border);
   border-radius: 6px;
   padding: 0.85rem 1rem;
   backdrop-filter: blur(6px);
+}
+
+/*
+ * `backdrop-filter` makes every .panel its own stacking context, which traps a
+ * tooltip's z-index inside the panel that owns it. Sibling panels then cover the
+ * tooltip purely by DOM order — the Chronicle sat on top of the player tooltips
+ * from the Round panel above it. Lift whichever panel is currently showing a
+ * tooltip above its siblings. 5 clears the other panels while staying well under
+ * the fixed overlays (drawer 40, modal 50, toast 70).
+ */
+.panel:has(.tip-wrap:hover),
+.panel:has(.tip-wrap:focus-within) {
+  z-index: 5;
 }
 
 .setup-screen {

@@ -47,7 +47,9 @@ export function HumanControls({ state, onAction, flashLeaderLevel = null }: Prop
   const [repoToken, setRepoToken] = useState('');
   const [repoTrack, setRepoTrack] = useState<TrackId>('moral');
   const [asherMode, setAsherMode] = useState<'faith' | 'rest'>('rest');
+  const [rallyTrack, setRallyTrack] = useState<TrackId>('military');
   const [placingMore, setPlacingMore] = useState(false);
+  const freePlacement = state.tuningSnapshot.freePlacementPhase;
 
   useEffect(() => {
     if (state.phase !== 'action') setPlacingMore(false);
@@ -250,6 +252,7 @@ export function HumanControls({ state, onAction, flashLeaderLevel = null }: Prop
                 onClick={() => {
                   const unique = buildUnique(human.tribe, {
                     targetId,
+                    rallyTrack,
                     leviMode,
                     ephraimMode,
                     asherMode,
@@ -373,7 +376,7 @@ export function HumanControls({ state, onAction, flashLeaderLevel = null }: Prop
                   setPlacingMore((v) => !v);
                 }}
               >
-                Place more Influence
+                {freePlacement ? 'Place more Influence' : 'Place Influence'}
               </button>
             </Tip>
             <Tip text={HELP.pass} className="tip-below">
@@ -390,9 +393,12 @@ export function HumanControls({ state, onAction, flashLeaderLevel = null }: Prop
           {placingMore && (
             <div className="placement-controls" style={{ marginTop: '0.75rem' }}>
               <div className="help-callout">
-                Spend your action to place more face-down Influence. You have{' '}
-                <strong>{affordablePool}</strong> spendable resources (Faith + Warriors +
-                Goods). Prefer Warriors→Military, Faith→Moral, Goods→Provision.
+                {freePlacement
+                  ? 'Spend your action to place more face-down Influence.'
+                  : 'Place Influence is your action this round.'}{' '}
+                You have <strong>{affordablePool}</strong> spendable resources (Faith +
+                Warriors + Goods). Prefer Warriors→Military, Faith→Moral,
+                Goods→Provision.
               </div>
               {TRACKS.map((t) => (
                 <div key={t} className="placement-row">
@@ -431,7 +437,7 @@ export function HumanControls({ state, onAction, flashLeaderLevel = null }: Prop
                       setPlacingMore(false);
                     }}
                   >
-                    Confirm extra Influence ({plannedTotal})
+                    Confirm Influence ({plannedTotal})
                   </button>
                 </Tip>
                 <button
@@ -464,6 +470,17 @@ export function HumanControls({ state, onAction, flashLeaderLevel = null }: Prop
                       {p.tribe}
                     </option>
                   ))}
+              </select>
+              <select
+                value={rallyTrack}
+                onChange={(e) => setRallyTrack(e.target.value as TrackId)}
+                aria-label="Rally track"
+              >
+                {TRACKS.map((t) => (
+                  <option key={t} value={t}>
+                    on {TRACK_LABELS[t]}
+                  </option>
+                ))}
               </select>
             </div>
           )}
@@ -546,6 +563,7 @@ function buildUnique(
   tribe: string,
   opts: {
     targetId: string;
+    rallyTrack: TrackId;
     leviMode: 'raise' | 'protect';
     ephraimMode: 'doubleGoods' | 'goodsPlusFaith' | 'goodsPlusWarriors';
     asherMode: 'faith' | 'rest';
@@ -556,7 +574,12 @@ function buildUnique(
 ): PlayerAction | null {
   switch (tribe) {
     case 'Judah':
-      return { type: 'unique', tribe: 'Judah', targetPlayerId: opts.targetId };
+      return {
+        type: 'unique',
+        tribe: 'Judah',
+        targetPlayerId: opts.targetId,
+        track: opts.rallyTrack,
+      };
     case 'Benjamin':
       return { type: 'unique', tribe: 'Benjamin' };
     case 'Levi':

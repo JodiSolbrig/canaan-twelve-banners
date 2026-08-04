@@ -31,18 +31,50 @@
 | Issachar  | 4     | 2        | 3     | 3       | 0     |
 | Zebulun   | 2     | 3        | 4     | 2       | 0     |
 
-### 4. Leader Progression
-- Each player begins with their Tribe’s base abilities only.
-- Leader upgrades are unlocked later (recommended trigger: first time a player becomes Champion of any track, or when they reach 3 / 6 / 9 Glory — exact unlock timing can be tuned after playtests).
+### 4. Round Income (rounds 2 onward)
 
-### 5. Turn Order
+At the **start of every round after the first**, each tribe collects its income.
+Round 1 runs on the printed starting resources alone, so the opening position
+matches the table above exactly.
+
+| Tribe     | Income                | Theme |
+|-----------|-----------------------|-------|
+| Judah     | 1 Faith + 1 Warrior   | Leadership / lion |
+| Benjamin  | 2 Warriors            | Aggressive combat |
+| Levi      | 2 Faith               | Priestly / Covenant |
+| Ephraim   | 1 Goods + 1 Faith     | Economic + prophetic |
+| Manasseh  | 1 Warrior + 1 Loyalty | Stabilizer / tank |
+| Reuben    | 1 Warrior + 1 Goods   | Pastoral / early momentum |
+| Simeon    | 2 Warriors            | Skirmisher |
+| Dan       | 1 Warrior + 1 Faith   | Strongman / trickster |
+| Naphtali  | 1 Faith + 1 Goods     | Flexible support |
+| Gad       | 2 Warriors            | Frontline tank |
+| Asher     | 2 Goods               | Coastal abundance |
+| Issachar  | 1 Faith + 1 Goods     | Strategic / understanding |
+| Zebulun   | 1 Goods + 1 Warrior   | Merchant / trade |
+
+**Loyalty income** (Manasseh only) applies only while that player is *below*
+their starting Loyalty; it can restore losses but never exceed the printed value.
+
+### 5. Leader Progression
+- Each player begins with their Tribe’s base abilities only.
+- Leader upgrades unlock at **3 / 6 / 9 Glory** (levels I / II / III). Once
+  unlocked, an upgrade stays active for the rest of the game.
+- Alternative trigger for playtesting: the first time a player becomes Champion
+  of any track. Exact unlock timing can be tuned after playtests.
+
+### 6. Turn Order
 - Randomly determine first player.
 - Play proceeds clockwise.
+- The first player marker passes one seat to the left at the start of each round.
 - In Epic 12 Mode, seat players in roughly biblical geographic order around the table if desired (optional flavor).
 
-### 6. First Round Special Rule
+### 7. First Round Special Rule
 - Draw and reveal the top Crisis card as normal.
 - No Leader upgrades or “once per game” abilities may be used on Round 1 (keeps the opening clean).
+- In practice this bars **Dan’s Serpent’s Wisdom**, the only Unique Action that
+  is itself once-per-game. Leader upgrades are unreachable on Round 1 anyway, as
+  no one can bank 3 Glory that fast.
 
 ---
 
@@ -64,7 +96,7 @@
 - Covenant Meter 8–10 at game end: every player gains +1 Glory.
 - Covenant Meter 5–7: no change.
 - Covenant Meter 2–4: every player loses 1 Glory (minimum 0).
-- Covenant Meter 0–1: the game already ended under Broken Covenant rules; apply the Loyalty losses and score as normal.
+- Covenant Meter 0–1: the game already ended under Broken Covenant rules. The 2 Loyalty each player lost at that moment **is** the penalty — apply **no** further Glory adjustment and score as normal.
 
 ### Champion Tracking
 Keep a simple tally (pencil & paper or extra tokens) of how many times each player became Champion. This is only needed for the rare fourth-level tie-breaker and for unlocking Leader upgrades during the game.

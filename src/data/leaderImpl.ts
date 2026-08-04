@@ -9,8 +9,8 @@ import type { TribeId } from '../engine/types';
  */
 export const LEADER_UPGRADE_ACTIVE: Record<TribeId, [boolean, boolean, boolean]> =
   {
-    Judah: [true, false, false], // I Glory; II/III need activation UI
-    Benjamin: [true, false, true], // I Warrior; II need UI; III free Recruit
+    Judah: [true, true, false], // I Glory; II auto on Military placement; III needs UI
+    Benjamin: [true, true, true], // I Warrior; II auto on Military placement; III free Recruit
     Levi: [true, false, false], // I Covenant on Moral Champ
     Ephraim: [true, true, false], // I Faith; II +1 Goods on unlock; III convert UI
     Manasseh: [false, true, true], // I peek; II Provision High; III loyalty soften

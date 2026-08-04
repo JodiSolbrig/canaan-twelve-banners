@@ -1,20 +1,37 @@
 /**
  * Standard actions, unique tribe actions, and action-phase Place Influence.
  */
-import { TRIBE_BY_ID } from '../data/gameData';
+import { TRACK_LABELS, TRIBE_BY_ID, uniqueCanCostFaith } from '../data/gameData';
 import {
   addLog,
-  applyLoyaltyLoss,
   getPlayer,
-  grantGlory,
-  isTrackLow,
+  mulberry32,
   mutateResources,
   nextTokenId,
   raiseCovenant,
+  shuffle,
   updatePlayer,
 } from './helpers';
 import { applyPlacement } from './placement';
-import type { GameState, PlayerAction, TrackId } from './types';
+import type { GameState, PlayerAction, TrackId, TribeId } from './types';
+
+/**
+ * Tribes whose Unique Action is itself once-per-game. Round 1 bars these along
+ * with leader upgrades, per the First Round Special Rule.
+ */
+const ONCE_PER_GAME_UNIQUES = new Set<TribeId>(['Dan']);
+
+type Tradeable = 'faith' | 'warriors' | 'goods';
+
+/**
+ * The Convert / Bargain rate table (03-standard-actions-and-player-aid.md):
+ * 2 Goods → Faith or Warrior; 2 Warriors → Goods; 2 Faith → Goods or Warrior.
+ */
+function isValidConversion(from: Tradeable, to: Tradeable): boolean {
+  if (from === to) return false;
+  if (from === 'warriors') return to === 'goods';
+  return true;
+}
 
 function capLoyalty(state: GameState, playerId: string): GameState {
   return updatePlayer(state, playerId, (p) => ({
@@ -111,11 +128,8 @@ export function applyStandardAction(
         return { state: addLog(s, 'Cannot convert to same resource.', 'bad'), ok: false };
       if (p.resources[c.from] < 2)
         return { state: addLog(s, `Need 2 ${c.from}.`, 'bad'), ok: false };
-      const ok =
-        (c.from === 'goods' && (c.to === 'faith' || c.to === 'warriors')) ||
-        (c.from === 'warriors' && c.to === 'goods') ||
-        (c.from === 'faith' && (c.to === 'goods' || c.to === 'warriors'));
-      if (!ok) return { state: addLog(s, 'Invalid conversion rate.', 'bad'), ok: false };
+      if (!isValidConversion(c.from, c.to))
+        return { state: addLog(s, 'Invalid conversion rate.', 'bad'), ok: false };
       s = updatePlayer(s, playerId, (pl) => ({
         ...pl,
         resources: mutateResources(pl.resources, {
@@ -154,20 +168,47 @@ export function applyUniqueAction(
   let s = state;
   const p = getPlayer(s, playerId);
   const tribe = p.tribe;
+  // Micah's Idol (Crisis 7): no Faith may be spent on unique actions.
   const crisisBlocksFaith =
-    s.activeCrisis?.id === 7 &&
-    ['Judah', 'Levi', 'Dan', 'Issachar', 'Asher', 'Manasseh'].includes(tribe);
+    s.activeCrisis?.id === 7 && uniqueCanCostFaith(tribe);
+  const blockedMsg = 'Micah’s Idol blocks spending Faith on unique actions.';
 
   const spendFaith = (n: number): boolean => {
     if (crisisBlocksFaith) return false;
     return getPlayer(s, playerId).resources.faith >= n;
   };
 
+  /** Round 1 bars once-per-game abilities (04-setup-scoring-and-scaling.md). */
+  if (s.round <= 1 && ONCE_PER_GAME_UNIQUES.has(tribe)) {
+    return {
+      state: addLog(
+        s,
+        `${TRIBE_BY_ID[tribe].uniqueName} is a once-per-game ability and cannot be used on Round 1.`,
+        'bad',
+      ),
+      ok: false,
+    };
+  }
+
   switch (tribe) {
     case 'Judah': {
-      if (!spendFaith(1) || !action.targetPlayerId) {
-        return { state: addLog(s, 'Rally needs 1 Faith and a target.', 'bad'), ok: false };
+      if (crisisBlocksFaith) return { state: addLog(s, blockedMsg, 'bad'), ok: false };
+      if (!action.targetPlayerId) {
+        return { state: addLog(s, 'Rally needs a target player.', 'bad'), ok: false };
       }
+      if (action.targetPlayerId === playerId) {
+        return {
+          state: addLog(s, 'Rally must target one *other* player.', 'bad'),
+          ok: false,
+        };
+      }
+      if (!spendFaith(1)) {
+        return { state: addLog(s, 'Rally needs 1 Faith.', 'bad'), ok: false };
+      }
+      const target = getPlayer(s, action.targetPlayerId);
+      // The rules name no track, so the gift lands on the chosen track and
+      // otherwise follows the recipient's thematic affinity.
+      const rallyTrack = action.track ?? TRIBE_BY_ID[target.tribe].bias;
       s = updatePlayer(s, playerId, (pl) => ({
         ...pl,
         resources: mutateResources(pl.resources, { faith: -1 }),
@@ -179,7 +220,7 @@ export function applyUniqueAction(
           {
             id: nextTokenId(),
             playerId: action.targetPlayerId,
-            track: 'military',
+            track: rallyTrack,
             value: 1,
             temporary: true,
             faceDown: true,
@@ -188,37 +229,25 @@ export function applyUniqueAction(
       };
       s = addLog(
         s,
-        `${p.tribe} Rallies ${getPlayer(s, action.targetPlayerId).tribe} (+1 temp Influence).`,
+        `${p.tribe} Rallies ${target.tribe} (+1 temp Influence on ${TRACK_LABELS[rallyTrack]}).`,
         'good',
       );
       break;
     }
     case 'Benjamin': {
       if (p.resources.warriors < 1) return { state: addLog(s, 'Need 1 Warrior.', 'bad'), ok: false };
+      // The Warrior is spent now; the Low-zone outcome is settled after Reveal so
+      // it cannot be read off opponents' face-down tokens.
       s = updatePlayer(s, playerId, (pl) => ({
         ...pl,
         resources: mutateResources(pl.resources, { warriors: -1 }),
+        pendingZoneUnique: 'raid',
       }));
-      // Zone check uses current board totals vs the same threshold as resolution.
-      const low = isTrackLow(s, 'military');
-      if (low) {
-        s = applyLoyaltyLoss(s, playerId, 1, 'Raid in Low zone');
-        s = updatePlayer(s, playerId, (pl) => ({
-          ...pl,
-          resources: mutateResources(pl.resources, { goods: 1 }),
-        }));
-        s = addLog(s, `${p.tribe} Raids (Low) — Goods but no Glory.`, 'bad');
-      } else {
-        s = updatePlayer(s, playerId, (pl) => ({
-          ...pl,
-          resources: mutateResources(pl.resources, { goods: 1 }),
-        }));
-        s = addLog(s, `${p.tribe} Raids — +1 Goods, +1 Glory.`, 'good');
-        s = grantGlory(s, playerId, 1, false);
-      }
+      s = addLog(s, `${p.tribe} Raids — outcome settles at Reveal.`, 'info');
       break;
     }
     case 'Levi': {
+      if (crisisBlocksFaith) return { state: addLog(s, blockedMsg, 'bad'), ok: false };
       if (!spendFaith(1)) return { state: addLog(s, 'Intercede needs 1 Faith.', 'bad'), ok: false };
       s = updatePlayer(s, playerId, (pl) => ({
         ...pl,
@@ -249,7 +278,10 @@ export function applyUniqueAction(
       const spend = action.manassehSpend ?? 'warriors';
       if (p.resources[spend] < 1) return { state: addLog(s, `Need 1 ${spend}.`, 'bad'), ok: false };
       if (spend === 'faith' && crisisBlocksFaith) {
-        return { state: addLog(s, 'Micah’s Idol blocks Faith on uniques.', 'bad'), ok: false };
+        return {
+          state: addLog(s, `${blockedMsg} Spend a Warrior instead.`, 'bad'),
+          ok: false,
+        };
       }
       s = updatePlayer(s, playerId, (pl) => ({
         ...pl,
@@ -271,47 +303,42 @@ export function applyUniqueAction(
     }
     case 'Simeon': {
       if (p.resources.warriors < 1) return { state: addLog(s, 'Need 1 Warrior.', 'bad'), ok: false };
+      // Deferred for the same reason as Raid — see Benjamin above.
       s = updatePlayer(s, playerId, (pl) => ({
         ...pl,
         resources: mutateResources(pl.resources, { warriors: -1 }),
+        pendingZoneUnique: 'skirmish',
       }));
-      if (isTrackLow(s, 'military')) {
-        s = updatePlayer(s, playerId, (pl) => ({
-          ...pl,
-          resources: mutateResources(pl.resources, { goods: 1 }),
-        }));
-        s = addLog(s, `${p.tribe} Skirmishes (Low) — +1 Glory, +1 Goods.`, 'good');
-      } else {
-        s = addLog(s, `${p.tribe} Skirmishes — +1 Glory.`, 'good');
-      }
-      s = grantGlory(s, playerId, 1, false);
+      s = addLog(s, `${p.tribe} Skirmishes — outcome settles at Reveal.`, 'info');
       break;
     }
     case 'Dan': {
       if (p.oncePerGameUsed['serpent']) {
         return { state: addLog(s, 'Serpent’s Wisdom already used.', 'bad'), ok: false };
       }
+      if (crisisBlocksFaith) return { state: addLog(s, blockedMsg, 'bad'), ok: false };
       if (!spendFaith(1)) return { state: addLog(s, 'Need 1 Faith.', 'bad'), ok: false };
-      if (!s.activeCrisis) return { state: addLog(s, 'No active Crisis.', 'bad'), ok: false };
+      const discarded = s.activeCrisis;
+      if (!discarded) return { state: addLog(s, 'No active Crisis.', 'bad'), ok: false };
       s = updatePlayer(s, playerId, (pl) => ({
         ...pl,
         resources: mutateResources(pl.resources, { faith: -1 }),
         oncePerGameUsed: { ...pl.oncePerGameUsed, serpent: true },
       }));
-      const discarded = s.activeCrisis;
       let deck = [...s.crisisDeck];
-      let next = deck.shift() ?? null;
-      if (!next && s.crisisDiscard.length) {
-        deck = [...s.crisisDiscard];
-        next = deck.shift() ?? null;
+      let discard = [...s.crisisDiscard];
+      if (deck.length === 0 && discard.length > 0) {
+        // Recycle the discard as a fresh shuffled deck rather than dealing it in
+        // discard order — and empty it, so no card can be drawn twice.
+        deck = shuffle(discard, mulberry32(s.seed + s.round * 53));
+        discard = [];
       }
+      const next = deck.shift() ?? null;
       s = {
         ...s,
         activeCrisis: next,
         crisisDeck: deck,
-        crisisDiscard: [...s.crisisDiscard, discarded].filter(
-          (c): c is NonNullable<typeof c> => c != null,
-        ),
+        crisisDiscard: [...discard, discarded],
       };
       s = addLog(
         s,
@@ -333,7 +360,11 @@ export function applyUniqueAction(
           t.id === action.tokenId ? { ...t, track: action.toTrack as TrackId } : t,
         ),
       };
-      s = addLog(s, `${p.tribe} Repositions Influence to ${action.toTrack}.`, 'info');
+      s = addLog(
+        s,
+        `${p.tribe} Repositions Influence to ${TRACK_LABELS[action.toTrack]}.`,
+        'info',
+      );
       break;
     }
     case 'Gad': {
@@ -349,6 +380,12 @@ export function applyUniqueAction(
     case 'Asher': {
       const mode = action.asherMode ?? 'rest';
       if (mode === 'faith') {
+        if (crisisBlocksFaith) {
+          return {
+            state: addLog(s, `${blockedMsg} Harvest by resting instead.`, 'bad'),
+            ok: false,
+          };
+        }
         if (!spendFaith(1)) return { state: addLog(s, 'Need 1 Faith.', 'bad'), ok: false };
         s = updatePlayer(s, playerId, (pl) => ({
           ...pl,
@@ -371,6 +408,7 @@ export function applyUniqueAction(
       break;
     }
     case 'Issachar': {
+      if (crisisBlocksFaith) return { state: addLog(s, blockedMsg, 'bad'), ok: false };
       if (!spendFaith(1)) return { state: addLog(s, 'Need 1 Faith.', 'bad'), ok: false };
       const top2 = s.crisisDeck.slice(0, 2);
       s = updatePlayer(s, playerId, (pl) => ({
@@ -380,12 +418,17 @@ export function applyUniqueAction(
       }));
       if (action.issacharOrder && top2.length === 2) {
         const [a, b] = action.issacharOrder;
-        const reordered = [top2[a], top2[b]].filter(Boolean);
-        if (reordered.length === 2) {
+        // The two cards go back in some order — they must be a permutation of the
+        // pair, or the deck would gain a duplicate and silently lose the other card.
+        const isPermutation =
+          a !== b && [a, b].every((i) => i === 0 || i === 1);
+        if (isPermutation) {
           s = {
             ...s,
-            crisisDeck: [...reordered, ...s.crisisDeck.slice(2)],
+            crisisDeck: [top2[a]!, top2[b]!, ...s.crisisDeck.slice(2)],
           };
+        } else {
+          s = addLog(s, 'Invalid Crisis order — deck left as it was.', 'bad');
         }
       }
       s = addLog(s, `${p.tribe} Studies the Times.`, 'info');
@@ -398,20 +441,24 @@ export function applyUniqueAction(
         resources: mutateResources(pl.resources, { goods: -1 }),
       }));
       const converts = action.zebulunConverts ?? [];
+      let done = 0;
       for (const c of converts.slice(0, 2)) {
         const pl = getPlayer(s, playerId);
         if (pl.resources[c.from] < 2) continue;
-        const ok =
-          (c.from === 'goods' && (c.to === 'faith' || c.to === 'warriors')) ||
-          (c.from === 'warriors' && c.to === 'goods') ||
-          (c.from === 'faith' && (c.to === 'goods' || c.to === 'warriors'));
-        if (!ok) continue;
+        if (!isValidConversion(c.from, c.to)) continue;
         s = updatePlayer(s, playerId, (x) => ({
           ...x,
           resources: mutateResources(x.resources, { [c.from]: -2, [c.to]: 1 }),
         }));
+        done += 1;
       }
-      s = addLog(s, `${p.tribe} Bargains (two conversions).`, 'info');
+      const skipped = Math.min(converts.length, 2) - done;
+      s = addLog(
+        s,
+        `${p.tribe} Bargains — ${done} conversion${done === 1 ? '' : 's'}` +
+          (skipped > 0 ? ` (${skipped} skipped: unaffordable or invalid rate).` : '.'),
+        skipped > 0 ? 'bad' : 'info',
+      );
       break;
     }
     default: {

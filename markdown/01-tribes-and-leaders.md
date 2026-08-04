@@ -1,5 +1,9 @@
 # Twelve Banners — Tribes & Leader Progressions
 
+Thirteen tribe boards are listed. See `00-README.md` for why "Twelve Banners"
+counts thirteen boards (Joseph splits into Ephraim and Manasseh; Levi is landless
+but playable).
+
 ## Tribe Overview
 
 | Tribe     | Faith | Warriors | Goods | Loyalty | Playstyle                                                                 | Unique Action |

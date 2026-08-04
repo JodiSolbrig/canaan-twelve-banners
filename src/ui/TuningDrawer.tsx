@@ -123,13 +123,13 @@ export function TuningDrawer({ open, tuning, onClose, onApply }: Props) {
           />
         </label>
         <label>
-          Free placement phase (not wired — always place then act)
+          Free placement phase
           <select
             value={draft.freePlacementPhase ? 'yes' : 'no'}
             onChange={(e) => set('freePlacementPhase', e.target.value === 'yes')}
           >
-            <option value="yes">Yes (place + action)</option>
-            <option value="no">No (ignored in this build)</option>
+            <option value="yes">Yes — free placement, then an action</option>
+            <option value="no">No — one action per round (printed rules)</option>
           </select>
         </label>
         <label>

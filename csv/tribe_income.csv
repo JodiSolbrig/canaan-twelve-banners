@@ -1,0 +1,14 @@
+Tribe,Faith,Warriors,Goods,Loyalty,Income Line,Theme
+Judah,1,1,0,0,1 Faith + 1 Warrior,Leadership / lion
+Benjamin,0,2,0,0,2 Warriors,Aggressive combat
+Levi,2,0,0,0,2 Faith,Priestly / Covenant
+Ephraim,1,0,1,0,1 Goods + 1 Faith,Economic + prophetic
+Manasseh,0,1,0,1,1 Warrior + 1 Loyalty (if below max),Stabilizer / tank
+Reuben,0,1,1,0,1 Warrior + 1 Goods,Pastoral / early momentum
+Simeon,0,2,0,0,2 Warriors,Skirmisher
+Dan,1,1,0,0,1 Warrior + 1 Faith,Strongman / trickster
+Naphtali,1,0,1,0,1 Faith + 1 Goods,Flexible support
+Gad,0,2,0,0,2 Warriors,Frontline tank
+Asher,0,0,2,0,2 Goods,Coastal abundance
+Issachar,1,0,1,0,1 Faith + 1 Goods,Strategic / understanding
+Zebulun,0,1,1,0,1 Goods + 1 Warrior,Merchant / trade

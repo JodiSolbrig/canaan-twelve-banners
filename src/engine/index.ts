@@ -12,8 +12,8 @@ import {
   applyUniqueAction,
 } from './actions';
 import { advanceActorOrPhase, applyPlacement } from './placement';
-import { applyAngelChoice, revealTokens } from './resolve';
-import { addLog, currentActor } from './helpers';
+import { advanceToNextRound, applyAngelChoice, revealTokens } from './resolve';
+import { addLog, currentActor, openingPhase } from './helpers';
 import type { GameState, PlayerAction } from './types';
 
 /** Apply one legal player/system action; returns next immutable state. */
@@ -34,7 +34,15 @@ export function dispatch(state: GameState, action: PlayerAction): GameState {
     if (state.phase !== 'placement') return state;
     const actor = currentActor(state);
     if (!actor) return state;
+    const wanted =
+      (action.plan.military ?? 0) +
+      (action.plan.moral ?? 0) +
+      (action.plan.provision ?? 0);
+    const before = state.tokens.length;
     let s = applyPlacement(state, actor.id, action.plan);
+    // An unaffordable plan places nothing; hold the turn so it can be redone
+    // rather than silently spending the player's placement on empty air.
+    if (wanted > 0 && s.tokens.length <= before) return s;
     s = advanceActorOrPhase(s, 'action');
     return s;
   }
@@ -89,7 +97,10 @@ export function dispatch(state: GameState, action: PlayerAction): GameState {
 
   if (action.type === 'advance') {
     if (state.phase === 'crisisReveal') {
-      return { ...state, phase: 'placement', currentActorIndex: 0 };
+      return { ...state, phase: openingPhase(state), currentActorIndex: 0 };
+    }
+    if (state.phase === 'resolve') {
+      return advanceToNextRound(state);
     }
     return state;
   }

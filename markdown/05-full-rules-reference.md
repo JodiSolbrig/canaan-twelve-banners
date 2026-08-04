@@ -7,10 +7,14 @@
 ---
 
 ### Core Concept
-Players represent the twelve tribes of Israel during the period of the Judges. Each tribe competes to become Champion of the Military, Moral, and Provision tracks while managing a shared Covenant Meter that reflects the people’s fidelity to the Lord. Crisis cards introduce narrative pressure drawn from the biblical text. Highest Glory at the end of the game wins.
+Players represent the tribes of Israel during the period of the Judges. Each tribe competes to become Champion of the Military, Moral, and Provision tracks while managing a shared Covenant Meter that reflects the people’s fidelity to the Lord. Crisis cards introduce narrative pressure drawn from the biblical text. Highest Glory at the end of the game wins.
+
+Thirteen boards are provided for twelve banners — Joseph is played as Ephraim and
+Manasseh, and landless Levi is included as the Covenant guardian. See
+`00-README.md`.
 
 ### Components (Prototype)
-- 12 Tribe Boards (one per tribe)
+- 13 Tribe Boards (one per tribe)
 - Influence tokens (8–10 per player, distinct colors)
 - Resource tokens: Faith, Warriors, Goods, Loyalty, Glory
 - 3 Track boards: Military, Moral, Provision
@@ -34,10 +38,18 @@ Players represent the twelve tribes of Israel during the period of the Judges. E
 5. Award Champion rewards + resolve end-of-round effects
 6. Discard the Crisis card, clean up tokens, proceed to next round
 
+### Round Income
+From round 2 onward each tribe collects a small per-round income before the
+Crisis is drawn. Round 1 uses printed starting resources only.  
+Full table in `04-setup-scoring-and-scaling.md`.
+
 ### Tracks
 Three tracks exist: **Military**, **Moral**, **Provision**.  
+A track succeeds when total Influence on it reaches the threshold: the **number of players**, **+1** at 2–3 players.  
 Highest total Influence on a track becomes its Champion (ties broken by current Loyalty, then turn order).  
-Exact numerical thresholds for success/failure are tunable in playtest (prototype default: success if total Influence ≥ number of players, or a fixed value of 4–6 depending on player count).
+Champion reward: **+1 Glory** plus **+1 Warrior / Faith / Goods** matching the track.  
+Failure: Covenant **−1** (−2 in Judgment) and **−1 Loyalty** to every investor.  
+Full table in `03-standard-actions-and-player-aid.md`.
 
 ### Standard Actions
 (See detailed list in `03-standard-actions-and-player-aid.md`)
@@ -52,7 +64,8 @@ Players choose **one** of the following (or their Unique Action):
 
 ### Unique Actions & Leader Upgrades
 Each tribe has one Unique Action printed on its board and a three-step Leader Progression.  
-Upgrades are unlocked during play (recommended: on becoming Champion or at Glory thresholds 3/6/9).  
+Upgrades unlock at **3 / 6 / 9 Glory** and stay active once earned.  
+No Leader upgrade or once-per-game ability may be used on Round 1.  
 Full details in `01-tribes-and-leaders.md`.
 
 ### Covenant Meter
