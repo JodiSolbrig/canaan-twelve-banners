@@ -83,6 +83,15 @@ Drops on track failures (and some Crisis effects).
 Thresholds create escalating pressure (Warning → Judgment → Broken Covenant).  
 Full details in `02-crisis-cards-and-covenant.md`.
 
+### The Cycle of the Judges
+The Covenant does not only fall. Reaching **Judgment (2–4)** sells Israel into the
+hand of an **Oppressor**, which replaces the Crisis card and worsens every round
+it is endured. Players may spend an action to **Cry Out**, paying Faith into a
+shared pool; when the Cry is met the oppression breaks, the Covenant is restored
+to 8, and a **Judge is raised from the least among the tribes** — the player with
+the lowest Glory. The following round is one of **rest**, with no Crisis.  
+Full details in `02-crisis-cards-and-covenant.md`.
+
 ### Crisis Modifier Deck
 14 narrative cards. One is revealed each round and modifies the round’s conditions.  
 Full card list and effects in `02-crisis-cards-and-covenant.md` and `csv/crisis_cards.csv`.

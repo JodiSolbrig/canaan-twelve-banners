@@ -1,8 +1,10 @@
 import { TRIBE_BY_ID } from '../data/gameData';
 import {
   baseThreshold,
+  cryThreshold,
   currentActor,
   getPlayer,
+  oppressionSeverity,
   planTotal,
   TRACK_AFFINITY_RESOURCE,
 } from '../engine/helpers';
@@ -124,6 +126,20 @@ function chooseAction(state: GameState, playerId: string): PlayerAction {
       if (planTotal(plan) > 0) {
         return { type: 'placeInfluence', plan };
       }
+    }
+  }
+
+  // Cry out under oppression. The bot weighs it by severity rather than by who
+  // will be raised up — the escalating penalty is what forces the issue, and a
+  // Judge going to the weakest player is not something it can plan around.
+  if (state.oppression) {
+    const need = cryThreshold(state) - state.oppression.cryPool;
+    const severity = oppressionSeverity(state);
+    // Hold one Faith back while the grip is light; give everything once it bites.
+    const keepBack = severity >= 3 ? 0 : 1;
+    const willing = Math.min(need, Math.max(0, p.resources.faith - keepBack));
+    if (willing > 0) {
+      return { type: 'standard', action: 'cryOut', cryFaith: willing };
     }
   }
 

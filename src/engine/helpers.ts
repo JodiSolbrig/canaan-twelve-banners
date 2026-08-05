@@ -7,6 +7,7 @@
  */
 import type { TuningConfig } from '../config/tuning';
 import { formatTribeIncome, TRIBE_BY_ID } from '../data/gameData';
+import { OPPRESSOR_BY_ID } from '../data/oppressors';
 import type {
   GameState,
   InfluenceToken,
@@ -114,6 +115,52 @@ export function mutateResources(
   };
 }
 
+/**
+ * How hard the current oppression presses. The round an Oppressor arrives it is
+ * at 1, and it climbs by 1 for every full round Israel endures it. Zero when
+ * there is no oppression.
+ */
+export function oppressionSeverity(state: GameState): number {
+  return state.oppression ? state.oppression.roundsEndured + 1 : 0;
+}
+
+/**
+ * Faith the Cry needs to break the current oppression:
+ *
+ *   one per player, plus one, plus one for each round already endured.
+ *
+ * Every term is a whole token so the number can be counted out at a table.
+ * `Math.ceil` only guards against someone dialling in a fractional value.
+ */
+export function cryThreshold(state: GameState): number {
+  if (!state.oppression) return 0;
+  const t = state.tuningSnapshot;
+  return Math.ceil(
+    t.cryThresholdBase +
+      t.cryThresholdPerPlayer * state.players.length +
+      t.cryThresholdPerRound * state.oppression.roundsEndured,
+  );
+}
+
+/**
+ * The player a Judge is raised from: the least among them. Lowest Glory, then
+ * lowest Loyalty, then earliest in turn order.
+ *
+ * "My clan is the weakest in Manasseh, and I am the least in my father's house."
+ */
+export function leastAmongThem(state: GameState): PlayerState | null {
+  const ranked = [...state.players].sort((a, b) => {
+    if (a.resources.glory !== b.resources.glory) {
+      return a.resources.glory - b.resources.glory;
+    }
+    if (a.resources.loyalty !== b.resources.loyalty) {
+      return a.resources.loyalty - b.resources.loyalty;
+    }
+    return state.turnOrder.indexOf(a.id) - state.turnOrder.indexOf(b.id);
+  });
+  return ranked[0] ?? null;
+}
+
 export function baseThreshold(state: GameState, track: TrackId): number {
   const t = state.tuningSnapshot;
   const n = state.players.length;
@@ -124,6 +171,13 @@ export function baseThreshold(state: GameState, track: TrackId): number {
   const c = state.activeCrisis?.id;
   if (track === 'provision' && c === 2) thr += 1;
   if ((track === 'military' || track === 'moral') && c === 6) thr += 1;
+
+  // An oppression presses hardest on the track its account names, and presses
+  // harder the longer it is endured.
+  if (state.oppression) {
+    const def = OPPRESSOR_BY_ID[state.oppression.oppressorId];
+    if (def.attacks === track) thr += oppressionSeverity(state);
+  }
   return thr;
 }
 

@@ -32,6 +32,11 @@ Available to every tribe every round. You may perform **one** standard action **
 6. **Rest & Recover**  
    Do nothing else this round → Gain 1 Loyalty (cannot exceed starting Loyalty) **and** look at the top card of the Crisis deck (put it back on top or bottom).
 
+7. **Cry Out** *(only while Israel is under an Oppressor)*  
+   Pay any amount of **Faith** into the shared Cry. When the Cry is met the
+   oppression breaks and a Judge is raised from the least among the tribes.  
+   See *The Cycle of the Judges* in `02-crisis-cards-and-covenant.md`.
+
 **Notes**
 - Unique Actions (printed on your Tribe Board) replace the standard action for that round unless the card specifically says otherwise.
 - Some Leader upgrades and Crisis cards modify these actions.
@@ -152,7 +157,8 @@ Faith • Warriors • Goods • Loyalty • Glory • Influence Tokens
 • **Gather** — 1 Warrior or 1 Faith → 2 Goods  
 • **Pray** — Rest → 2 Faith  *or*  1 Goods → 1 Faith + 1 Loyalty  
 • **Convert** — 2 of one resource → 1 of another (see rates above)  
-• **Rest & Recover** — Gain 1 Loyalty + peek at top Crisis card
+• **Rest & Recover** — Gain 1 Loyalty + peek at top Crisis card  
+• **Cry Out** *(under oppression only)* — pay Faith into the shared Cry
 
 **Tracks & affinity**  
 Military ← **Warriors** • Moral ← **Faith** • Provision ← **Goods**  

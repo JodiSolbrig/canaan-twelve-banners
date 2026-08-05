@@ -4,6 +4,7 @@
 import { TRACK_LABELS, TRIBE_BY_ID, uniqueCanCostFaith } from '../data/gameData';
 import {
   addLog,
+  cryThreshold,
   getPlayer,
   mulberry32,
   mutateResources,
@@ -148,6 +149,47 @@ export function applyStandardAction(
       }));
       s = capLoyalty(s, playerId);
       s = addLog(s, `${p.tribe} Rests (+1 Loyalty) and peeks the Crisis deck.`, 'info');
+      break;
+    }
+    case 'cryOut': {
+      const oppression = s.oppression;
+      if (!oppression) {
+        return {
+          state: addLog(s, 'There is no oppression to cry out against.', 'bad'),
+          ok: false,
+        };
+      }
+      const faith = Math.max(0, Math.floor(action.cryFaith ?? 0));
+      if (faith < 1) {
+        return { state: addLog(s, 'Crying out costs at least 1 Faith.', 'bad'), ok: false };
+      }
+      if (p.resources.faith < faith) {
+        return {
+          state: addLog(s, `${p.tribe} does not have ${faith} Faith.`, 'bad'),
+          ok: false,
+        };
+      }
+      s = updatePlayer(s, playerId, (pl) => ({
+        ...pl,
+        resources: mutateResources(pl.resources, { faith: -faith }),
+      }));
+      const pool = oppression.cryPool + faith;
+      s = {
+        ...s,
+        oppression: {
+          ...oppression,
+          cryPool: pool,
+          contributors: {
+            ...oppression.contributors,
+            [playerId]: (oppression.contributors[playerId] ?? 0) + faith,
+          },
+        },
+      };
+      s = addLog(
+        s,
+        `${p.tribe} cries out to the Lord (+${faith} Faith — ${pool}/${cryThreshold(s)}).`,
+        'good',
+      );
       break;
     }
     case 'pass': {

@@ -1,21 +1,29 @@
 /**
  * Reveal → resolve tracks → champion rewards → advance round or end game.
  */
+import { TRACK_LABELS } from '../data/gameData';
+import { OPPRESSOR_BY_ID, OPPRESSORS } from '../data/oppressors';
 import {
   addLog,
   applyCovenantDrop,
   applyLoyaltyLoss,
   baseThreshold,
   checkLeaderUnlocks,
+  clamp,
   covenantZone,
+  cryThreshold,
   getPlayer,
   getTrackTotals,
   grantGlory,
+  leastAmongThem,
+  mulberry32,
   mutateResources,
   openingPhase,
+  oppressionSeverity,
   raiseCovenant,
   rankPlayers,
   sameStanding,
+  shuffle,
   TRACK_AFFINITY_RESOURCE,
   TRACKS,
   trackZone,
@@ -270,6 +278,11 @@ export function resolveRound(state: GameState): GameState {
 
   // Philistine Razor already handled in awardChampion
 
+  // The cycle: deliverance is checked before a fresh oppression can be summoned,
+  // so a Cry completed this round restores the Covenant and no new Oppressor
+  // arrives on the same breath.
+  s = resolveOppression(s);
+
   // Broken covenant check
   if (covenantZone(s.covenant, tuning) === 'broken') {
     for (const p of s.players) {
@@ -308,6 +321,98 @@ export function advanceToNextRound(state: GameState): GameState {
     firstPlayerIndex: (state.firstPlayerIndex + 1) % state.turnOrder.length,
     turnOrder: rotate(state.turnOrder, 1),
   });
+}
+
+/**
+ * The cycle of Judges, run at the end of every round:
+ *
+ *   deliverance (if the Cry was met) → escalation (if it was not)
+ *   → a new oppression (if the Covenant has fallen into Judgment)
+ *
+ * Order matters. Checking deliverance first means a Cry completed this round
+ * restores the Covenant *before* the Judgment test, so Israel is not delivered
+ * and immediately sold again in the same breath.
+ */
+function resolveOppression(state: GameState): GameState {
+  let s = state;
+  const tuning = s.tuningSnapshot;
+  if (!tuning.oppressionEnabled) return s;
+
+  if (s.oppression) {
+    const def = OPPRESSOR_BY_ID[s.oppression.oppressorId];
+
+    if (s.oppression.cryPool >= cryThreshold(s)) {
+      // Deliverance. The Lord raises up a judge from the least among them.
+      const judge = leastAmongThem(s);
+      s = { ...s, oppression: null, restRound: tuning.restAfterDeliverance };
+      s = addLog(s, `${def.title} is broken — Israel is delivered.`, 'good');
+
+      const restored = clamp(
+        Math.max(s.covenant, tuning.covenantStart),
+        0,
+        tuning.covenantMax,
+      );
+      if (restored !== s.covenant) {
+        s = { ...s, covenant: restored };
+        s = addLog(s, `Covenant Meter restored to ${restored} (deliverance).`, 'good');
+      }
+
+      if (judge) {
+        s = updatePlayer(s, judge.id, (p) => ({
+          ...p,
+          judgeships: p.judgeships + 1,
+          judgePower: def.id,
+        }));
+        s = addLog(
+          s,
+          `${judge.tribe} — least among the tribes — is raised up as ${def.deliverer}.`,
+          'good',
+        );
+        s = grantGlory(s, judge.id, tuning.judgeGlory, false);
+      }
+      return s;
+    }
+
+    // Not delivered. The oppression endures, and worsens.
+    s = {
+      ...s,
+      oppression: { ...s.oppression, roundsEndured: s.oppression.roundsEndured + 1 },
+    };
+    s = addLog(
+      s,
+      `${def.title} tightens its grip (severity ${oppressionSeverity(s)}).`,
+      'bad',
+    );
+    return s;
+  }
+
+  // No oppression standing. Judgment on the meter sells Israel into a hand.
+  if (covenantZone(s.covenant, tuning) !== 'judgment') return s;
+
+  let deck = [...s.oppressorDeck];
+  if (deck.length === 0) {
+    // Every oppression has been endured once; the cycle begins again.
+    deck = shuffle(
+      OPPRESSORS.map((o) => o.id),
+      mulberry32(s.seed + s.round * 71),
+    );
+  }
+  const next = deck.shift();
+  if (!next) return s;
+
+  const def = OPPRESSOR_BY_ID[next];
+  s = {
+    ...s,
+    oppressorDeck: deck,
+    oppression: { oppressorId: next, roundsEndured: 0, cryPool: 0, contributors: {} },
+  };
+  s = addLog(
+    s,
+    `The Covenant is in Judgment — Israel is sold into the hand of ${def.name}. ` +
+      `${TRACK_LABELS[def.attacks]} is pressed until the tribes cry out (${cryThreshold(s)} Faith).`,
+    'crisis',
+  );
+  return s;
 }
 
 /**

@@ -24,6 +24,10 @@ npm run build   # tsc -b && vite build
 - Solo play vs **1–5 bots** (2–6 total players)
 - Pick any of the **13 tribes** from the design package
 - Full round loop: Crisis → Place Influence → Action → Reveal → Champions → Covenant
+- **The Cycle of the Judges** — Judgment on the Covenant summons an Oppressor that
+  worsens each round; players Cry Out with Faith to break it, which restores the
+  Covenant and raises a Judge from the *least* among the tribes, followed by a
+  round of rest
 - Per-tribe **round income** from round 2 onward
 - **Leader upgrades** at Glory thresholds (default 3 / 6 / 9), with UI feedback
 - **Tuning** drawer for thresholds, rewards, rounds, bot aggression, and more
@@ -54,6 +58,7 @@ listed here is implemented as written.
 
 | Rule | Design source | Prototype behaviour | Why |
 |------|---------------|---------------------|-----|
+| **The Cycle of the Judges** | `02` §The Cycle of the Judges — new rule | Judgment summons an escalating Oppressor that replaces the Crisis; Crying Out with Faith breaks it, restores the Covenant to 8, and raises a Judge from the lowest-Glory player; a round of rest follows. | The Covenant only ever fell, making it a doom clock with no decision attached. Judges is a *cycle* — sin, oppression, crying out, deliverance, rest — and only the downswing was modelled. Off via `tuning.oppressionEnabled`. |
 | **Banners & Supply** | `03` §Banners & Supply — new rule, added after playtest review | The resource you pay with decides whether a token can claim Champion. Affinity = Banner (counts for Champion, exposed to the failure penalty); anything else = Supply (threshold only, no risk, shares the spoil). | The original rule made 1 Faith = 1 Warrior = 1 Goods, collapsing thirteen asymmetric tribes into "how many tokens can I afford". Now starting spreads and income define what each tribe can actually win. |
 | Gifted Influence | `01` — Judah's Rally, Naphtali's Swift Response | Gifted tokens are always **Supply** | Otherwise Rally hands out Championships. |
 | Simeon's free Military token | `01` — Furious Assault | **Banner**, placed automatically on top of the plan | It musters real warriors, and it is the payoff for having been beaten. |

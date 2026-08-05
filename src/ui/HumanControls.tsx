@@ -44,6 +44,7 @@ export function HumanControls({ state, onAction, flashLeaderLevel = null }: Prop
   const [repoTrack, setRepoTrack] = useState<TrackId>('moral');
   const [asherMode, setAsherMode] = useState<'faith' | 'rest'>('rest');
   const [rallyTrack, setRallyTrack] = useState<TrackId>('military');
+  const [cryFaith, setCryFaith] = useState(1);
   const [placingMore, setPlacingMore] = useState(false);
   const freePlacement = state.tuningSnapshot.freePlacementPhase;
 
@@ -362,6 +363,34 @@ export function HumanControls({ state, onAction, flashLeaderLevel = null }: Prop
                 {freePlacement ? 'Place more Influence' : 'Place Influence'}
               </button>
             </Tip>
+            {state.oppression && (
+              <Tip text={HELP.cryOut} wide className="tip-below">
+                <button
+                  type="button"
+                  className="btn btn-cry"
+                  disabled={human.resources.faith < 1}
+                  onClick={() =>
+                    onAction({ type: 'standard', action: 'cryOut', cryFaith })
+                  }
+                >
+                  Cry Out ({cryFaith} Faith)
+                </button>
+              </Tip>
+            )}
+            {state.oppression && (
+              <select
+                value={Math.min(cryFaith, Math.max(1, human.resources.faith))}
+                onChange={(e) => setCryFaith(Number(e.target.value))}
+                aria-label="Faith to cry out with"
+                disabled={human.resources.faith < 1}
+              >
+                {Array.from({ length: Math.max(1, human.resources.faith) }, (_, i) => (
+                  <option key={i + 1} value={i + 1}>
+                    {i + 1} Faith
+                  </option>
+                ))}
+              </select>
+            )}
             <Tip text={HELP.pass} className="tip-below">
               <button
                 type="button"

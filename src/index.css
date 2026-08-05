@@ -724,6 +724,42 @@ h3 {
   border: 1px dashed var(--panel-border);
 }
 
+/* Standing oppression — heavier than a one-round Crisis */
+.oppressor-card {
+  border-color: var(--danger);
+  background: linear-gradient(165deg, rgba(60, 20, 20, 0.55) 0%, var(--panel) 70%);
+}
+
+.severity.oppressor {
+  color: var(--danger);
+}
+
+.oppressor-card .reference {
+  color: var(--ink-dim);
+  font-size: 0.72rem;
+  font-style: normal;
+}
+
+.cry-meter {
+  height: 7px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--panel-border);
+  overflow: hidden;
+  margin: 0.45rem 0 0.35rem;
+}
+
+.cry-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--bronze), var(--good));
+  transition: width 0.3s ease;
+}
+
+.btn-cry {
+  border-color: var(--bronze);
+  color: var(--sand);
+}
+
 /* Placement grid — tracks down the side, resources across the top */
 .placement-grid {
   margin: 0.5rem 0;

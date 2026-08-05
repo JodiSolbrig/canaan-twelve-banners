@@ -8,9 +8,10 @@
 import { DEFAULT_TUNING, type TuningConfig } from '../config/tuning';
 import { CRISIS_CARDS } from '../data/gameData';
 import { createGame } from './createGame';
-import { nextTokenId, TRACK_AFFINITY_RESOURCE } from './helpers';
+import { baseThreshold, nextTokenId, TRACK_AFFINITY_RESOURCE, TRACKS } from './helpers';
 import type {
   GameState,
+  OppressorId,
   PlayerState,
   Resources,
   SpendableResource,
@@ -160,6 +161,38 @@ export function tokenTotal(
   return state.tokens
     .filter((t) => t.playerId === playerId && t.track === track)
     .reduce((sum, t) => sum + t.value, 0);
+}
+
+/** Put Israel under a standing oppression. */
+export function withOppression(
+  state: GameState,
+  oppressorId: OppressorId,
+  opts: { roundsEndured?: number; cryPool?: number } = {},
+): GameState {
+  return {
+    ...state,
+    oppression: {
+      oppressorId,
+      roundsEndured: opts.roundsEndured ?? 0,
+      cryPool: opts.cryPool ?? 0,
+      contributors: {},
+    },
+    oppressorDeck: state.oppressorDeck.filter((id) => id !== oppressorId),
+  };
+}
+
+/**
+ * Carry every track past its threshold, so a round resolves with no failures and
+ * the Covenant stays exactly where the test put it.
+ */
+export function carryAllTracks(state: GameState, playerId: string): GameState {
+  const need = Math.max(
+    ...TRACKS.map((t) => baseThreshold(state, t)),
+  );
+  return withTokens(
+    state,
+    TRACKS.map((track) => ({ playerId, track, count: need })),
+  );
 }
 
 /** Banner-only Influence a player has on a track — what Champion is decided on. */

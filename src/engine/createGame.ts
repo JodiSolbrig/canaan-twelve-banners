@@ -3,6 +3,7 @@
  */
 import { cloneTuning, type TuningConfig } from '../config/tuning';
 import { CRISIS_CARDS, TRIBE_BY_ID } from '../data/gameData';
+import { OPPRESSORS } from '../data/oppressors';
 import { addLog, mulberry32, resetIdCounters, shuffle } from './helpers';
 import { startRound } from './round';
 import type { GameState, PlayerState, TribeId } from './types';
@@ -49,6 +50,8 @@ function makePlayer(
     pendingTempInfluenceGift: 0,
     incomeBonus: { faith: 0, warriors: 0, goods: 0 },
     pendingZoneUnique: null,
+    judgeships: 0,
+    judgePower: null,
     peekedCrisis: null,
   };
 }
@@ -104,6 +107,12 @@ export function createGame(opts: SetupOptions): GameState {
     crisisDeck: shuffle([...CRISIS_CARDS], rng),
     crisisDiscard: [],
     activeCrisis: null,
+    oppression: null,
+    oppressorDeck: shuffle(
+      OPPRESSORS.map((o) => o.id),
+      rng,
+    ),
+    restRound: false,
     tokens: [],
     log: [],
     trackResults: null,

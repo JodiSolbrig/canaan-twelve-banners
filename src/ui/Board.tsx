@@ -1,5 +1,12 @@
 import { formatTribeIncome, TRACK_LABELS, TRIBE_BY_ID } from '../data/gameData';
-import { baseThreshold, covenantZone, trackZone } from '../engine/helpers';
+import { OPPRESSOR_BY_ID } from '../data/oppressors';
+import {
+  baseThreshold,
+  covenantZone,
+  cryThreshold,
+  oppressionSeverity,
+  trackZone,
+} from '../engine/helpers';
 import type { GameState, TrackId } from '../engine/types';
 import { HELP, TRACK_AFFINITY } from './helpText';
 import { formatLeaderTip } from './leaderHelp';
@@ -39,6 +46,44 @@ export function CovenantMeter({ state }: { state: GameState }) {
 }
 
 export function CrisisPanel({ state }: { state: GameState }) {
+  // A standing oppression holds the Crisis slot until Israel is delivered.
+  if (state.oppression) {
+    const def = OPPRESSOR_BY_ID[state.oppression.oppressorId];
+    const severity = oppressionSeverity(state);
+    const need = cryThreshold(state);
+    const pool = state.oppression.cryPool;
+    return (
+      <div className="panel crisis-card oppressor-card">
+        <span className="severity oppressor">Oppression · severity {severity}</span>
+        <h3>{def.title}</h3>
+        <p className="flavor">“{def.flavor}” <span className="reference">{def.reference}</span></p>
+        <p className="effect">
+          {TRACK_LABELS[def.attacks]} threshold +{severity}. It tightens every round
+          until the tribes cry out.
+        </p>
+        <div className="cry-meter" aria-label={`Cry ${pool} of ${need} Faith`}>
+          <div
+            className="cry-fill"
+            style={{ width: `${Math.min(100, need === 0 ? 0 : (pool / need) * 100)}%` }}
+          />
+        </div>
+        <p className="effect">
+          The Cry: <strong>{pool}/{need}</strong> Faith. Deliverance raises up{' '}
+          {def.deliverer} from the least among the tribes.
+        </p>
+      </div>
+    );
+  }
+
+  if (state.restRound) {
+    return (
+      <div className="panel crisis-card">
+        <h3>The land had rest</h3>
+        <p className="flavor">No Crisis this round.</p>
+      </div>
+    );
+  }
+
   const c = state.activeCrisis;
   if (!c) {
     return (

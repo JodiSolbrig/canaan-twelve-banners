@@ -47,6 +47,8 @@ export const HELP = {
     'Trade resources once at 2:1. Allowed: 2 Goods → 1 Faith or 1 Warrior; 2 Warriors → 1 Goods; 2 Faith → 1 Goods or 1 Warrior.',
   restRecover:
     'Do nothing else this round. Gain 1 Loyalty (cannot exceed starting Loyalty) and peek at the top Crisis card of the deck. Useful before a dangerous round.',
+  cryOut:
+    'Spend your action to pay Faith into the shared Cry. When the Cry is met, the oppression breaks, the Covenant is restored, and the Lord raises up a Judge — from the *least* among the tribes, not from whoever paid. Every round you endure instead, the oppression tightens and the Cry gets dearer.',
   pass: 'Take no action this round. Influence already placed still counts at Reveal.',
   confirmPlacement:
     'Locks in your face-down Influence for this round. You will still choose one Standard or Unique Action afterward.',

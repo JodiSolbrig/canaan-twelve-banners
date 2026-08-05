@@ -23,6 +23,92 @@ This keeps early pressure light and makes later failures feel heavier without co
 
 ---
 
+## The Cycle of the Judges
+
+> *"They did what was evil… so the anger of the Lord was kindled against Israel, and
+> he sold them into the hand of plunderers… Then the Lord raised up judges, who saved
+> them… but whenever the judge died, they turned back and were more corrupt than their
+> fathers."* — Judges 2:11–19
+
+The Covenant Meter does not only fall. When it collapses far enough, Israel is
+oppressed; when the tribes cry out, they are delivered. This is the spine of the
+book and the spine of the game.
+
+### 1. Oppression
+
+The moment the Covenant Meter enters **Judgment (2–4)**, Israel is sold into a
+hand. Draw an **Oppressor**. It takes the Crisis slot and **no Crisis card is
+drawn** while it stands — an oppression is not a one-round modifier, it is a
+condition that endures.
+
+| Oppressor | Presses on | Deliverer | Reference |
+|-----------|------------|-----------|-----------|
+| Cushan-Rishathaim of Aram | Moral | Othniel | Judges 3:8 |
+| Eglon, King of Moab | Provision | Ehud | Judges 3:14 |
+| Jabin of Hazor & Sisera | Military | Deborah & Barak | Judges 4:3 |
+| The Hand of Midian | Provision | Gideon | Judges 6:4 |
+| The Ammonite Oppression | Military | Jephthah | Judges 10:8 |
+| The Philistine Yoke | Military | Samson | Judges 13:1 |
+
+### 2. Escalation
+
+An Oppressor has a **severity**, starting at 1 the round it arrives and rising
+by 1 for every full round Israel endures it.
+
+- The track it presses on has its threshold raised by the severity.
+- The Cry grows dearer by 1 Faith per round endured.
+
+Waiting is never safe. This is what stops a leading player from simply refusing
+to act: the longer the nation suffers, the worse it is for everyone, including them.
+
+### 3. Crying Out
+
+> *"Then the people of Israel cried out to the Lord."*
+
+On your turn you may spend your action to **Cry Out**: pay any amount of **Faith**
+into a shared pool.
+
+**The Cry needed is one Faith per player, plus one** — and **one more for every
+round already endured**.
+
+| Players | Cry when it arrives | After 1 round | After 2 | After 3 |
+|---------|--------------------|---------------|---------|---------|
+| 2 | 3 | 4 | 5 | 6 |
+| 3 | 4 | 5 | 6 | 7 |
+| 4 | 5 | 6 | 7 | 8 |
+| 5 | 6 | 7 | 8 | 9 |
+| 6 | 7 | 8 | 9 | 10 |
+
+Faith is the scarcest resource in the game and it is also what plants Banners on
+the Moral track — so crying out always costs you something real.
+
+### 4. Deliverance
+
+When the pool meets the Cry, at the end of that round:
+
+- The oppression is **broken** and its card discarded.
+- The **Covenant Meter is restored to 8**.
+- The Lord raises up a **Judge** — and raises them from **the least among the
+  tribes**: the player with the *lowest Glory* (ties broken by lowest Loyalty,
+  then turn order). The Judge takes **2 Glory** and the one-shot power of the
+  deliverer named above.
+
+Note who pays and who is honoured. The tribes with Faith to spare are buying a
+deliverance that will elevate their weakest rival. *"My clan is the weakest in
+Manasseh, and I am the least in my father's house."*
+
+### 5. Rest
+
+> *"And the land had rest forty years."*
+
+The round after a deliverance draws **no Crisis** and pays full income. It counts
+toward the game's normal round total.
+
+Then the cycle may begin again — and the Oppressors do not repeat until all six
+have been endured.
+
+---
+
 ## Crisis Modifier Deck (14 cards)
 
 Draw **one** card at the start of each round and place it face-up as the active Crisis. It remains in effect until the end of the round, then is discarded.  

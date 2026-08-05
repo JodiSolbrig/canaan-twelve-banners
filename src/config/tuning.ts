@@ -33,6 +33,33 @@ export type TuningConfig = {
    */
   spoilOnSuccess: number;
   championRewards: Record<TrackId, ChampionReward>;
+  /**
+   * The Oppression → Cry → Deliverance → Rest cycle. Off restores the 0.3.0
+   * rules, where the Covenant only ever falls.
+   */
+  oppressionEnabled: boolean;
+  /**
+   * The Cry is `cryThresholdBase + players + cryThresholdPerRound x roundsEndured`
+   * Faith — every term a whole token, so it can be counted at a table.
+   *
+   * Faith is the scarcest resource in the game (36 across all thirteen tribes,
+   * ~0.5 income each per round) and it is also the Moral Banner resource, so the
+   * Cry always competes with a track.
+   *
+   * Swept over 300-game samples: at two Faith per player only 9% of oppressions
+   * were ever broken and half the games ended on the Broken Covenant clock; at a
+   * flat one per player 68% broke and deliverance was a formality. One per player
+   * plus one lands at roughly half. Sweep with `BALANCE_CRY=1.5 npm run balance`.
+   */
+  cryThresholdBase: number;
+  /** Faith per player in the Cry. */
+  cryThresholdPerPlayer: number;
+  /** Added to the Cry threshold for each full round already endured. */
+  cryThresholdPerRound: number;
+  /** Glory to the Judge raised up at deliverance. */
+  judgeGlory: number;
+  /** Deliverance is followed by a round with no Crisis ("the land had rest"). */
+  restAfterDeliverance: boolean;
   roundsShort: number; // 2–4 players
   roundsStandard: number; // 5–6 players
   leaderUnlockGlory: [number, number, number];
@@ -59,6 +86,12 @@ export const DEFAULT_TUNING: TuningConfig = {
     moral: { glory: 1, faith: 1 },
     provision: { glory: 1, goods: 1 },
   },
+  oppressionEnabled: true,
+  cryThresholdBase: 1,
+  cryThresholdPerPlayer: 1,
+  cryThresholdPerRound: 1,
+  judgeGlory: 2,
+  restAfterDeliverance: true,
   roundsShort: 5,
   roundsStandard: 6,
   leaderUnlockGlory: [3, 6, 9],

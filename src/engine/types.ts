@@ -91,8 +91,55 @@ export type PlayerState = {
    * reading opponents' face-down tokens or depending on seat order.
    */
   pendingZoneUnique: 'raid' | 'skirmish' | null;
+  /** Times this player has been raised up as Judge. */
+  judgeships: number;
+  /**
+   * An unspent Judge one-shot, named by the oppression it broke. Held on the
+   * player until used; the powers themselves are not wired yet.
+   */
+  judgePower: OppressorId | null;
   /** Peeked crisis cards for UI */
   peekedCrisis: CrisisCardDef[] | null;
+};
+
+export type OppressorId =
+  | 'aram'
+  | 'moab'
+  | 'hazor'
+  | 'midian'
+  | 'ammon'
+  | 'philistia';
+
+export type OppressorDef = {
+  id: OppressorId;
+  /** Short name for the board, e.g. "Midian". */
+  name: string;
+  /** Full card title, e.g. "The Hand of Midian". */
+  title: string;
+  flavor: string;
+  reference: string;
+  /** The track this oppression presses on. */
+  attacks: TrackId;
+  deliverer: string;
+  /** Display text for the one-shot the Judge receives. */
+  judgePower: string;
+};
+
+/**
+ * A standing oppression. Unlike a Crisis it does not expire at end of round —
+ * it worsens until Israel cries out (Judges 2:11-19).
+ */
+export type Oppression = {
+  oppressorId: OppressorId;
+  /**
+   * Full rounds already endured. Severity is `roundsEndured + 1`, so the round
+   * an Oppressor arrives it is at severity 1.
+   */
+  roundsEndured: number;
+  /** Faith paid into the Cry so far this oppression. */
+  cryPool: number;
+  /** Faith each player has paid in, for the log and any future reward. */
+  contributors: Record<string, number>;
 };
 
 export type CrisisSeverity =
@@ -178,7 +225,14 @@ export type GameState = {
   brokenClock: boolean; // final round after broken
   crisisDeck: CrisisCardDef[];
   crisisDiscard: CrisisCardDef[];
+  /** Null while an Oppressor holds the slot, and during a round of rest. */
   activeCrisis: CrisisCardDef | null;
+  /** The standing oppression, if Israel is under one. */
+  oppression: Oppression | null;
+  /** Oppressors not yet drawn this game. */
+  oppressorDeck: OppressorId[];
+  /** This round is "the land had rest": no Crisis, full income. */
+  restRound: boolean;
   tokens: InfluenceToken[];
   log: LogEntry[];
   trackResults: TrackResolution[] | null;
@@ -216,6 +270,7 @@ export type StandardActionType =
   | 'pray'
   | 'convert'
   | 'rest'
+  | 'cryOut'
   | 'pass';
 
 export type PlayerAction =
@@ -227,6 +282,8 @@ export type PlayerAction =
       gatherSpend?: 'warriors' | 'faith';
       prayMode?: 'rest' | 'goods';
       convert?: { from: 'faith' | 'warriors' | 'goods'; to: 'faith' | 'warriors' | 'goods' };
+      /** Faith to pay into the Cry. Only meaningful for `cryOut`. */
+      cryFaith?: number;
     }
   | { type: 'placeInfluence'; plan: PlacementPlan }
   | {
