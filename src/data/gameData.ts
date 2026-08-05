@@ -77,7 +77,7 @@ export const TRIBES: TribeDef[] = [
     playstyle: 'Natural group leader. Excels at becoming Champion.',
     uniqueName: 'Rally the Tribes',
     uniqueCost: 'Spend 1 Faith',
-    uniqueEffect: 'Give +1 temporary Influence to one other player this round.',
+    uniqueEffect: 'Give +1 temporary Influence (Supply) to one other player on a track you name.',
     color: TRIBE_COLORS.Judah,
     bias: BIAS.Judah,
     upgrades: [
@@ -101,7 +101,7 @@ export const TRIBES: TribeDef[] = [
     playstyle: 'Aggressive combat specialist.',
     uniqueName: 'Raid',
     uniqueCost: 'Spend 1 Warrior',
-    uniqueEffect: 'Gain 1 Goods + 1 Glory. If Military is Low, lose 1 Loyalty instead of Glory.',
+    uniqueEffect: 'Gain 1 Goods + 1 Glory. If Military is Low, lose 1 Loyalty instead of Glory — settled at Reveal.',
     color: TRIBE_COLORS.Benjamin,
     bias: BIAS.Benjamin,
     upgrades: [
@@ -120,7 +120,7 @@ export const TRIBES: TribeDef[] = [
     playstyle: 'Covenant guardian.',
     uniqueName: 'Intercede',
     uniqueCost: 'Spend 1 Faith',
-    uniqueEffect: 'Raise Covenant Meter by 1 or protect it from the next drop.',
+    uniqueEffect: 'Raise Covenant Meter by 1, or cancel the next drop outright.',
     color: TRIBE_COLORS.Levi,
     bias: BIAS.Levi,
     upgrades: [
@@ -211,7 +211,7 @@ export const TRIBES: TribeDef[] = [
     playstyle: 'High-risk skirmisher.',
     uniqueName: 'Skirmish',
     uniqueCost: 'Spend 1 Warrior',
-    uniqueEffect: 'Gain 1 Glory. If Military is Low, also gain 1 Goods.',
+    uniqueEffect: 'Gain 1 Glory. If Military is Low, also gain 1 Goods — settled at Reveal.',
     color: TRIBE_COLORS.Simeon,
     bias: BIAS.Simeon,
     upgrades: [
@@ -392,14 +392,14 @@ export const CRISIS_CARDS: CrisisCardDef[] = [
     name: 'Iron Chariots of the North',
     flavor: 'Sisera had nine hundred iron chariots…',
     severity: 'Mild',
-    effect: 'Military Track tokens cost 1 extra Warrior to place this round (or −1 Influence if unpaid).',
+    effect: 'Military Track tokens cost 1 extra Warrior this round. An unpaid token contributes 0.',
   },
   {
     id: 4,
     name: 'The Cry of the Oppressed',
     flavor: 'The people of Israel cried out to the Lord…',
     severity: 'Mild-Positive',
-    effect: 'The first player to become Champion of any track this round gains +1 Faith.',
+    effect: 'The Military Champion gains +1 Faith (tracks resolve Military → Moral → Provision).',
   },
   {
     id: 5,

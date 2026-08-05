@@ -99,6 +99,24 @@ wins the game — but Banners are exposed. Supply is safe, profitable, and helps
 Israel, and it will never win you anything. Every placement is a choice between
 the good of the tribes and the glory of your own house.
 
+### Tokens nobody paid a resource for
+
+A few abilities put a token on a track without a resource being spent on it, so
+there is no affinity to read. What such a token counts as follows from **what it
+is**, not from whose board it came off:
+
+| Token | Counts as | Why |
+|-------|-----------|-----|
+| **Gifted** — Judah's Rally, Barak's Swift Response | **Supply** | You are sending help to another tribe, not planting their banner for them. Were it otherwise, Rally would hand out Championships. |
+| **Summoned** — Deborah & Barak's judge power | **Supply** | She rallies the tribes; she does not plant their banners. |
+| **Found** — Reuben's Pathfinder | **Supply** | A path opened is not a muster. |
+| **Mustered** — Simeon's Furious Assault | **Banner** | It turns out actual warriors, and it is the payoff for having been beaten on that very track. It is placed for you, on top of whatever you planned. |
+
+**Flat Influence bonuses from a leader upgrade add Banner strength** — Othniel II
+(Wholehearted Charge), Ehud II (Hidden Dagger), Samson I (Nazirite Strength) and
+Gad's Enduring Defense. All four are Military bonuses belonging to Military
+tribes: a bonus inherits the nature of the tokens it modifies.
+
 ---
 
 ## Track Thresholds & Champion Rewards

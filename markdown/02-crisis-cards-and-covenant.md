@@ -188,11 +188,11 @@ The Provision Track threshold is increased by 1 this round.
 
 **3. Iron Chariots of the North**  
 *“Sisera had nine hundred iron chariots…”*  
-Military Track tokens cost 1 extra Warrior to place this round (or count as –1 Influence if you cannot pay).
+Military Track tokens cost 1 extra Warrior to place this round. A token whose extra Warrior went unpaid still gets placed but **contributes nothing** — its Influence is reduced by 1, to 0. It is never worse than not placing at all.
 
 **4. The Cry of the Oppressed**  
 *“The people of Israel cried out to the Lord…”*  
-The first player to become Champion of any track this round gains +1 Faith.
+The **Military Champion** gains +1 Faith. (Tracks are all scored at once, so there is no natural "first" — they resolve in the order Military → Moral → Provision, and the first Champion of the round is therefore Military's.)
 
 ### Moderate
 **5. Abimelech’s Ambition**  

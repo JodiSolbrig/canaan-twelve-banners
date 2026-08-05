@@ -1,11 +1,11 @@
 Tribe,Unique Action Name,Cost,Effect
-Judah,Rally the Tribes,Spend 1 Faith,Give +1 temporary Influence to one other player this round.
-Benjamin,Raid,Spend 1 Warrior,"Gain 1 Goods + 1 Glory. If Military Track is in Low zone, lose 1 Loyalty instead of gaining Glory."
-Levi,Intercede,Spend 1 Faith,Raise Covenant Meter by 1 or protect it from the next drop this round.
+Judah,Rally the Tribes,Spend 1 Faith,"Give +1 temporary Influence to one other player this round. You name the track; otherwise it lands on their affinity track. The gift is Supply."
+Benjamin,Raid,Spend 1 Warrior,"Gain 1 Goods + 1 Glory. If Military Track is in Low zone, lose 1 Loyalty instead of gaining Glory. The zone is settled after the Reveal."
+Levi,Intercede,Spend 1 Faith,"Raise Covenant Meter by 1, or protect it from the next drop this round. Protecting cancels that drop outright, including a Judgment drop of 2."
 Ephraim,Double Portion,Spend 1 Goods,Gain 2 Goods or 1 Goods + 1 other resource.
 Manasseh,Hold the Line,Spend 1 Warrior or 1 Faith,Reduce the Covenant penalty of one failed track by 1 this round.
 Reuben,Scout Ahead,Exhaust 1 Warrior,Look at the top card of the Crisis modifier deck.
-Simeon,Skirmish,Spend 1 Warrior,"Gain 1 Glory. If Military is Low, also gain 1 Goods."
+Simeon,Skirmish,Spend 1 Warrior,"Gain 1 Glory. If Military is Low, also gain 1 Goods. The zone is settled after the Reveal."
 Dan,Serpent’s Wisdom,Spend 1 Faith,Discard and redraw one pending Crisis modifier card (once per game).
 Naphtali,Reposition,None (action),Move 1 of your already-placed Influence tokens to a different track (before resolution).
 Gad,Stand Firm,Spend 1 Warrior,Protect yourself from the next Loyalty loss this round.

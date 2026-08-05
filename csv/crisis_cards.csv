@@ -1,8 +1,8 @@
 Card Number,Name,Flavor Text,Severity,Effect
 1,"The High Places of Baal","The people forsook the Lord and served the Baals.",Mild,"Any Faith spent this round counts as only half Influence on the Moral Track (round down)."
 2,"Midianite Swarms","They came like locusts… and left no sustenance in Israel.",Mild,"The Provision Track threshold is increased by 1 this round."
-3,"Iron Chariots of the North","Sisera had nine hundred iron chariots…",Mild,"Military Track tokens cost 1 extra Warrior to place this round (or count as –1 Influence if you cannot pay)."
-4,"The Cry of the Oppressed","The people of Israel cried out to the Lord…",Mild-Positive,"The first player to become Champion of any track this round gains +1 Faith."
+3,"Iron Chariots of the North","Sisera had nine hundred iron chariots…",Mild,"Military Track tokens cost 1 extra Warrior to place this round. A token whose extra Warrior went unpaid is still placed but contributes nothing."
+4,"The Cry of the Oppressed","The people of Israel cried out to the Lord…",Mild-Positive,"The Military Champion gains +1 Faith. (Tracks resolve Military, then Moral, then Provision.)"
 5,"Abimelech’s Ambition","He hired worthless and reckless fellows…",Moderate,"At the end of the round, the player with the most Glory loses 1 Loyalty (ties = all tied players lose 1)."
 6,"The Ammonite Claim","Israel took away my land…",Moderate,"Military and Moral Tracks both require +1 total Influence to succeed this round."
 7,"Micah’s Idol","Every man did what was right in his own eyes.",Moderate,"Players may not spend Faith on tribe unique actions this round."
