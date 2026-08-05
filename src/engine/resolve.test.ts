@@ -431,7 +431,7 @@ describe('Covenant zone effects', () => {
 
   it('makes every player tied for lowest Loyalty discard under Judgment', () => {
     // Carrying every track mends the meter by 1, so start a step below Judgment.
-    let s = scenario({ tribes: ['Judah', 'Naphtali', 'Gad'], covenant: 3, crisisId: null });
+    let s = scenario({ tribes: ['Judah', 'Naphtali', 'Gad'], covenant: 1, crisisId: null });
     const [a, b, c] = s.players.map((p) => p.id) as [string, string, string];
     s = setResources(s, a, { loyalty: 1, goods: 2, warriors: 2 });
     s = setResources(s, b, { loyalty: 1, goods: 2, warriors: 2 });
@@ -441,7 +441,7 @@ describe('Covenant zone effects', () => {
 
     s = resolveRound(s);
 
-    expect(s.covenant).toBe(4);
+    expect(covenantZone(s.covenant, s.tuningSnapshot)).toBe('judgment');
     expect(playerOf(s, a).resources.goods).toBe(1);
     expect(playerOf(s, b).resources.goods).toBe(1);
     // `c` is not tied for lowest, so keeps its Goods (plus the Provision reward).
@@ -648,7 +648,7 @@ describe('endGame', () => {
   });
 
   it('applies no Glory penalty under Broken Covenant', () => {
-    let s = scenario({ tribes: ['Judah', 'Levi'], covenant: 1, crisisId: null });
+    let s = scenario({ tribes: ['Judah', 'Levi'], covenant: 0, crisisId: null });
     s = setResources(s, idAt(s, 0), { glory: 4 });
     s = endGame(s);
     expect(playerOf(s, idAt(s, 0)).resources.glory).toBe(4);

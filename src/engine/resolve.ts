@@ -60,9 +60,80 @@ function pickChampion(
   return entries[0]![0];
 }
 
+/**
+ * How good a board is for one player: Championships first, then how much of
+ * Israel is holding. Used to pick Samson's post-reveal shift.
+ */
+function evaluateFor(state: GameState, playerId: string) {
+  const totals = getTrackTotals(state);
+  let champs = 0;
+  let successes = 0;
+  for (const track of TRACKS) {
+    const grand = Object.values(totals.total[track]).reduce((a, b) => a + b, 0);
+    if (grand >= baseThreshold(state, track)) successes += 1;
+    if (pickChampion(state, totals.banner[track]) === playerId) champs += 1;
+  }
+  return { champs, successes };
+}
+
+/**
+ * Dan, Samson II — Riddle & Cunning: once a round, shift one token after
+ * everything else is face up.
+ *
+ * Resolved automatically, and only when it strictly improves Dan's position —
+ * a Championship first, otherwise a track pulled over its threshold. Striking
+ * after everyone has committed is the whole of Samson's method.
+ */
+function applySamsonCunning(state: GameState): GameState {
+  const dan = state.players.find(
+    (p) =>
+      p.tribe === 'Dan' && p.leaderLevel >= 2 && !p.oncePerRoundUsed['samsonII'],
+  );
+  if (!dan) return state;
+
+  const mine = state.tokens.filter((t) => t.playerId === dan.id && !t.temporary);
+  if (mine.length === 0) return state;
+
+  const before = evaluateFor(state, dan.id);
+  let best: { state: GameState; from: TrackId; to: TrackId } | null = null;
+  let bestScore = before;
+
+  for (const token of mine) {
+    for (const to of TRACKS) {
+      if (to === token.track) continue;
+      const moved: GameState = {
+        ...state,
+        tokens: state.tokens.map((t) => (t.id === token.id ? { ...t, track: to } : t)),
+      };
+      const score = evaluateFor(moved, dan.id);
+      const better =
+        score.champs > bestScore.champs ||
+        (score.champs === bestScore.champs && score.successes > bestScore.successes);
+      if (better) {
+        bestScore = score;
+        best = { state: moved, from: token.track, to };
+      }
+    }
+  }
+
+  if (!best) return state;
+  let s = best.state;
+  s = updatePlayer(s, dan.id, (p) => ({
+    ...p,
+    oncePerRoundUsed: { ...p.oncePerRoundUsed, samsonII: true },
+  }));
+  return addLog(
+    s,
+    `Dan strikes after the reveal (Riddle & Cunning): 1 Influence ${label(best.from)} → ${label(best.to)}.`,
+    'good',
+  );
+}
+
 export function resolveRound(state: GameState): GameState {
   let s = state;
   const tuning = s.tuningSnapshot;
+  // Samson moves before anything is counted.
+  s = applySamsonCunning(s);
   const totals = getTrackTotals(s);
 
   // Simeon's Furious Assault token is good for the round after the failure only.

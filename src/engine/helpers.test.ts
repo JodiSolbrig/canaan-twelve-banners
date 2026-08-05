@@ -64,9 +64,9 @@ describe('covenantZone', () => {
 
   it('matches the published thresholds', () => {
     for (const v of [8, 9, 10]) expect(covenantZone(v, t)).toBe('strength');
-    for (const v of [5, 6, 7]) expect(covenantZone(v, t)).toBe('warning');
-    for (const v of [2, 3, 4]) expect(covenantZone(v, t)).toBe('judgment');
-    for (const v of [0, 1]) expect(covenantZone(v, t)).toBe('broken');
+    for (const v of [4, 5, 6, 7]) expect(covenantZone(v, t)).toBe('warning');
+    for (const v of [1, 2, 3]) expect(covenantZone(v, t)).toBe('judgment');
+    expect(covenantZone(0, t)).toBe('broken');
   });
 
   it('leaves no gap or overlap between the bands', () => {

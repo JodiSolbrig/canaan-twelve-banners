@@ -15,7 +15,7 @@ but playable).
 | Manasseh  | 3     | 3        | 3     | 5       | Tanky stabilizer. Hard to knock down; strong when tracks fail.            | **Hold the Line** – Spend 1 Warrior or 1 Faith → Reduce the Covenant penalty of one failed track by 1 this round. |
 | Reuben    | 2     | 4        | 3     | 3       | Early momentum and scouting (pastoral warrior tradition, Gilead ties).    | **Scout Ahead** – Exhaust 1 Warrior → Look at the top card of the Crisis modifier deck. |
 | Simeon    | 2     | 4        | 3     | 4       | High-risk skirmisher. Southern aggressive tradition.                      | **Skirmish** – Spend 1 Warrior → Gain 1 Glory. If Military is Low, also gain 1 Goods. |
-| Dan       | 3     | 4        | 2     | 3       | Trickster / strongman (Samson tradition). Flexible and disruptive.        | **Serpent’s Wisdom** – Spend 1 Faith → Discard and redraw one pending Crisis modifier card (once per game). |
+| Dan       | 3     | 4        | 0     | 3       | Trickster / strongman (Samson tradition). Flexible and disruptive.        | **Serpent’s Wisdom** – Spend 1 Faith → Discard and redraw one pending Crisis modifier card (once per game). |
 | Naphtali  | 3     | 3        | 3     | 3       | Flexible support (Barak tradition). Good at repositioning and helping others. | **Reposition** – Move 1 of your already-placed Influence tokens to a different track (before resolution). |
 | Gad       | 2     | 4        | 3     | 4       | Frontline tank (Gilead warrior tradition).                                | **Stand Firm** – Spend 1 Warrior → Protect yourself from the next Loyalty loss this round. |
 | Asher     | 2     | 2        | 5     | 3       | Economic powerhouse (coastal abundance tradition).                        | **Harvest** – Spend 1 Faith or rest → Gain 2 Goods. |
@@ -37,7 +37,7 @@ but playable).
 ### Levi — Phinehas
 1. **Phinehas I – Covenant Zeal**: When you become Moral Champion, raise Covenant Meter by 1.  
 2. **Phinehas II – Intercession**: Once per round, spend 1 Faith to prevent 1 Covenant loss.  
-3. **Phinehas III – Sacred Inquiry**: Once per game, after all Influence is placed, look at the next Crisis modifier card.
+3. **Phinehas III – Turned Away Wrath**: Once per game, one track you held counts twice, cancelling a single failed track for the Covenant.
 
 ### Ephraim — Deborah / Abdon
 1. **Deborah – Prophetic Voice**: Once per round, when investing in Moral Track, gain +1 Faith if you become Champion.  
@@ -60,9 +60,9 @@ but playable).
 3. **Raid Leader**: Once per round, convert 1 Goods into 1 Warrior or vice versa at no loss.
 
 ### Dan — Samson
-1. **Samson I – Nazirite Strength**: When you invest 3 tokens on Military, treat them as 4.  
+1. **Samson I – Nazirite Strength**: If all your Banners are on a single track, they count double.  
 2. **Samson II – Riddle & Cunning**: Once per round, you may move 1 of your tokens after all others are revealed.  
-3. **Samson III – Final Stand**: Once per game, when a track fails, you may spend 2 Warriors to ignore the Covenant loss for everyone.
+3. **Samson III – Final Stand**: Once per game, spend 2 Warriors so one track you held counts twice, cancelling a failed track.
 
 ### Naphtali — Barak
 1. **Barak I – Doe’s Leap**: Once per round, after Influence is placed, you may move 1 of your tokens to another track.  
@@ -72,7 +72,7 @@ but playable).
 ### Gad
 1. **Gadite Warrior – Raider’s Resolve**: Reduce all Loyalty loss you suffer by 1 (minimum 0).  
 2. **Enduring Defense**: When Military Track is Low, your tokens on it count as +1.  
-3. **Overcomer**: Once per game, ignore one setback (failed track penalty or Selfish Glory failure).
+3. **Overcomer**: Once per game, one track you held counts twice, cancelling a single failed track for the Covenant.
 
 ### Asher
 1. **Blessed Abundance**: When Provision Track reaches High, gain +1 extra Goods.  

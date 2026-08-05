@@ -84,12 +84,22 @@ function planPlacement(state: GameState, playerId: string): PlacementPlan {
   // genuinely has the strength.
   const primary = def.bias;
   const primaryRes = TRACK_AFFINITY_RESOURCE[primary];
-  add(primary, primaryRes, Math.max(1, Math.ceil(budget * 0.7)));
+  // Dan's Nazirite Strength doubles its Banners only while they all stand on a
+  // single track, so Dan commits everything and never contests a second.
+  const concentrates = p.tribe === 'Dan' && p.leaderLevel >= 1;
 
-  for (const track of TRACKS) {
-    if (track === primary) continue;
-    const res = TRACK_AFFINITY_RESOURCE[track];
-    if (pool[res] >= 3) add(track, res, agr > 0.5 ? 2 : 1);
+  add(
+    primary,
+    primaryRes,
+    concentrates ? pool[primaryRes] : Math.max(1, Math.ceil(budget * 0.7)),
+  );
+
+  if (!concentrates) {
+    for (const track of TRACKS) {
+      if (track === primary) continue;
+      const res = TRACK_AFFINITY_RESOURCE[track];
+      if (pool[res] >= 3) add(track, res, agr > 0.5 ? 2 : 1);
+    }
   }
 
   // Whatever is left goes as Supply to tracks it has not claimed. A failed track

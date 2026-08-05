@@ -172,10 +172,10 @@ export const TRIBES: TribeDef[] = [
       'Jephthah – Outcast’s Resolve: −1 Loyalty loss on failed investment.',
     ],
     income: {
-      warriors: 1,
+      goods: 1,
       loyalty: 1,
-      label: '1 Warrior + 1 Loyalty (if below max)',
-      note: 'Stabilizer / tank',
+      label: '1 Goods + 1 Loyalty (if below max)',
+      note: 'Stabilizer / thirty towns',
     },
   },
   {
@@ -196,10 +196,10 @@ export const TRIBES: TribeDef[] = [
       'Bold Claim: Once/game +1 Glory if second-most on a track.',
     ],
     income: {
+      faith: 1,
       warriors: 1,
-      goods: 1,
-      label: '1 Warrior + 1 Goods',
-      note: 'Pastoral / early momentum',
+      label: '1 Faith + 1 Warrior',
+      note: 'Searchings of heart / pastoral',
     },
   },
   {
@@ -225,7 +225,9 @@ export const TRIBES: TribeDef[] = [
     id: 'Dan',
     faith: 3,
     warriors: 4,
-    goods: 2,
+    // Dan alone opens with no Goods, trading its starting stock for the only
+    // three-resource income in the game.
+    goods: 0,
     loyalty: 3,
     playstyle: 'Trickster / strongman (Samson).',
     uniqueName: 'Serpent’s Wisdom',
@@ -234,15 +236,15 @@ export const TRIBES: TribeDef[] = [
     color: TRIBE_COLORS.Dan,
     bias: BIAS.Dan,
     upgrades: [
-      'Nazirite Strength: 3 Military tokens count as 4.',
-      'Riddle & Cunning: Move 1 token after reveal once/round.',
+      'Samson I – Nazirite Strength: If all your Banners are on one track, they count double.',
+      'Samson II – Riddle & Cunning: Move 1 token after reveal, once/round.',
       'Samson III – Final Stand: Once/game spend 2 Warriors so one track you held counts twice.',
     ],
     income: {
-      warriors: 1,
+      warriors: 2,
       faith: 1,
-      label: '1 Warrior + 1 Faith',
-      note: 'Strongman / trickster',
+      label: '2 Warriors + 1 Faith',
+      note: 'Strongman — the only three-resource income, and no Goods at all',
     },
   },
   {

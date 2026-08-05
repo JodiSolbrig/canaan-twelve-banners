@@ -3,10 +3,10 @@ Judah,1,1,0,0,1 Faith + 1 Warrior,Leadership / lion
 Benjamin,0,2,0,0,2 Warriors,Aggressive combat
 Levi,2,0,0,0,2 Faith,Priestly / Covenant
 Ephraim,1,0,1,0,1 Goods + 1 Faith,Economic + prophetic
-Manasseh,0,1,0,1,1 Warrior + 1 Loyalty (if below max),Stabilizer / tank
-Reuben,0,1,1,0,1 Warrior + 1 Goods,Pastoral / early momentum
+Manasseh,0,0,1,1,1 Goods + 1 Loyalty (if below max),Stabilizer / thirty towns
+Reuben,1,1,0,0,1 Faith + 1 Warrior,Searchings of heart / pastoral
 Simeon,0,2,0,0,2 Warriors,Skirmisher
-Dan,1,1,0,0,1 Warrior + 1 Faith,Strongman / trickster
+Dan,1,2,0,0,2 Warriors + 1 Faith,"Strongman — the only three-resource income, and no Goods at all"
 Naphtali,1,0,1,0,1 Faith + 1 Goods,Flexible support
 Gad,0,2,0,0,2 Warriors,Frontline tank
 Asher,0,0,2,0,2 Goods,Coastal abundance

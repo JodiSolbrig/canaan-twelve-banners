@@ -16,7 +16,7 @@ export const LEADER_UPGRADE_ACTIVE: Record<TribeId, [boolean, boolean, boolean]>
     Manasseh: [false, true, true], // I peek; II Provision High; III loyalty soften
     Reuben: [false, false, false],
     Simeon: [true, true, false], // I Warrior; II free Mil next round; III convert
-    Dan: [true, false, true], // I Nazirite Strength; III Final Stand
+    Dan: [true, true, true], // I Nazirite; II Riddle & Cunning; III Final Stand
     Naphtali: [false, false, false], // II gift flag exists but never set
     Gad: [true, true, true], // I loyalty; II Mil Low; III Overcomer
     Asher: [true, true, false], // I Provision High; II Gather/Harvest; III once

@@ -334,16 +334,52 @@ describe('placement-triggered leader bonuses', () => {
     expect(getTrackTotals(s).banner.military[me]).toBe(2);
   });
 
-  it('counts Dan Nazirite Strength as Banner strength', () => {
+  it('doubles Dan Nazirite Strength where its Banners stand alone', () => {
     let s = scenario({ tribes: ['Dan', 'Levi'], crisisId: null });
-    const me = idAt(s, 0);
-    s = patchPlayer(s, me, { leaderLevel: 1 });
+    const dan = idAt(s, 0);
+    s = patchPlayer(s, dan, { leaderLevel: 1 });
 
-    const two = withTokens(s, [{ playerId: me, track: 'military', count: 2 }]);
-    expect(getTrackTotals(two).banner.military[me]).toBe(2);
+    const alone = withTokens(s, [{ playerId: dan, track: 'military', count: 2 }]);
+    expect(getTrackTotals(alone).banner.military[dan]).toBe(4);
+    expect(getTrackTotals(alone).total.military[dan]).toBe(4);
+  });
 
-    const three = withTokens(s, [{ playerId: me, track: 'military', count: 3 }]);
-    expect(getTrackTotals(three).total.military[me]).toBe(4);
-    expect(getTrackTotals(three).banner.military[me]).toBe(4);
+  it('doubles even on a contested track — the condition is Dan’s own focus', () => {
+    let s = scenario({ tribes: ['Dan', 'Benjamin'], crisisId: null });
+    const [dan, benjamin] = s.players.map((p) => p.id) as [string, string];
+    s = patchPlayer(s, dan, { leaderLevel: 1 });
+    s = withTokens(s, [
+      { playerId: dan, track: 'military', count: 2 },
+      { playerId: benjamin, track: 'military', count: 1 },
+    ]);
+
+    expect(getTrackTotals(s).banner.military[dan]).toBe(4);
+  });
+
+  it('does not double once Dan splits its Banners across tracks', () => {
+    let s = scenario({ tribes: ['Dan', 'Levi'], crisisId: null });
+    const dan = idAt(s, 0);
+    s = patchPlayer(s, dan, { leaderLevel: 1 });
+    s = withTokens(s, [
+      { playerId: dan, track: 'military', count: 2 },
+      { playerId: dan, track: 'moral', count: 1 },
+    ]);
+
+    const tallies = getTrackTotals(s);
+    expect(tallies.banner.military[dan]).toBe(2);
+    expect(tallies.banner.moral[dan]).toBe(1);
+  });
+
+  it('still doubles when the other tracks hold only Dan’s Supply', () => {
+    let s = scenario({ tribes: ['Dan', 'Levi'], crisisId: null });
+    const dan = idAt(s, 0);
+    s = patchPlayer(s, dan, { leaderLevel: 1 });
+    s = withTokens(s, [
+      { playerId: dan, track: 'military', count: 2 },
+      // Supply is not a Banner, so Dan's focus is unbroken.
+      { playerId: dan, track: 'provision', count: 2, paidWith: 'warriors' },
+    ]);
+
+    expect(getTrackTotals(s).banner.military[dan]).toBe(4);
   });
 });

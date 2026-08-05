@@ -24,7 +24,7 @@
 | Manasseh  | 3     | 3        | 3     | 5       | 0     |
 | Reuben    | 2     | 4        | 3     | 3       | 0     |
 | Simeon    | 2     | 4        | 3     | 4       | 0     |
-| Dan       | 3     | 4        | 2     | 3       | 0     |
+| Dan       | 3     | 4        | 0     | 3       | 0     |
 | Naphtali  | 3     | 3        | 3     | 3       | 0     |
 | Gad       | 2     | 4        | 3     | 4       | 0     |
 | Asher     | 2     | 2        | 5     | 3       | 0     |
@@ -43,10 +43,10 @@ matches the table above exactly.
 | Benjamin  | 2 Warriors            | Aggressive combat |
 | Levi      | 2 Faith               | Priestly / Covenant |
 | Ephraim   | 1 Goods + 1 Faith     | Economic + prophetic |
-| Manasseh  | 1 Warrior + 1 Loyalty | Stabilizer / tank |
-| Reuben    | 1 Warrior + 1 Goods   | Pastoral / early momentum |
+| Manasseh  | 1 Goods + 1 Loyalty   | Stabilizer / thirty towns |
+| Reuben    | 1 Faith + 1 Warrior   | Searchings of heart / pastoral |
 | Simeon    | 2 Warriors            | Skirmisher |
-| Dan       | 1 Warrior + 1 Faith   | Strongman / trickster |
+| Dan       | 2 Warriors + 1 Faith  | Strongman — three-resource income, and no Goods at all |
 | Naphtali  | 1 Faith + 1 Goods     | Flexible support |
 | Gad       | 2 Warriors            | Frontline tank |
 | Asher     | 2 Goods               | Coastal abundance |

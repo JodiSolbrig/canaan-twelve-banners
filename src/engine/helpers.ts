@@ -217,12 +217,22 @@ export function getTrackTotals(state: GameState): TrackTallies {
   };
 
   for (const p of state.players) {
-    // Dan Samson I: three Military tokens count as four.
+    // Dan Samson I — Nazirite Strength: if every Banner Dan planted this
+    // generation stands on a single track, they count double.
+    //
+    // Samson never fought at the head of an army and never fought on two fronts;
+    // his whole strength went into one blow. Conditioning this on Dan's own
+    // concentration rather than on the absence of rivals matters: an earlier
+    // version keyed off being the *only* Banner on a track, which on contested
+    // Military almost never happened and left Dan the weakest tribe on the board.
     if (p.leaderLevel >= 1 && p.tribe === 'Dan') {
-      const milCount = state.tokens.filter(
-        (t) => t.playerId === p.id && t.track === 'military' && !t.temporary,
-      ).length;
-      if (milCount >= 3) addMilitary(p.id, 1);
+      const held = TRACKS.filter((t) => (banner[t][p.id] ?? 0) > 0);
+      const only = held[0];
+      if (held.length === 1 && only) {
+        const mine = banner[only][p.id] ?? 0;
+        total[only][p.id] = (total[only][p.id] ?? 0) + mine;
+        banner[only][p.id] = mine * 2;
+      }
     }
     // Judah Othniel II — armed during placement.
     if (

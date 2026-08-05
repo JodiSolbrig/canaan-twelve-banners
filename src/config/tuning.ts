@@ -140,8 +140,12 @@ export const DEFAULT_TUNING: TuningConfig = {
   covenantStart: 8,
   covenantMax: 10,
   zoneStrengthMin: 8,
-  zoneWarningMin: 5,
-  zoneJudgmentMin: 2,
+  // Judgment 1–3 rather than 2–4: the deeper drops and the lowest-Loyalty
+  // discard start a step later than the oppression trigger at 5, leaving a 4–5
+  // band where Israel is under a hand but not yet doubly punished — room to cry
+  // out before it gets bad. Broken is consequently 0 alone.
+  zoneWarningMin: 4,
+  zoneJudgmentMin: 1,
   thresholdBase: 'playerCount',
   thresholdFixed: 5,
   smallGroupThresholdBonus: 1,
