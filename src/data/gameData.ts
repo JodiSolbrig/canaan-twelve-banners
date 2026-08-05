@@ -83,7 +83,7 @@ export const TRIBES: TribeDef[] = [
     upgrades: [
       'Othniel I – Lion’s Rally: When Champion, +1 extra Glory.',
       'Othniel II – Wholehearted Charge: Military tokens +1 once/round.',
-      'Othniel III – First in Line: Once/game move 1 token after reveal.',
+      'Othniel III – Claim the Field: Once/game your Supply on a track stands up as Banners.',
     ],
     income: {
       faith: 1,
@@ -125,7 +125,7 @@ export const TRIBES: TribeDef[] = [
     bias: BIAS.Levi,
     upgrades: [
       'Phinehas I – Covenant Zeal: Moral Champion raises Covenant +1.',
-      'Phinehas II – Intercession: Spend 1 Faith to prevent 1 Covenant loss.',
+      'Phinehas II – The Tithe: Never Provision Champion; if present there, the Champion pays you 1 Goods.',
       'Phinehas III – Turned Away Wrath: Once/game one track you held counts twice, cancelling a failure.',
     ],
     income: { faith: 2, label: '2 Faith', note: 'Priestly / Covenant' },
@@ -167,7 +167,7 @@ export const TRIBES: TribeDef[] = [
     color: TRIBE_COLORS.Manasseh,
     bias: BIAS.Manasseh,
     upgrades: [
-      'Gideon – Fleece Test: Peek one track modifier before placing.',
+      'Gideon – Spend Your Resilience: 1 Loyalty buys 2 Supply, once/round. Costs no placement.',
       'Jair – Thirty Towns: +1 Goods when Provision is High.',
       'Jephthah – Outcast’s Resolve: −1 Loyalty loss on failed investment.',
     ],

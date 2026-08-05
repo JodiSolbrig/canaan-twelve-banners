@@ -53,12 +53,22 @@ export function revealTokens(state: GameState): GameState {
   return s;
 }
 
-/** Anyone still holding a decision that must be made before scoring. */
+/**
+ * Anyone still holding a decision that must be made before scoring.
+ *
+ * The app auto-advances past `preResolve` when the human has nothing to decide,
+ * so **every** post-reveal ability has to be listed here or it is silently
+ * skipped: the panel offering it renders, but the round has already moved on.
+ * Judah's Claim the Field and Issachar's Wise Counsel both shipped missing from
+ * this list and were unreachable in play.
+ */
 export function hasPreResolveChoice(state: GameState, playerId: string): boolean {
   const p = getPlayer(state, playerId);
   if (p.judgePower && JUDGE_POWER_WINDOW[p.judgePower] === 'preResolve') return true;
   if (canShiftToken(state, playerId)) return true;
   if (canDeclareAlliance(state, playerId)) return true;
+  if (canClaimField(state, playerId)) return true;
+  if (canWiseCounsel(state, playerId)) return true;
   return canRescue(state, playerId);
 }
 

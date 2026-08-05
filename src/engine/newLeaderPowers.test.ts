@@ -15,6 +15,7 @@ import {
   applyClaimField,
   barredFromProvision,
   canClaimField,
+  hasPreResolveChoice,
   resolveRound,
   supplyOnTrack,
 } from './resolve';
@@ -275,5 +276,31 @@ describe('Levi II — The Tithe', () => {
     ]);
     const out = resolveRound({ ...s, phase: 'resolve' });
     expect(out.trackResults!.find((r) => r.track === 'provision')!.success).toBe(true);
+  });
+});
+
+describe('the post-reveal window is offered at all', () => {
+  /**
+   * The app advances straight past `preResolve` when the human has nothing to
+   * decide, so an ability missing from `hasPreResolveChoice` is unreachable in
+   * play however well its panel renders. Both of these shipped that way.
+   */
+  it('offers the window for Claim the Field', () => {
+    let s = at('Judah', 3, 'preResolve');
+    const me = idAt(s, 0);
+    expect(hasPreResolveChoice(s, me)).toBe(false);
+    s = withTokens(s, [
+      { playerId: me, track: 'moral', count: 1, paidWith: 'goods' },
+    ]);
+    expect(canClaimField(s, me)).toBe(true);
+    expect(hasPreResolveChoice(s, me)).toBe(true);
+  });
+
+  it('offers the window for Wise Counsel', () => {
+    let s = at('Issachar', 3, 'preResolve');
+    const me = idAt(s, 0);
+    expect(hasPreResolveChoice(s, me)).toBe(false);
+    s = withTokens(s, [{ playerId: idAt(s, 1), track: 'military', count: 1 }]);
+    expect(hasPreResolveChoice(s, me)).toBe(true);
   });
 });

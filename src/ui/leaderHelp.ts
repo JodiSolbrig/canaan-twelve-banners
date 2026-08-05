@@ -4,7 +4,7 @@ import type { TribeDef } from '../engine/types';
 const ROMAN = ['I', 'II', 'III'] as const;
 
 export function leaderEarnSummary(thresholds: [number, number, number]): string {
-  return `Leader upgrades unlock at ${thresholds[0]}, ${thresholds[1]}, and ${thresholds[2]} Glory (levels I–III). Each tribe has three unique upgrades. Active effects apply automatically; Planned ones are design text not yet wired in play.`;
+  return `Leader upgrades unlock at ${thresholds[0]}, ${thresholds[1]}, and ${thresholds[2]} Glory (levels I–III). Each tribe has three unique upgrades. Every upgrade in the game is wired; those needing a decision wait for you to spend them.`;
 }
 
 export function formatLeaderTip(
