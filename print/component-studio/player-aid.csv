@@ -1,0 +1,21 @@
+name,quantity,side,heading,body,footer
+Player Aid — front,6,Front — the generation,One generation,"1. Reveal the Crisis (or endure the Oppressor).
+2. Placement — all players place Influence face down.
+3. Action — one standard action or your Unique Action.
+4. Reveal all Influence.
+5. Before scoring — spend anything that reads the full board.
+6. Score each track, then move the Covenant.","Threshold: 1 Influence per player on every track.
+Banner = the track’s affinity resource. Counts for the threshold AND for Champion, and loses 1 Loyalty if the track fails.
+Supply = anything else. Counts for the threshold only. Risks nothing, shares the spoil.
+Warriors → Military · Faith → Moral · Goods → Provision"
+Player Aid — back,6,Back — actions,Choose one each generation,"Place Influence — Spend any resources → 1 Influence token each. Face down. What you pay with decides Banner or Supply.
+Recruit — Spend 1 Goods → 2 Warriors. Or commit 1 Faith → 1 Warrior (the Faith is returned).
+Gather / Harvest — Spend 1 Warrior or 1 Faith → 2 Goods.
+Pray / Seek the Lord — Rest → 2 Faith. Or spend 1 Goods → 1 Faith + 1 Loyalty (never above your starting Loyalty).
+Convert / Bargain — 2 Goods → 1 Faith or 1 Warrior. 2 Warriors → 1 Goods. 2 Faith → 1 Goods or 1 Warrior.
+Rest & Recover — Do nothing else → 1 Loyalty, and look at the top Crisis card (return it to the top or the bottom).
+Cry Out — Only under an Oppressor. Pay any Faith into the shared Cry.
+Your Unique Action — Printed on your tribe board. Replaces the standard action for the generation.","Champion of a track: +1 Glory and +1 of that track’s resource.
+Covenant: −1 for every track that gave way; +1 only if all three held.
+Leaders unlock at 3, 6, 9 Glory.
+The game is 10 generations long."

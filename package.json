@@ -1,7 +1,7 @@
 {
   "name": "canaan-twelve-banners",
   "private": true,
-  "version": "0.8.0",
+  "version": "0.9.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "balance": "vitest run --config vitest.balance.config.ts --disable-console-intercept",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "export:print": "node --experimental-strip-types scripts/export-components.ts"
   },
   "dependencies": {
     "react": "^19.2.7",

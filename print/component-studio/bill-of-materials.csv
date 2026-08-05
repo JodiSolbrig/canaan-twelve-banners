@@ -1,0 +1,18 @@
+item,quantity,spec,data_file,notes
+Crisis cards,14,Poker 2.5×3.5,crisis-cards.csv,Deck. One of each.
+Oppressor cards,6,Tarot 2.75×4.75,oppressor-cards.csv,"Larger than the Crisis deck on purpose — an Oppressor stays on the table for generations, and should not look like a card that leaves at the end of the round."
+Judge cards,6,Poker 2.5×3.5,judge-cards.csv,"Held by a player for two generations, then discarded."
+Tribe boards,13,Mat 6×9 or Jumbo card,tribe-boards.csv,"Needs printed tracks for Loyalty (0–5) and Glory (0–20), plus three leader slots."
+Leader cards,39,Mini 1.75×2.5,leader-cards.csv,Optional — the same text is on the tribe board. Nice if you want players to physically take an upgrade.
+Player aid cards,6,"Tarot 2.75×4.75, double sided",player-aid.csv,One per player.
+Reference cards,6,Poker 2.5×3.5,reference-cards.csv,"Two copies of each of three, so the table can share."
+Main board,1,Folding board 20×20,—,"Three track rows with threshold markings, the Covenant meter 0–10, a generation track 1–10, a Crisis/Oppressor slot and a Cry pool space."
+Influence tokens,156,3/4in double-sided disc,—,"Twelve per tribe, in the tribe colour. BANNER on one face, SUPPLY on the other — this is how the table sees what a token counts for without anyone declaring it."
+Faith cubes,60,"8mm wooden cube, white",—,Shared bank.
+Warrior cubes,60,"8mm wooden cube, red",—,Shared bank.
+Goods cubes,60,"8mm wooden cube, yellow",—,Shared bank.
+Loyalty & Glory markers,26,"8mm wooden cube, tribe colour",—,"Two per tribe, for the tracks on the tribe board."
+Covenant marker,1,"15mm wooden disc, black",—,Starts at 8.
+Severity marker,1,"15mm wooden disc, red",—,Sits on the Oppressor card.
+Generation marker,1,"15mm wooden disc, white",—,Counts 1 to 10.
+Player screens,6,Small screen,—,"Placement is simultaneous and secret. A screen is what makes that work at a table — build your placement behind it, then everyone reveals at once."

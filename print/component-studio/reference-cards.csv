@@ -1,0 +1,14 @@
+name,quantity,heading,body,footer,art
+The Covenant Meter,2,The Covenant Meter,"8–10  Strength — no effect.
+4–7   Warning — every player loses 1 Loyalty unless at least one track held.
+1–3   Judgment — every failed track drops the meter 1 deeper, and everyone tied for lowest Loyalty discards 1 Goods or 1 Warrior.
+0     Broken — everyone loses 2 Loyalty. The game ends after the next full generation.","At 5 or below, Israel is sold into the hand of an Oppressor. Deliverance restores the meter to 8.",reference-covenant.png
+The Cycle of the Judges,2,The Cycle of the Judges,"1. Oppression — the meter falls to 5. Draw an Oppressor. It replaces the Crisis until it is broken.
+2. Escalation — severity rises 1 every generation endured. The track it presses on gets harder, and the Cry gets dearer.
+3. Crying Out — spend your action to pay Faith into the shared Cry.
+4. Deliverance — the Cry is met. The Covenant returns to 8, and a Judge is raised from the LEAST among the tribes (lowest Glory).
+5. Rest — the next generation draws no Crisis and pays full income.","Whoever pays for the deliverance, it elevates their weakest rival.",reference-cycle.png
+Scoring,2,Final scoring,"Glory earned across the game.
++1 Glory per 2 Loyalty remaining.
++1 Glory per 3 resources remaining, of any kind.
+Ties: most Championships, then highest Loyalty.",Most Glory wins.,reference-scoring.png

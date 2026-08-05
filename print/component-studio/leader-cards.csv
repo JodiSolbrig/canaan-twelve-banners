@@ -1,0 +1,40 @@
+name,quantity,tribe,color_hex,level,leader,ability_name,ability_text,unlock,art
+Judah I — Lion’s Rally,1,Judah,#c9a227,I,Othniel I,Lion’s Rally,"When you become Champion of any track, gain +1 extra Glory.",3 Glory,tribe-judah.png
+Judah II — Wholehearted Charge,1,Judah,#c9a227,II,Othniel II,Wholehearted Charge,"Once per round, when investing in Military, your tokens count as +1.",6 Glory,tribe-judah.png
+Judah III — First in Line,1,Judah,#c9a227,III,Othniel III,First in Line,"Once per game, after Influence is revealed, you may move 1 of your tokens to a different track.",9 Glory,tribe-judah.png
+Benjamin I — Left-Handed Strike,1,Benjamin,#8b2e2e,I,Ehud I,Left-Handed Strike,"When you become Military Champion, gain +1 Warrior.",3 Glory,tribe-benjamin.png
+Benjamin II — Hidden Dagger,1,Benjamin,#8b2e2e,II,Ehud II,Hidden Dagger,"Once per round, you may treat 1 Warrior as 2 Influence on the Military Track.",6 Glory,tribe-benjamin.png
+Benjamin III — Deliverer’s Legacy,1,Benjamin,#8b2e2e,III,Ehud III,Deliverer’s Legacy,"After winning Military Champion, you may immediately take a free Recruit action.",9 Glory,tribe-benjamin.png
+Levi I — Covenant Zeal,1,Levi,#4a6fa5,I,Phinehas I,Covenant Zeal,"When you become Moral Champion, raise Covenant Meter by 1.",3 Glory,tribe-levi.png
+Levi II — Intercession,1,Levi,#4a6fa5,II,Phinehas II,Intercession,"Once per round, spend 1 Faith to prevent 1 Covenant loss.",6 Glory,tribe-levi.png
+Levi III — Turned Away Wrath,1,Levi,#4a6fa5,III,Phinehas III,Turned Away Wrath,"Once per game, one track you held counts twice, cancelling a failed track.",9 Glory,tribe-levi.png
+Ephraim I — Prophetic Voice,1,Ephraim,#2d6a4f,I,Deborah,Prophetic Voice,"Once per round, when investing in Moral Track, gain +1 Faith if you become Champion.",3 Glory,tribe-ephraim.png
+Ephraim II — Many Sons,1,Ephraim,#2d6a4f,II,Abdon I,Many Sons,"When you unlock this, gain 1 Goods permanently to your starting total for the rest of the game.",6 Glory,tribe-ephraim.png
+Ephraim III — Landed Authority,1,Ephraim,#2d6a4f,III,Abdon II,Landed Authority,"Once per round, you may convert 2 Goods into 1 Faith or 1 Warrior.",9 Glory,tribe-ephraim.png
+Manasseh I — Fleece Test,1,Manasseh,#5c4d7a,I,Gideon,Fleece Test,"Once per round, before placing Influence, look at one track’s current special modifier (if any).",3 Glory,tribe-manasseh.png
+Manasseh II — Thirty Towns,1,Manasseh,#5c4d7a,II,Jair,Thirty Towns,Gain +1 Goods when the Provision Track reaches High.,6 Glory,tribe-manasseh.png
+Manasseh III — Outcast’s Resolve,1,Manasseh,#5c4d7a,III,Jephthah,Outcast’s Resolve,"When a track you invested in fails, you lose 1 less Loyalty (minimum 0).",9 Glory,tribe-manasseh.png
+Reuben I — Firstborn Advance,1,Reuben,#b5651d,I,Reubenite Scout,Firstborn Advance,"You always place last in the placement phase, seeing how heavily every other tribe has committed before you commit.",3 Glory,tribe-reuben.png
+Reuben II — Pathfinder,1,Reuben,#b5651d,II,Gilead Tie I,Pathfinder,"When you place at least 2 Influence on one track, name a second track you left empty and gain 1 temporary Supply Influence there.",6 Glory,tribe-reuben.png
+Reuben III — Bold Claim,1,Reuben,#b5651d,III,Gilead Tie II,Bold Claim,"Once per game, gain +1 Glory for a track where you were not Champion but stood second in Banner strength.",9 Glory,tribe-reuben.png
+Simeon I — Vengeful Strike,1,Simeon,#9c2f4a,I,Simeonite Raider,Vengeful Strike,"When you become Military Champion, gain +1 Warrior.",3 Glory,tribe-simeon.png
+Simeon II — Furious Assault,1,Simeon,#9c2f4a,II,,Furious Assault,"After a Military Track failure you invested in, you may immediately place 1 token on it next round for free.",6 Glory,tribe-simeon.png
+Simeon III — Raid Leader,1,Simeon,#9c2f4a,III,,Raid Leader,"Once per round, convert 1 Goods into 1 Warrior or vice versa at no loss.",9 Glory,tribe-simeon.png
+Dan I — Nazirite Strength,1,Dan,#1d4e6e,I,Samson I,Nazirite Strength,"If all your Banners are on a single track, they count double.",3 Glory,tribe-dan.png
+Dan II — Riddle & Cunning,1,Dan,#1d4e6e,II,Samson II,Riddle & Cunning,"Once per round, you may move 1 of your tokens after all others are revealed.",6 Glory,tribe-dan.png
+Dan III — Final Stand,1,Dan,#1d4e6e,III,Samson III,Final Stand,"Once per game, spend 2 Warriors so one track you held counts twice.",9 Glory,tribe-dan.png
+Naphtali I — Doe’s Leap,1,Naphtali,#3d7c47,I,Barak I,Doe’s Leap,"Once per round, after the reveal, you may move 1 of your placed tokens to another track.",3 Glory,tribe-naphtali.png
+Naphtali II — Swift Response,1,Naphtali,#3d7c47,II,Barak II,Swift Response,"When you become Champion, you owe 1 temporary Influence to another tribe — name them and the track at your next placement. It arrives as Supply.",6 Glory,tribe-naphtali.png
+Naphtali III — Northern Alliance,1,Naphtali,#3d7c47,III,Barak III,Northern Alliance,"Once per game, after the reveal, name two tracks; your Influence on each counts 1 more.",9 Glory,tribe-naphtali.png
+Gad I — Raider’s Resolve,1,Gad,#6b5b3a,I,Gadite Warrior,Raider’s Resolve,Reduce all Loyalty loss you suffer by 1 (minimum 0).,3 Glory,tribe-gad.png
+Gad II — Enduring Defense,1,Gad,#6b5b3a,II,,Enduring Defense,"When Military Track is Low, your tokens on it count as +1.",6 Glory,tribe-gad.png
+Gad III — Overcomer,1,Gad,#6b5b3a,III,,Overcomer,"Once per game, one track you held counts twice, cancelling a failed track.",9 Glory,tribe-gad.png
+Asher I — Blessed Abundance,1,Asher,#a67c2d,I,,Blessed Abundance,"When Provision Track reaches High, gain +1 extra Goods.",3 Glory,tribe-asher.png
+Asher II — Fertile Blessing,1,Asher,#a67c2d,II,,Fertile Blessing,"Once per round, when you take a Generate Goods action, gain 1 additional Goods.",6 Glory,tribe-asher.png
+Asher III — Rich Harvest,1,Asher,#a67c2d,III,,Rich Harvest,"Once per game, double the Goods you gain from any single action or Champion reward.",9 Glory,tribe-asher.png
+Issachar I — Understanding of Times,1,Issachar,#4f6f8f,I,,Understanding of Times,"Once per round, before placing tokens, look at one track’s current threshold status.",3 Glory,tribe-issachar.png
+Issachar II — Strategic Insight,1,Issachar,#4f6f8f,II,,Strategic Insight,"When you become Champion of any track, gain +1 Faith.",6 Glory,tribe-issachar.png
+Issachar III — Wise Counsel,1,Issachar,#4f6f8f,III,,Wise Counsel,"Once per game, after all tokens are placed, you may force one other player to move 1 of their tokens.",9 Glory,tribe-issachar.png
+Zebulun I — Sea Trader,1,Zebulun,#2a6f7a,I,,Sea Trader,"Once per round, convert 1 Faith ↔ 1 Goods at 1:1.",3 Glory,tribe-zebulun.png
+Zebulun II — Commerce Route,1,Zebulun,#2a6f7a,II,,Commerce Route,"When you become Provision Champion, gain +1 Glory.",6 Glory,tribe-zebulun.png
+Zebulun III — Profitable Venture,1,Zebulun,#2a6f7a,III,,Profitable Venture,"Once per game, after gaining Goods from any source, gain that many again.",9 Glory,tribe-zebulun.png
