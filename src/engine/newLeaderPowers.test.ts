@@ -304,3 +304,20 @@ describe('the post-reveal window is offered at all', () => {
     expect(hasPreResolveChoice(s, me)).toBe(true);
   });
 });
+
+describe('opening leader level', () => {
+  it('is settled at setup, so a zero threshold is honoured from round 1', () => {
+    // checkLeaderUnlocks used to run only when Glory was granted, so thresholds
+    // of 0 left every tribe at level 0 until someone first scored.
+    const s = scenario({
+      tribes: ['Judah', 'Levi'],
+      tuning: { leaderUnlockGlory: [0, 0, 0] },
+    });
+    for (const p of s.players) expect(p.leaderLevel).toBe(3);
+  });
+
+  it('leaves everyone at level 0 under the shipped thresholds', () => {
+    const s = scenario({ tribes: ['Judah', 'Levi'] });
+    for (const p of s.players) expect(p.leaderLevel).toBe(0);
+  });
+});

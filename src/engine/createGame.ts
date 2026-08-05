@@ -4,7 +4,13 @@
 import { cloneTuning, type TuningConfig } from '../config/tuning';
 import { CRISIS_CARDS, TRIBE_BY_ID } from '../data/gameData';
 import { OPPRESSORS } from '../data/oppressors';
-import { addLog, mulberry32, resetIdCounters, shuffle } from './helpers';
+import {
+  addLog,
+  checkLeaderUnlocks,
+  mulberry32,
+  resetIdCounters,
+  shuffle,
+} from './helpers';
 import { startRound } from './round';
 import type { GameState, PlayerState, TribeId } from './types';
 
@@ -130,5 +136,12 @@ export function createGame(opts: SetupOptions): GameState {
     `Game begins — ${total} tribes. You are ${opts.humanTribe}.`,
     'info',
   );
+
+  // Settle the opening leader level before play starts. `checkLeaderUnlocks`
+  // otherwise only runs when Glory is granted, so a threshold of 0 left every
+  // tribe at level 0 until someone first scored — a level nobody could be at.
+  for (const p of state.players) {
+    state = checkLeaderUnlocks(state, p.id);
+  }
   return startRound(state);
 }
