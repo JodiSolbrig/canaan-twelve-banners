@@ -6,9 +6,41 @@
 **Range:** 0–10  
 
 ### How it moves
-- Every time a track fails (Military, Moral, or Provision), the Covenant Meter drops by 1.
+
+At the end of each generation:
+
+> **The Covenant drops 1 for every track that gave way.**
+> **It rises 1 only if every track held.**
+
+| Tracks held | Covenant |
+|-------------|----------|
+| 3 | **+1** |
+| 2 | **−1** |
+| 1 | **−2** |
+| 0 | **−3** |
+
+Failure is counted track by track; recovery is all or nothing. Mending the
+Covenant takes a wholly faithful generation, which is rare — anything less and
+the meter falls.
+
+- While the meter is in **Judgment**, each failure drops it **1 deeper**.
 - Certain Crisis cards can force extra drops or prevent drops.
 - Levi’s Intercede and several Leader upgrades can raise it or protect it.
+- Three Level III abilities can make one track you held **count twice**, covering
+  a single failure — see *Turning away wrath* below.
+- **Deliverance** restores it to 8 (see *The Cycle of the Judges* below).
+
+### Turning away wrath
+
+Three tribes can, **once per game**, name a track they held and have it count
+twice, cancelling a single failed track for the Covenant — turning a losing
+generation into a faithful one:
+
+| Tribe | Ability | Cost |
+|-------|---------|------|
+| **Levi** | Phinehas III — Turned Away Wrath | — |
+| **Dan** | Samson III — Final Stand | 2 Warriors |
+| **Gad** | Overcomer | — |
 
 ### Thresholds & Effects
 
@@ -36,8 +68,13 @@ book and the spine of the game.
 
 ### 1. Oppression
 
-The moment the Covenant Meter enters **Judgment (2–4)**, Israel is sold into a
-hand. Draw an **Oppressor**. It takes the Crisis slot and **no Crisis card is
+When the Covenant Meter falls to **5 or below**, Israel is sold into a hand.
+Draw an **Oppressor**.
+
+> This trigger is deliberately a step above the Judgment band. Judgment also
+> deepens every failed track's drop, so tying the two together meant the cycle
+> could only fire more often by making failure hurt sooner — which collapsed more
+> games than it saved. It takes the Crisis slot and **no Crisis card is
 drawn** while it stands — an oppression is not a one-round modifier, it is a
 condition that endures.
 
@@ -96,6 +133,11 @@ When the pool meets the Cry, at the end of that round:
 Note who pays and who is honoured. The tribes with Faith to spare are buying a
 deliverance that will elevate their weakest rival. *"My clan is the weakest in
 Manasseh, and I am the least in my father's house."*
+
+**A judge does not outlive their generations.** The one-shot lasts **two
+generations** and then lapses, spent or not — *"and whenever the judge died, they
+turned back and were more corrupt than their fathers"* (Judges 2:19). No
+deliverance is permanent; that is the argument of the whole book.
 
 ### 5. Rest
 

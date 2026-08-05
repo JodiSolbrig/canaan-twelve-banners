@@ -81,9 +81,24 @@ their starting Loyalty; it can restore losses but never exceed the printed value
 ## End-Game Scoring
 
 ### Game Length
-- Standard game: **6 rounds** (or until the Covenant Meter hits 0–1 and the final-round clock is triggered).
-- Short game (2–4 players): 5 rounds.
-- Epic 12 Mode: 7 rounds or until Broken Covenant triggers.
+
+**A game is ten generations**, at every player count — or fewer if the Covenant
+Meter hits 0–1 and the final-generation clock is triggered.
+
+A round is **not a season. It is a generation.** The Book of Judges spans roughly
+300–410 years and measures itself in generations rather than years:
+
+> *"And all that generation also were gathered to their fathers. And there arose
+> another generation after them who did not know the Lord."* — Judges 2:10
+
+The recurring "the land had rest forty years" *is* a generation. Reckoned that
+way the book runs to eight or ten of them, containing six major oppressions and
+twelve named judges. Ten generations is therefore the shape of the source, not an
+arbitrary length — and it is what gives the cycle room to turn more than once and
+leaders room to actually rise.
+
+Expect roughly **45–70 minutes** at 3–4 players once the table knows the rules,
+and up to **two hours** for a first six-player game including teaching.
 
 ### Final Scoring
 1. **Glory** is the primary score. Highest Glory wins.

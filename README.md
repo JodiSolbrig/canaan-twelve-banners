@@ -47,9 +47,10 @@ npm run build   # tsc -b && vite build
 ## Prototype scope
 
 The design package targets **2–11 players plus Epic 12 Mode**. This prototype
-covers **2–6 players** and does not implement Epic 12 (12 boards, 7 rounds,
-special seating). Round counts follow the rules: 5 rounds at 2–4 players,
-6 at 5–6.
+covers **2–6 players** and does not implement Epic 12 (12 boards, special seating).
+
+A game is **10 generations** at every player count. A round is a generation, not
+a season — see *Game Length* in `markdown/04-setup-scoring-and-scaling.md`.
 
 ## Rules deviations
 

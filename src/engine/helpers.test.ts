@@ -14,14 +14,26 @@ import {
 import { idAt, patchPlayer, playerOf, scenario, setResources } from './testSupport';
 
 describe('baseThreshold', () => {
+  /** What the threshold should be for `n` players, straight from the config. */
+  function expected(s: ReturnType<typeof scenario>, players: number): number {
+    const t = s.tuningSnapshot;
+    const base = t.thresholdBase === 'fixed' ? t.thresholdFixed : players;
+    return base + (players <= 3 ? t.smallGroupThresholdBonus : 0) + t.thresholdBonus;
+  }
+
   it('defaults to the player count', () => {
     const s = scenario({ tribes: ['Judah', 'Levi', 'Gad', 'Asher'], crisisId: null });
-    expect(baseThreshold(s, 'military')).toBe(4);
+    expect(baseThreshold(s, 'military')).toBe(expected(s, 4));
   });
 
   it('adds the small-group bonus at 2–3 players', () => {
-    const s = scenario({ tribes: ['Judah', 'Levi'], crisisId: null });
-    expect(baseThreshold(s, 'moral')).toBe(3);
+    const two = scenario({ tribes: ['Judah', 'Levi'], crisisId: null });
+    const four = scenario({ tribes: ['Judah', 'Levi', 'Gad', 'Asher'], crisisId: null });
+    expect(baseThreshold(two, 'moral')).toBe(expected(two, 2));
+    // The bonus is what keeps a 2-player table from having a trivially low bar.
+    expect(baseThreshold(two, 'moral') - 2).toBeGreaterThan(
+      baseThreshold(four, 'moral') - 4,
+    );
   });
 
   it('honours the fixed-threshold mode', () => {
@@ -30,20 +42,20 @@ describe('baseThreshold', () => {
       tuning: { thresholdBase: 'fixed', thresholdFixed: 6 },
       crisisId: null,
     });
-    expect(baseThreshold(s, 'provision')).toBe(6);
+    expect(baseThreshold(s, 'provision')).toBe(6 + s.tuningSnapshot.thresholdBonus);
   });
 
   it('raises Provision by 1 under Midianite Swarms', () => {
     const s = scenario({ tribes: ['Judah', 'Levi', 'Gad', 'Asher'], crisisId: 2 });
-    expect(baseThreshold(s, 'provision')).toBe(5);
-    expect(baseThreshold(s, 'military')).toBe(4);
+    expect(baseThreshold(s, 'provision')).toBe(expected(s, 4) + 1);
+    expect(baseThreshold(s, 'military')).toBe(expected(s, 4));
   });
 
   it('raises Military and Moral by 1 under the Ammonite Claim', () => {
     const s = scenario({ tribes: ['Judah', 'Levi', 'Gad', 'Asher'], crisisId: 6 });
-    expect(baseThreshold(s, 'military')).toBe(5);
-    expect(baseThreshold(s, 'moral')).toBe(5);
-    expect(baseThreshold(s, 'provision')).toBe(4);
+    expect(baseThreshold(s, 'military')).toBe(expected(s, 4) + 1);
+    expect(baseThreshold(s, 'moral')).toBe(expected(s, 4) + 1);
+    expect(baseThreshold(s, 'provision')).toBe(expected(s, 4));
   });
 });
 
@@ -55,6 +67,15 @@ describe('covenantZone', () => {
     for (const v of [5, 6, 7]) expect(covenantZone(v, t)).toBe('warning');
     for (const v of [2, 3, 4]) expect(covenantZone(v, t)).toBe('judgment');
     for (const v of [0, 1]) expect(covenantZone(v, t)).toBe('broken');
+  });
+
+  it('leaves no gap or overlap between the bands', () => {
+    const seen = new Set<string>();
+    for (let v = 0; v <= t.covenantMax; v++) seen.add(covenantZone(v, t));
+    expect(seen).toEqual(new Set(['broken', 'judgment', 'warning', 'strength']));
+    // Every band boundary is ordered.
+    expect(t.zoneJudgmentMin).toBeLessThan(t.zoneWarningMin);
+    expect(t.zoneWarningMin).toBeLessThan(t.zoneStrengthMin);
   });
 });
 

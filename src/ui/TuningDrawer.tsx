@@ -94,19 +94,21 @@ export function TuningDrawer({ open, tuning, onClose, onApply }: Props) {
           />
         </label>
         <label>
-          Rounds (2–4 players)
+          Generations (rounds)
           <input
             type="number"
-            value={draft.roundsShort}
-            onChange={(e) => set('roundsShort', Number(e.target.value))}
+            min={1}
+            value={draft.generations}
+            onChange={(e) => set('generations', Number(e.target.value))}
           />
         </label>
         <label>
-          Rounds (5–6 players)
+          Judge power lasts (generations)
           <input
             type="number"
-            value={draft.roundsStandard}
-            onChange={(e) => set('roundsStandard', Number(e.target.value))}
+            min={1}
+            value={draft.judgeGenerations}
+            onChange={(e) => set('judgeGenerations', Number(e.target.value))}
           />
         </label>
         <label>

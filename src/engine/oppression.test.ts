@@ -16,14 +16,25 @@ import {
 } from './testSupport';
 import type { GameState, TribeId } from './types';
 
-/** Resolve a round in which nothing fails, so the Covenant stays put. */
+/**
+ * Resolve a round in which every track holds.
+ *
+ * Note that a faithful generation *mends* the Covenant by 1, so tests that need
+ * the meter to finish in a particular band should start one step below it.
+ */
 function quietRound(state: GameState, carrier: string): GameState {
   return resolveRound(carryAllTracks(state, carrier));
 }
 
+/**
+ * Covenant value that lands inside Judgment (2–4) after a wholly faithful
+ * generation lifts the meter by +1 per track held.
+ */
+const JUDGMENT_BEFORE_MENDING = 3;
+
 describe('falling under an Oppressor', () => {
   it('sells Israel into a hand when the Covenant reaches Judgment', () => {
-    let s = scenario({ tribes: ['Judah', 'Levi'], covenant: 4, crisisId: null });
+    let s = scenario({ tribes: ['Judah', 'Levi'], covenant: JUDGMENT_BEFORE_MENDING, crisisId: null });
     expect(s.oppression).toBeNull();
 
     s = quietRound(s, idAt(s, 0));
@@ -42,7 +53,7 @@ describe('falling under an Oppressor', () => {
   });
 
   it('draws each Oppressor once before repeating', () => {
-    let s = scenario({ tribes: ['Judah', 'Levi'], covenant: 4, crisisId: null });
+    let s = scenario({ tribes: ['Judah', 'Levi'], covenant: JUDGMENT_BEFORE_MENDING, crisisId: null });
     const before = s.oppressorDeck.length;
     s = quietRound(s, idAt(s, 0));
     expect(s.oppressorDeck).toHaveLength(before - 1);
@@ -63,24 +74,22 @@ describe('falling under an Oppressor', () => {
 
 describe('enduring an Oppressor', () => {
   it('presses on the track its account names', () => {
-    const s = withOppression(
-      scenario({ tribes: ['Judah', 'Levi'], crisisId: null }),
-      'midian', // attacks Provision
-    );
-    const base = 3; // 2 players + small-group bonus
+    const free = scenario({ tribes: ['Judah', 'Levi'], crisisId: null });
+    const base = baseThreshold(free, 'provision');
+    const s = withOppression(free, 'midian'); // Midian attacks Provision
+
     expect(baseThreshold(s, 'provision')).toBe(base + 1);
-    expect(baseThreshold(s, 'military')).toBe(base);
-    expect(baseThreshold(s, 'moral')).toBe(base);
+    expect(baseThreshold(s, 'military')).toBe(baseThreshold(free, 'military'));
+    expect(baseThreshold(s, 'moral')).toBe(baseThreshold(free, 'moral'));
   });
 
   it('presses harder for every round endured', () => {
-    const s = withOppression(
-      scenario({ tribes: ['Judah', 'Levi'], crisisId: null }),
-      'midian',
-      { roundsEndured: 3 },
-    );
+    const free = scenario({ tribes: ['Judah', 'Levi'], crisisId: null });
+    const base = baseThreshold(free, 'provision');
+    const s = withOppression(free, 'midian', { roundsEndured: 3 });
+
     expect(oppressionSeverity(s)).toBe(4);
-    expect(baseThreshold(s, 'provision')).toBe(3 + 4);
+    expect(baseThreshold(s, 'provision')).toBe(base + 4);
   });
 
   it('tightens its grip at the end of a round it survives', () => {
@@ -205,7 +214,7 @@ describe('crying out', () => {
 describe('deliverance', () => {
   function delivered() {
     let s = withOppression(
-      scenario({ tribes: ['Judah', 'Levi'], covenant: 4, crisisId: null }),
+      scenario({ tribes: ['Judah', 'Levi'], covenant: JUDGMENT_BEFORE_MENDING, crisisId: null }),
       'midian',
       { cryPool: 4 }, // 2 players x 2 = threshold met
     );
@@ -220,7 +229,7 @@ describe('deliverance', () => {
 
   it('raises up the least among them, not the biggest giver', () => {
     let s = withOppression(
-      scenario({ tribes: ['Judah', 'Levi'], covenant: 4, crisisId: null }),
+      scenario({ tribes: ['Judah', 'Levi'], covenant: JUDGMENT_BEFORE_MENDING, crisisId: null }),
       'midian',
       { cryPool: 4 },
     );
@@ -238,7 +247,7 @@ describe('deliverance', () => {
 
   it('breaks a tie on Glory by lower Loyalty', () => {
     let s = withOppression(
-      scenario({ tribes: ['Judah', 'Naphtali'], covenant: 4, crisisId: null }),
+      scenario({ tribes: ['Judah', 'Naphtali'], covenant: JUDGMENT_BEFORE_MENDING, crisisId: null }),
       'midian',
       { cryPool: 4 },
     );
@@ -286,10 +295,60 @@ describe('deliverance', () => {
   });
 });
 
+describe('a judge does not outlive their generations', () => {
+  it('lapses the one-shot after the set number of generations', () => {
+    let s = withOppression(
+      scenario({
+        tribes: ['Judah', 'Levi'],
+        covenant: JUDGMENT_BEFORE_MENDING,
+        round: 1,
+        crisisId: null,
+      }),
+      'midian',
+      { cryPool: 9 },
+    );
+    s = quietRound(s, idAt(s, 0));
+
+    const judge = s.players.find((p) => p.judgeships > 0)!;
+    expect(judge.judgePower).toBe('midian');
+    expect(judge.judgePowerExpires).toBe(1 + s.tuningSnapshot.judgeGenerations);
+
+    // Run generations forward until the judge's time is up.
+    for (let i = 0; i < s.tuningSnapshot.judgeGenerations; i++) {
+      s = advanceToNextRound(s);
+      s = quietRound(s, idAt(s, 0));
+    }
+
+    expect(playerOf(s, judge.id).judgePower).toBeNull();
+    // The judgeship itself is remembered even though the power is gone.
+    expect(playerOf(s, judge.id).judgeships).toBe(1);
+  });
+
+  it('keeps the power alive within its own generations', () => {
+    let s = withOppression(
+      scenario({
+        tribes: ['Judah', 'Levi'],
+        covenant: JUDGMENT_BEFORE_MENDING,
+        round: 1,
+        crisisId: null,
+      }),
+      'midian',
+      { cryPool: 9 },
+    );
+    s = quietRound(s, idAt(s, 0));
+    const judge = s.players.find((p) => p.judgeships > 0)!;
+
+    s = advanceToNextRound(s);
+    s = quietRound(s, idAt(s, 0));
+
+    expect(playerOf(s, judge.id).judgePower).toBe('midian');
+  });
+});
+
 describe('the land had rest', () => {
   it('draws no Crisis and still pays income', () => {
     let s = withOppression(
-      scenario({ tribes: ['Levi', 'Judah'], covenant: 4, crisisId: null }),
+      scenario({ tribes: ['Levi', 'Judah'], covenant: JUDGMENT_BEFORE_MENDING, crisisId: null }),
       'midian',
       { cryPool: 4 },
     );
@@ -308,7 +367,7 @@ describe('the land had rest', () => {
 
   it('counts toward the round total rather than extending the game', () => {
     let s = withOppression(
-      scenario({ tribes: ['Judah', 'Levi'], covenant: 4, crisisId: null }),
+      scenario({ tribes: ['Judah', 'Levi'], covenant: JUDGMENT_BEFORE_MENDING, crisisId: null }),
       'midian',
       { cryPool: 4 },
     );
@@ -320,7 +379,7 @@ describe('the land had rest', () => {
 
   it('returns to normal Crisis draws the round after', () => {
     let s = withOppression(
-      scenario({ tribes: ['Judah', 'Levi'], covenant: 4, crisisId: null }),
+      scenario({ tribes: ['Judah', 'Levi'], covenant: JUDGMENT_BEFORE_MENDING, crisisId: null }),
       'midian',
       { cryPool: 4 },
     );
@@ -337,7 +396,7 @@ describe('the land had rest', () => {
 describe('a second cycle', () => {
   it('summons a different Oppressor after the Covenant falls again', () => {
     let s = withOppression(
-      scenario({ tribes: ['Judah', 'Levi'], covenant: 4, crisisId: null }),
+      scenario({ tribes: ['Judah', 'Levi'], covenant: JUDGMENT_BEFORE_MENDING, crisisId: null }),
       'midian',
       { cryPool: 4 },
     );
@@ -346,7 +405,7 @@ describe('a second cycle', () => {
     expect(s.oppression).toBeNull();
 
     // Drive the meter back into Judgment.
-    s = { ...s, covenant: 4, restRound: false };
+    s = { ...s, covenant: JUDGMENT_BEFORE_MENDING, restRound: false };
     s = quietRound(s, idAt(s, 0));
 
     expect(s.oppression).not.toBeNull();
@@ -355,12 +414,12 @@ describe('a second cycle', () => {
 
   it('carries no Cry over from the oppression before it', () => {
     let s = withOppression(
-      scenario({ tribes: ['Judah', 'Levi'], covenant: 4, crisisId: null }),
+      scenario({ tribes: ['Judah', 'Levi'], covenant: JUDGMENT_BEFORE_MENDING, crisisId: null }),
       'midian',
       { cryPool: 9 },
     );
     s = quietRound(s, idAt(s, 0));
-    s = { ...s, covenant: 4, restRound: false };
+    s = { ...s, covenant: JUDGMENT_BEFORE_MENDING, restRound: false };
     s = quietRound(s, idAt(s, 0));
 
     expect(s.oppression?.cryPool).toBe(0);
@@ -368,21 +427,23 @@ describe('a second cycle', () => {
 });
 
 describe('interaction with the Broken Covenant clock', () => {
+  // Let every track give way, so the meter falls the full −3 into Broken.
   it('still ends the game if the meter collapses while oppressed', () => {
     let s = withOppression(
-      scenario({ tribes: ['Judah', 'Levi'], covenant: 1, round: 2, crisisId: null }),
+      scenario({ tribes: ['Judah', 'Levi'], covenant: 2, round: 2, crisisId: null }),
       'midian',
     );
-    s = quietRound(s, idAt(s, 0));
+    s = resolveRound(s);
+    expect(s.covenant).toBe(0);
     expect(s.brokenClock).toBe(true);
   });
 
   it('leaves the oppression standing through the final round', () => {
     let s = withOppression(
-      scenario({ tribes: ['Judah', 'Levi'], covenant: 1, round: 2, crisisId: null }),
+      scenario({ tribes: ['Judah', 'Levi'], covenant: 2, round: 2, crisisId: null }),
       'midian',
     );
-    s = quietRound(s, idAt(s, 0));
+    s = resolveRound(s);
     expect(s.oppression).not.toBeNull();
   });
 });

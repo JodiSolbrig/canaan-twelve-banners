@@ -167,6 +167,7 @@ export function baseThreshold(state: GameState, track: TrackId): number {
   let thr =
     t.thresholdBase === 'fixed' ? t.thresholdFixed : n;
   if (n <= 3) thr += t.smallGroupThresholdBonus;
+  thr += t.thresholdBonus;
 
   const c = state.activeCrisis?.id;
   if (track === 'provision' && c === 2) thr += 1;

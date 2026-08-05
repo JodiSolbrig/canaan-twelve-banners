@@ -70,9 +70,9 @@ You sent help without marching.
 - Takes **no penalty** if the track fails
 
 ### Spoil
-When a track succeeds, every player who contributed to it — Banner or Supply —
-takes **1 of that track's affinity resource**. The Champion takes the Champion
-reward instead, which is already richer.
+When a track succeeds, every player who sent **Supply** to it takes **1 of that
+track's affinity resource**. Banner contributors take nothing extra — they are
+already playing for the Champion reward.
 
 This is what makes Supply worth sending: it turns a resource you have into one
 you need at a better rate than the Convert action, in exchange for the risk that
@@ -128,10 +128,11 @@ add to these rewards; "In Those Days There Was No King" caps the total Glory any
 one player takes from Champion rewards at 1 for that round.
 
 ### Failure penalties
-When a track fails:
-- The Covenant Meter drops by **1** (by **2** while the meter is in Judgment).
-- Every player who placed a **Banner** on that track loses **1 Loyalty**. Supply
-  contributors lose nothing — they never staked their name on it.
+When a track fails, every player who placed a **Banner** on it loses **1 Loyalty**.
+Supply contributors lose nothing — they never staked their name on it.
+
+The Covenant Meter itself moves **once for the generation**, not once per track —
+see *How it moves* in `02-crisis-cards-and-covenant.md`.
 
 ---
 
@@ -170,8 +171,12 @@ Highest **Banner** total = Champion (ties broken by Loyalty, then turn order)
 No Banners on a successful track = **no Champion**
 
 **On success** — Champion: +1 Glory and +1 matching resource.  
-Every other contributor: +1 matching resource (spoil).  
-**On failure** — Covenant −1 (−2 in Judgment); −1 Loyalty to each Banner
+Every **Supply** contributor: +1 matching resource (spoil).  
+**On failure** — −1 Loyalty to each Banner on that track
+
+**Covenant, once per generation**  
+**−1 for every track that gave way; +1 only if all three held**  
+(1 deeper per failure while in Judgment)
 
 **Covenant Meter** (starts at 8)  
 8–10: Stable  

@@ -30,7 +30,7 @@ import {
   updatePlayer,
 } from './helpers';
 import { startRound } from './round';
-import type { GameState, TrackId, TrackResolution } from './types';
+import type { GameState, TrackId, TrackResolution, TribeId } from './types';
 
 export function revealTokens(state: GameState): GameState {
   let s: GameState = {
@@ -199,15 +199,11 @@ export function resolveRound(state: GameState): GameState {
       if (res.track === 'moral' && s.activeCrisis?.id === 9 && res.championId) {
         s = grantGlory(s, res.championId, 1, false);
       }
-      s = paySpoil(s, res, totals.total[res.track]);
+      s = paySpoil(s, res, totals.total[res.track], totals.banner[res.track]);
       continue;
     }
 
-    // Failure
-    let drop = covenantZone(s.covenant, tuning) === 'judgment' ? 2 : 1;
-    if (res.track === 'moral' && s.activeCrisis?.id === 9) drop += 1;
-
-    s = applyCovenantDrop(s, drop, `${label(res.track)} failed`);
+    // The meter itself is moved once for the whole generation, after this loop.
 
     // Only Banner contributors staked their name on the track, so only they take
     // the Loyalty penalty. Supply is help sent at no personal risk.
@@ -230,6 +226,8 @@ export function resolveRound(state: GameState): GameState {
       }
     }
   }
+
+  s = moveCovenantForGeneration(s, results);
 
   // Warning zone
   const zone = covenantZone(s.covenant, tuning);
@@ -324,6 +322,125 @@ export function advanceToNextRound(state: GameState): GameState {
 }
 
 /**
+ * Move the Covenant Meter for the generation just resolved.
+ *
+ * All three modes settle the meter in one place, after every track is judged, so
+ * a table makes a single adjustment rather than one per track.
+ *
+ * Jephthah's Vow (Crisis 9) deepens a Moral failure in every mode. Clamping to
+ * the 0–10 range happens in `raiseCovenant` / `applyCovenantDrop`, so a swing
+ * past the maximum is simply wasted.
+ */
+/**
+ * Tribes whose Level III lets one track they held count twice, cancelling a
+ * single failure for the Covenant. Dan's and Gad's cards were already written
+ * this way; Levi is the Covenant's own guardian.
+ */
+const COVENANT_RESCUE: Partial<Record<TribeId, { warriors?: number }>> = {
+  Levi: {},
+  Dan: { warriors: 2 }, // "spend 2 Warriors to ignore the Covenant loss"
+  Gad: {},
+};
+
+/**
+ * Spend a Level III rescue if one is available and would turn a losing
+ * generation into a faithful one.
+ *
+ * Fired automatically rather than prompted: the engine only spends it on the one
+ * case that actually pays — a single failed track, where cancelling it swings the
+ * Covenant from −1 to +1 — so there is no interesting decision to surrender. It
+ * is deliberately *not* spent turning −3 into −2.
+ */
+function spendCovenantRescue(
+  state: GameState,
+  failedCount: number,
+  held: number,
+): { state: GameState; rescued: boolean } {
+  let s = state;
+  if (failedCount !== 1 || held < 1) return { state: s, rescued: false };
+
+  for (const p of s.players) {
+    const rescue = COVENANT_RESCUE[p.tribe];
+    if (!rescue || p.leaderLevel < 3 || p.oncePerGameUsed['rescue']) continue;
+    const cost = rescue.warriors ?? 0;
+    if (p.resources.warriors < cost) continue;
+
+    s = updatePlayer(s, p.id, (pl) => ({
+      ...pl,
+      resources: mutateResources(pl.resources, { warriors: -cost }),
+      oncePerGameUsed: { ...pl.oncePerGameUsed, rescue: true },
+    }));
+    s = addLog(
+      s,
+      `${p.tribe} spends a lifetime's standing${cost ? ` and ${cost} Warriors` : ''} — ` +
+        'one track they held counts twice, and the Covenant is spared.',
+      'good',
+    );
+    return { state: s, rescued: true };
+  }
+  return { state: s, rescued: false };
+}
+
+function moveCovenantForGeneration(
+  state: GameState,
+  results: TrackResolution[],
+): GameState {
+  let s = state;
+  const tuning = s.tuningSnapshot;
+  let failed = results.filter((r) => !r.success);
+  const held = results.length - failed.length;
+
+  // A rescue makes one held track count twice, so it covers a failure.
+  const attempt = spendCovenantRescue(s, failed.length, held);
+  s = attempt.state;
+  if (attempt.rescued) failed = [];
+
+  const names = failed.map((r) => label(r.track)).join(', ');
+  const vow =
+    s.activeCrisis?.id === 9 && failed.some((r) => r.track === 'moral') ? 1 : 0;
+
+  if (tuning.covenantDropMode === 'perTrackNet') {
+    // Every track that held lifts the meter, every one that gave way lowers it —
+    // by their own weights, so failure can bite harder than success rewards.
+    const net =
+      held * tuning.covenantPerTrackHeld -
+      failed.length * tuning.covenantPerTrackFailed -
+      vow;
+    if (net > 0) {
+      return raiseCovenant(s, net, `${held} of ${results.length} tracks held`);
+    }
+    if (net < 0) return applyCovenantDrop(s, -net, `${names} failed`);
+    return addLog(s, 'The Covenant holds where it stands.', 'info');
+  }
+
+  if (failed.length === 0) {
+    if (tuning.covenantRiseOnFaithfulRound > 0) {
+      s = raiseCovenant(
+        s,
+        tuning.covenantRiseOnFaithfulRound,
+        'every track held this generation',
+      );
+    }
+    return s;
+  }
+
+  if (tuning.covenantDropMode === 'perGeneration') {
+    let drop =
+      failed.length >= results.length ? tuning.covenantTotalCollapseDrop : 1;
+    if (covenantZone(s.covenant, tuning) === 'judgment') drop += 1;
+    return applyCovenantDrop(s, drop + vow, `${names} failed`);
+  }
+
+  // perTrack: the original rule — one drop for each track that gave way.
+  for (const res of failed) {
+    let drop = covenantZone(s.covenant, tuning) === 'judgment' ? 2 : 1;
+    if (res.track === 'moral' && s.activeCrisis?.id === 9) drop += 1;
+    s = applyCovenantDrop(s, drop, `${label(res.track)} failed`);
+  }
+  return s;
+}
+
+/**
  * The cycle of Judges, run at the end of every round:
  *
  *   deliverance (if the Cry was met) → escalation (if it was not)
@@ -337,6 +454,19 @@ function resolveOppression(state: GameState): GameState {
   let s = state;
   const tuning = s.tuningSnapshot;
   if (!tuning.oppressionEnabled) return s;
+
+  // "And whenever the judge died, they turned back." A judge's power does not
+  // outlive their generations, spent or not.
+  for (const p of s.players) {
+    if (p.judgePower && s.round >= p.judgePowerExpires) {
+      s = updatePlayer(s, p.id, (pl) => ({
+        ...pl,
+        judgePower: null,
+        judgePowerExpires: 0,
+      }));
+      s = addLog(s, `The judge of ${p.tribe} dies; their power passes.`, 'info');
+    }
+  }
 
   if (s.oppression) {
     const def = OPPRESSOR_BY_ID[s.oppression.oppressorId];
@@ -358,14 +488,18 @@ function resolveOppression(state: GameState): GameState {
       }
 
       if (judge) {
+        // The judge serves this generation and the next, then dies.
+        const expires = s.round + tuning.judgeGenerations;
         s = updatePlayer(s, judge.id, (p) => ({
           ...p,
           judgeships: p.judgeships + 1,
           judgePower: def.id,
+          judgePowerExpires: expires,
         }));
         s = addLog(
           s,
-          `${judge.tribe} — least among the tribes — is raised up as ${def.deliverer}.`,
+          `${judge.tribe} — least among the tribes — is raised up as ${def.deliverer}, ` +
+            `and judges Israel until generation ${expires}.`,
           'good',
         );
         s = grantGlory(s, judge.id, tuning.judgeGlory, false);
@@ -386,8 +520,8 @@ function resolveOppression(state: GameState): GameState {
     return s;
   }
 
-  // No oppression standing. Judgment on the meter sells Israel into a hand.
-  if (covenantZone(s.covenant, tuning) !== 'judgment') return s;
+  // No oppression standing. A low enough Covenant sells Israel into a hand.
+  if (s.covenant > tuning.oppressionTriggerAt) return s;
 
   let deck = [...s.oppressorDeck];
   if (deck.length === 0) {
@@ -416,26 +550,27 @@ function resolveOppression(state: GameState): GameState {
 }
 
 /**
- * Divide the spoil of a successful track.
+ * Divide the spoil of a successful track among those who **supplied** it.
  *
- * Everyone who contributed — Banner or Supply — shares in it, except the
- * Champion, who is already paid the richer Champion reward. This is what makes
- * Supply worth sending: it converts an off-affinity resource into the one the
- * track wants, at a better rate than the Convert action, in exchange for the
- * risk that the track fails and pays nothing.
+ * Only Supply contributors are paid. Banner contributors are already chasing the
+ * Champion reward, so they need no extra inducement; Supply is the play that
+ * needed one. Restricting it this way also roughly halves the number of payouts
+ * a table has to count out each round, which matters over ten generations.
  */
 function paySpoil(
   state: GameState,
   res: TrackResolution,
-  contributors: Record<string, number>,
+  totals: Record<string, number>,
+  banners: Record<string, number>,
 ): GameState {
   let s = state;
   const amount = s.tuningSnapshot.spoilOnSuccess;
   if (amount <= 0) return s;
   const resource = TRACK_AFFINITY_RESOURCE[res.track];
 
-  for (const [pid, influence] of Object.entries(contributors)) {
-    if (influence <= 0 || pid === res.championId) continue;
+  for (const [pid, influence] of Object.entries(totals)) {
+    const supplied = influence - (banners[pid] ?? 0);
+    if (supplied <= 0) continue;
     s = updatePlayer(s, pid, (p) => ({
       ...p,
       resources: mutateResources(p.resources, { [resource]: amount }),

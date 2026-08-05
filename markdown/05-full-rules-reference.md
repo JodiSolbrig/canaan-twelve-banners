@@ -100,7 +100,7 @@ Full card list and effects in `02-crisis-cards-and-covenant.md` and `csv/crisis_
 See `04-setup-scoring-and-scaling.md` for complete first-round setup, starting resources table, and first-round restrictions.
 
 ### End Game & Scoring
-Standard length: 6 rounds (adjustable).  
+Standard length: **10 generations** — a round is a generation, not a season.  
 Primary score = Glory.  
 Tie-breakers: Loyalty → total remaining resources → most Championships.  
 Optional end-of-game Covenant bonus/penalty applies.  

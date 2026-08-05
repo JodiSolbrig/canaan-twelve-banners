@@ -182,8 +182,23 @@ export function withOppression(
 }
 
 /**
- * Carry every track past its threshold, so a round resolves with no failures and
- * the Covenant stays exactly where the test put it.
+ * Place exactly enough Banner Influence for one track to succeed.
+ *
+ * Prefer this over a literal token count: thresholds move with tuning, and a
+ * hardcoded 3 silently becomes "this track fails" the moment they do.
+ */
+export function carryTrack(
+  state: GameState,
+  playerId: string,
+  track: TrackId,
+): GameState {
+  return withTokens(state, [
+    { playerId, track, count: baseThreshold(state, track) },
+  ]);
+}
+
+/**
+ * Carry every track past its threshold, so a round resolves with no failures.
  */
 export function carryAllTracks(state: GameState, playerId: string): GameState {
   const need = Math.max(

@@ -33,13 +33,31 @@ export const TRACK_LABELS: Record<TrackId, string> = {
   provision: 'Provision',
 };
 
+/**
+ * The track each tribe leans toward.
+ *
+ * This is a *lean*, not a restriction — nothing stops a player sending Benjamin
+ * into Provision. It drives the bot's planning, the resource it converts toward,
+ * and two defaults (the track Judah's Rally gifts to, and where a gifted
+ * temporary token lands).
+ *
+ * Kept at 5 Military / 4 Moral / 4 Provision. It was 7/3/3, which sent most of
+ * the table at Military and left Provision failing most generations — invisible
+ * before Banner/Supply, when any resource served on any track, but decisive once
+ * the paying resource began deciding Champions.
+ */
 const BIAS: Record<TribeId, TrackId> = {
   Judah: 'military',
   Benjamin: 'military',
   Levi: 'moral',
   Ephraim: 'provision',
-  Manasseh: 'military',
-  Reuben: 'military',
+  // Jair's Thirty Towns already rewards Manasseh for Provision reaching High,
+  // and its 3/3/3 spread argues no track over another.
+  Manasseh: 'provision',
+  // "Among the divisions of Reuben there were great searchings of heart"
+  // (Judges 5:15–16). Reuben's one memorable moment is a matter of conscience,
+  // and none of its three upgrades key off a track.
+  Reuben: 'moral',
   Simeon: 'military',
   Dan: 'military',
   Naphtali: 'moral',
@@ -108,7 +126,7 @@ export const TRIBES: TribeDef[] = [
     upgrades: [
       'Phinehas I – Covenant Zeal: Moral Champion raises Covenant +1.',
       'Phinehas II – Intercession: Spend 1 Faith to prevent 1 Covenant loss.',
-      'Phinehas III – Sacred Inquiry: Once/game peek next Crisis after placement.',
+      'Phinehas III – Turned Away Wrath: Once/game one track you held counts twice, cancelling a failure.',
     ],
     income: { faith: 2, label: '2 Faith', note: 'Priestly / Covenant' },
   },
@@ -218,7 +236,7 @@ export const TRIBES: TribeDef[] = [
     upgrades: [
       'Nazirite Strength: 3 Military tokens count as 4.',
       'Riddle & Cunning: Move 1 token after reveal once/round.',
-      'Final Stand: Once/game spend 2 Warriors to ignore Covenant loss.',
+      'Samson III – Final Stand: Once/game spend 2 Warriors so one track you held counts twice.',
     ],
     income: {
       warriors: 1,
@@ -266,7 +284,7 @@ export const TRIBES: TribeDef[] = [
     upgrades: [
       'Raider’s Resolve: Reduce all Loyalty loss by 1.',
       'Enduring Defense: Military Low → your tokens +1.',
-      'Overcomer: Once/game ignore one setback.',
+      'Overcomer: Once/game one track you held counts twice, cancelling a failure.',
     ],
     income: { warriors: 2, label: '2 Warriors', note: 'Frontline tank' },
   },

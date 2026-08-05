@@ -52,6 +52,7 @@ function makePlayer(
     pendingZoneUnique: null,
     judgeships: 0,
     judgePower: null,
+    judgePowerExpires: 0,
     peekedCrisis: null,
   };
 }
@@ -92,7 +93,7 @@ export function createGame(opts: SetupOptions): GameState {
     players.map((p) => p.id),
     rng,
   );
-  const maxRounds = total <= 4 ? tuning.roundsShort : tuning.roundsStandard;
+  const maxRounds = tuning.generations;
 
   let state: GameState = {
     players,

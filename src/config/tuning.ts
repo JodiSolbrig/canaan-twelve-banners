@@ -18,6 +18,15 @@ export type TuningConfig = {
   thresholdFixed: number;
   /** Extra threshold for 2–3 players */
   smallGroupThresholdBonus: number;
+  /**
+   * Added to every track's threshold at every table size.
+   *
+   * Matters most under `perTrackNet`, where the Covenant is a random walk driven
+   * by track outcomes: if tracks succeed more often than they fail the meter
+   * drifts to the ceiling and the cycle never fires, so that mode wants tracks
+   * near a coin flip.
+   */
+  thresholdBonus: number;
   lowHighOffset: number;
   /**
    * On (prototype default): every player gets a free Influence placement and
@@ -27,6 +36,41 @@ export type TuningConfig = {
    */
   freePlacementPhase: boolean;
   failedTrackLoyaltyLoss: number;
+  /**
+   * How the Covenant moves at the end of a generation.
+   *
+   * `perTrack` — every failure drops it, nothing raises it (the 0.4.0 rule,
+   *   tuned for a 5-round game). Over ten generations this erodes up to 3 a
+   *   round, which no amount of deliverance can outrun.
+   * `perGeneration` — the meter moves once: +1 if every track held, −1 if one or
+   *   two gave way, −2 if all three did.
+   * `perTrackNet` — each track that held lifts the meter by
+   *   `covenantPerTrackHeld` and each that gave way lowers it by
+   *   `covenantPerTrackFailed`. Anything above the maximum is wasted.
+   */
+  covenantDropMode: 'perTrack' | 'perGeneration' | 'perTrackNet';
+  /** `perTrackNet`: Covenant gained for each track that held. */
+  covenantPerTrackHeld: number;
+  /**
+   * `perTrackNet`: Covenant lost for each track that gave way.
+   *
+   * The ratio between this and `covenantPerTrackHeld` sets the meter's drift,
+   * and the drift has to be read against the track success rate. Weighting
+   * failure twice as heavily makes the meter fall unless tracks succeed roughly
+   * two times in three, so it wants a *lower* threshold than an even weighting
+   * does — the two settings cannot be tuned apart.
+   */
+  covenantPerTrackFailed: number;
+  /** Extra drop when every track fails, under `perGeneration`. */
+  covenantTotalCollapseDrop: number;
+  /**
+   * Covenant regained when every track succeeds in a generation.
+   *
+   * Without this the meter only ever falls, so over ten generations erosion
+   * outruns deliverance and half of all games end early on the Broken clock. A
+   * faithful generation should mend the covenant, not merely fail to break it.
+   */
+  covenantRiseOnFaithfulRound: number;
   /**
    * Affinity resource paid to each non-Champion contributor when a track
    * succeeds. This is what makes Supply worth sending; 0 disables it.
@@ -38,6 +82,17 @@ export type TuningConfig = {
    * rules, where the Covenant only ever falls.
    */
   oppressionEnabled: boolean;
+  /**
+   * Israel is sold into a hand when the Covenant sits at or below this.
+   *
+   * Deliberately separate from the Judgment band. Judgment also deepens the drop
+   * for a failed track, so widening the band to fire the cycle earlier deepens
+   * erosion at the same time — measured over 300 games, that traded 1.22
+   * oppressions per game for a jump from 44% to 51% of games ending on the
+   * Broken clock. Keeping the trigger on its own dial fires the cycle sooner
+   * without making failure hurt sooner.
+   */
+  oppressionTriggerAt: number;
   /**
    * The Cry is `cryThresholdBase + players + cryThresholdPerRound x roundsEndured`
    * Faith — every term a whole token, so it can be counted at a table.
@@ -58,10 +113,23 @@ export type TuningConfig = {
   cryThresholdPerRound: number;
   /** Glory to the Judge raised up at deliverance. */
   judgeGlory: number;
+  /**
+   * Generations a Judge's one-shot survives before it lapses, spent or not.
+   * "And whenever the judge died, they turned back" (Judges 2:19).
+   */
+  judgeGenerations: number;
   /** Deliverance is followed by a round with no Crisis ("the land had rest"). */
   restAfterDeliverance: boolean;
-  roundsShort: number; // 2–4 players
-  roundsStandard: number; // 5–6 players
+  /**
+   * Rounds in a game. A round is a **generation**, not a season — Judges spans
+   * roughly 300–410 years and measures itself in generations ("there arose
+   * another generation after them who did not know the Lord", 2:10), with six
+   * major oppression cycles and twelve judges. Ten generations gives room for
+   * the cycle to turn more than once and for leaders to actually rise.
+   *
+   * The same for every player count: a generation is a generation.
+   */
+  generations: number;
   leaderUnlockGlory: [number, number, number];
   botAggression: number; // 0–1
   botThinkMs: number;
@@ -77,9 +145,29 @@ export const DEFAULT_TUNING: TuningConfig = {
   thresholdBase: 'playerCount',
   thresholdFixed: 5,
   smallGroupThresholdBonus: 1,
+  /*
+   * Paired with the Covenant weights. Sampled over 300 games at 10 generations:
+   *
+   *   held/failed   threshold   Covenant   broken-clock   generations played
+   *   +1 / −1       +1          7.56        9.7%          9.6
+   *   +1 / −2       +0          6.16       34.7%          8.6
+   *   +1 / −2       +1          3.48       75.7%          6.7
+   *   +1 / −2       −1          8.26       11.3%          9.5
+   *
+   * A heavier failure weight needs an *easier* threshold, not a harder one.
+   */
+  thresholdBonus: 0,
   lowHighOffset: 2,
   freePlacementPhase: true,
   failedTrackLoyaltyLoss: 1,
+  // −1 for each track that gave way (−2 each while in Judgment, per the original
+  // design), and +1 only when every track held. Failure is granular; recovery is
+  // all-or-nothing, so mending the covenant takes a genuinely faithful generation.
+  covenantDropMode: 'perTrack',
+  covenantPerTrackHeld: 1,
+  covenantPerTrackFailed: 1,
+  covenantTotalCollapseDrop: 2,
+  covenantRiseOnFaithfulRound: 1,
   spoilOnSuccess: 1,
   championRewards: {
     military: { glory: 1, warriors: 1 },
@@ -87,13 +175,14 @@ export const DEFAULT_TUNING: TuningConfig = {
     provision: { glory: 1, goods: 1 },
   },
   oppressionEnabled: true,
+  oppressionTriggerAt: 5,
   cryThresholdBase: 1,
   cryThresholdPerPlayer: 1,
   cryThresholdPerRound: 1,
   judgeGlory: 2,
+  judgeGenerations: 2,
   restAfterDeliverance: true,
-  roundsShort: 5,
-  roundsStandard: 6,
+  generations: 10,
   leaderUnlockGlory: [3, 6, 9],
   botAggression: 0.55,
   botThinkMs: 450,

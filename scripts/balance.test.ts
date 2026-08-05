@@ -11,7 +11,7 @@
  */
 import { it } from 'vitest';
 import { chooseBotAction } from '../src/ai/bots';
-import { DEFAULT_TUNING } from '../src/config/tuning';
+import { DEFAULT_TUNING, type TuningConfig } from '../src/config/tuning';
 import { createGame } from '../src/engine/createGame';
 import { currentActor, isBannerToken } from '../src/engine/helpers';
 import { dispatch } from '../src/engine/index';
@@ -21,6 +21,9 @@ const TRACKS: TrackId[] = ['military', 'moral', 'provision'];
 const GAMES = Number(process.env.BALANCE_GAMES ?? 300);
 
 type TribeRow = { games: number; wins: number; glory: number; champs: number };
+
+/** How far players actually get up the three-step leader progression. */
+type LeaderReach = [number, number, number, number]; // seats reaching level 0/I/II/III
 
 type Stats = {
   games: number;
@@ -39,6 +42,10 @@ type Stats = {
   roundsPlayed: number;
   endedOppressed: number;
   cryPaid: number;
+  leaderReach: LeaderReach;
+  judgeships: number;
+  seats: number;
+  gameRounds: number[];
 };
 
 function blank(): Stats {
@@ -59,6 +66,10 @@ function blank(): Stats {
     roundsPlayed: 0,
     endedOppressed: 0,
     cryPaid: 0,
+    leaderReach: [0, 0, 0, 0],
+    judgeships: 0,
+    seats: 0,
+    gameRounds: [],
   };
 }
 
@@ -71,9 +82,25 @@ function playGame(seed: number, players: number, stats: Stats): void {
   // BALANCE_CRY overrides the Cry threshold so it can be swept without editing
   // the shipped defaults, e.g. `BALANCE_CRY=1.5 npm run balance`.
   const cry = process.env.BALANCE_CRY;
-  const tuning = cry
-    ? { ...structuredClone(DEFAULT_TUNING), cryThresholdPerPlayer: Number(cry) }
-    : undefined;
+  const gens = process.env.BALANCE_GENERATIONS;
+  const freePlace = process.env.BALANCE_FREEPLACE;
+  const covMode = process.env.BALANCE_COVENANT as
+    | TuningConfig['covenantDropMode']
+    | undefined;
+  const thr = process.env.BALANCE_THRESHOLD;
+  const fail = process.env.BALANCE_FAILWEIGHT;
+  const tuning =
+    cry || gens || freePlace || covMode || thr || fail
+      ? {
+          ...structuredClone(DEFAULT_TUNING),
+          ...(cry ? { cryThresholdPerPlayer: Number(cry) } : {}),
+          ...(gens ? { generations: Number(gens) } : {}),
+          ...(freePlace ? { freePlacementPhase: freePlace !== '0' } : {}),
+          ...(covMode ? { covenantDropMode: covMode } : {}),
+          ...(thr ? { thresholdBonus: Number(thr) } : {}),
+          ...(fail ? { covenantPerTrackFailed: Number(fail) } : {}),
+        }
+      : undefined;
   let s: GameState = createGame({
     humanTribe: 'Judah',
     totalPlayers: players,
@@ -146,6 +173,7 @@ function playGame(seed: number, players: number, stats: Stats): void {
 
   stats.games += 1;
   stats.finalCovenant.push(s.covenant);
+  stats.gameRounds.push(s.round);
   if (s.brokenClock) stats.brokenGames += 1;
   if (s.oppression) stats.endedOppressed += 1;
   for (const p of s.players) {
@@ -154,6 +182,10 @@ function playGame(seed: number, players: number, stats: Stats): void {
     row.glory += p.resources.glory;
     row.champs += p.championships;
     if (s.winners?.includes(p.id)) row.wins += 1;
+    stats.seats += 1;
+    stats.judgeships += p.judgeships;
+    // Count every level a seat reached, so I/II/III read as "got at least this far".
+    for (let lvl = 0; lvl <= p.leaderLevel; lvl++) stats.leaderReach[lvl] += 1;
   }
 }
 
@@ -198,6 +230,14 @@ it(`balance sample over ${GAMES} games`, () => {
       `  avg severity when broken ${avgSev.toFixed(2)}   avg Faith paid ${(stats.cryPaid / stats.deliverances).toFixed(2)}`,
     );
   }
+  out.push('');
+  out.push('leader progression (share of seats reaching each level):');
+  out.push(
+    `  I ${pct(stats.leaderReach[1], stats.seats)}   II ${pct(stats.leaderReach[2], stats.seats)}   III ${pct(stats.leaderReach[3], stats.seats)}`,
+  );
+  out.push(
+    `  judgeships ${(stats.judgeships / stats.games).toFixed(2)}/game   avg rounds played ${(stats.gameRounds.reduce((a, b) => a + b, 0) / stats.games).toFixed(1)}`,
+  );
   out.push('');
   out.push('tribe          games    win%   avgGlory  avgChamps');
   for (const [tribe, r] of Object.entries(stats.perTribe).sort(

@@ -94,10 +94,16 @@ export type PlayerState = {
   /** Times this player has been raised up as Judge. */
   judgeships: number;
   /**
-   * An unspent Judge one-shot, named by the oppression it broke. Held on the
-   * player until used; the powers themselves are not wired yet.
+   * An unspent Judge one-shot, named by the oppression it broke.
+   *
+   * A judge does not outlive their generation — "and whenever the judge died,
+   * they turned back and were more corrupt than their fathers" (Judges 2:19).
+   * The power lapses at the end of `judgePowerExpires`, spent or not.
+   * The powers themselves are not wired yet.
    */
   judgePower: OppressorId | null;
+  /** Round after which an unspent `judgePower` lapses. */
+  judgePowerExpires: number;
   /** Peeked crisis cards for UI */
   peekedCrisis: CrisisCardDef[] | null;
 };
