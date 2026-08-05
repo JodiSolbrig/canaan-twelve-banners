@@ -16,6 +16,7 @@ import {
   getPlayer,
   getTrackTotals,
   grantGlory,
+  grantGoods,
   isBannerToken,
   leastAmongThem,
   mulberry32,
@@ -127,6 +128,68 @@ export function applyShiftToken(
     state: addLog(
       s,
       `${getPlayer(s, playerId).tribe} moves after the reveal (${ability.name}): ` +
+        `1 Influence ${label(token.track)} → ${label(toTrack)}.`,
+      'good',
+    ),
+    ok: true,
+  };
+}
+
+/**
+ * Issachar III — Wise Counsel. Once a game, move someone *else's* token.
+ *
+ * The only ability in the game that reaches across the table and touches
+ * another player's board, so it is fenced: it is spent in the post-reveal
+ * window like the other movers, the counsellor names both the token and where
+ * it goes (a victim who chose would simply move it somewhere harmless, which is
+ * no counsel at all), and gifted or temporary tokens are out of reach — you can
+ * advise a tribe, not confiscate a gift.
+ */
+export function canWiseCounsel(state: GameState, playerId: string): boolean {
+  const p = getPlayer(state, playerId);
+  return (
+    p.tribe === 'Issachar' &&
+    p.leaderLevel >= 3 &&
+    !p.oncePerGameUsed['wiseCounsel'] &&
+    state.tokens.some((t) => t.playerId !== playerId && !t.temporary)
+  );
+}
+
+export function applyWiseCounsel(
+  state: GameState,
+  playerId: string,
+  tokenId: string,
+  toTrack: TrackId,
+): { state: GameState; ok: boolean } {
+  if (!canWiseCounsel(state, playerId)) {
+    return { state: addLog(state, 'No counsel available.', 'bad'), ok: false };
+  }
+  const token = state.tokens.find(
+    (t) => t.id === tokenId && t.playerId !== playerId && !t.temporary,
+  );
+  if (!token) {
+    return {
+      state: addLog(state, 'Counsel needs another player’s own token.', 'bad'),
+      ok: false,
+    };
+  }
+  if (token.track === toTrack) {
+    return { state: addLog(state, 'Pick a different track.', 'bad'), ok: false };
+  }
+  let s: GameState = {
+    ...state,
+    tokens: state.tokens.map((t) =>
+      t.id === tokenId ? { ...t, track: toTrack } : t,
+    ),
+  };
+  s = updatePlayer(s, playerId, (p) => ({
+    ...p,
+    oncePerGameUsed: { ...p.oncePerGameUsed, wiseCounsel: true },
+  }));
+  return {
+    state: addLog(
+      s,
+      `${getPlayer(s, playerId).tribe} counsels ${getPlayer(s, token.playerId).tribe} — ` +
         `1 Influence ${label(token.track)} → ${label(toTrack)}.`,
       'good',
     ),
@@ -358,16 +421,10 @@ export function resolveRound(state: GameState): GameState {
       if (res.track === 'provision' && res.zone === 'high') {
         for (const p of s.players) {
           if (p.tribe === 'Manasseh' && p.leaderLevel >= 2) {
-            s = updatePlayer(s, p.id, (pl) => ({
-              ...pl,
-              resources: mutateResources(pl.resources, { goods: 1 }),
-            }));
+            s = grantGoods(s, p.id, 1, 'zone');
           }
           if (p.tribe === 'Asher' && p.leaderLevel >= 1) {
-            s = updatePlayer(s, p.id, (pl) => ({
-              ...pl,
-              resources: mutateResources(pl.resources, { goods: 1 }),
-            }));
+            s = grantGoods(s, p.id, 1, 'zone');
           }
         }
       }
@@ -730,10 +787,14 @@ function paySpoil(
   for (const [pid, influence] of Object.entries(totals)) {
     const supplied = influence - (banners[pid] ?? 0);
     if (supplied <= 0) continue;
-    s = updatePlayer(s, pid, (p) => ({
-      ...p,
-      resources: mutateResources(p.resources, { [resource]: amount }),
-    }));
+    if (resource === 'goods') {
+      s = grantGoods(s, pid, amount, 'spoil');
+    } else {
+      s = updatePlayer(s, pid, (p) => ({
+        ...p,
+        resources: mutateResources(p.resources, { [resource]: amount }),
+      }));
+    }
     s = addLog(
       s,
       `${getPlayer(s, pid).tribe} shares the spoil of ${label(res.track)} (+${amount} ${resource}).`,
@@ -763,10 +824,7 @@ function settleZoneUniques(
     s = updatePlayer(s, id, (p) => ({ ...p, pendingZoneUnique: null }));
 
     if (pending === 'raid') {
-      s = updatePlayer(s, id, (p) => ({
-        ...p,
-        resources: mutateResources(p.resources, { goods: 1 }),
-      }));
+      s = grantGoods(s, id, 1, 'action');
       if (militaryLow) {
         s = addLog(s, `${player.tribe} Raid hits a Low Military Track — +1 Goods, no Glory.`, 'bad');
         s = applyLoyaltyLoss(s, id, 1, 'Raid in Low zone');
@@ -779,10 +837,7 @@ function settleZoneUniques(
 
     // Skirmish always pays Glory; Low Military adds Goods.
     if (militaryLow) {
-      s = updatePlayer(s, id, (p) => ({
-        ...p,
-        resources: mutateResources(p.resources, { goods: 1 }),
-      }));
+      s = grantGoods(s, id, 1, 'action');
       s = addLog(s, `${player.tribe} Skirmishes a Low Military Track — +1 Glory, +1 Goods.`, 'good');
     } else {
       s = addLog(s, `${player.tribe} Skirmishes — +1 Glory.`, 'good');
@@ -857,12 +912,12 @@ function awardChampion(state: GameState, res: TrackResolution): GameState {
   const delta: Record<string, number> = {};
   if (reward.faith) delta.faith = reward.faith;
   if (reward.warriors) delta.warriors = reward.warriors;
-  if (reward.goods) delta.goods = reward.goods;
 
   s = updatePlayer(s, res.championId, (p) => ({
     ...p,
     resources: mutateResources(p.resources, delta),
   }));
+  if (reward.goods) s = grantGoods(s, res.championId, reward.goods, 'champion');
 
   // Judah Othniel I
   if (champ.tribe === 'Judah' && champ.leaderLevel >= 1) {

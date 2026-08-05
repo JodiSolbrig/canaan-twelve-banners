@@ -13,7 +13,7 @@ Pure TypeScript game logic. React holds one `GameState` and calls `dispatch` / r
 | `actions.ts` | Standard + unique actions, and the leader trades (`LEADER_TRADES`) |
 | `resolve.ts` | Reveal, pre-resolve choices, track success/fail, Champions, the cycle, end game |
 | `judges.ts` | The six Judge one-shots and Jephthah's end-game reckoning |
-| `helpers.ts` | Shared mutators, thresholds, Glory/unlocks, standings |
+| `helpers.ts` | Shared mutators, thresholds, Glory/Goods grants, unlocks, standings |
 | `types.ts` | State and action types |
 | `testSupport.ts` | Test-only fixtures (`scenario`, `withTokens`, …) |
 
@@ -43,9 +43,16 @@ Abilities split by whether there is a decision to take away:
 The rule of thumb: a free bonus with no cost and no target applies itself; anything
 with a cost, a target, or a "once per game" applies only when asked.
 
-Two action-phase spends are **free of the action** and so do not advance the
-turn: a Judge one-shot whose window is `action`, and a leader trade. Both are
-dispatched, take effect, and leave the player their full action.
+Several spends are **free of the turn** and so do not advance the actor: a Judge
+one-shot whose window is `action`, a leader trade, arming a Goods doubler, and
+Issachar's study during placement. They dispatch, take effect, and leave the
+player their full placement or action.
+
+Anything driving bots must therefore use `src/ai/botStep.ts` rather than calling
+`dispatch` behind its own stall guard. The app and the balance harness each had
+their own copy of that guard, both treating "the seat did not advance" as stuck —
+which silently threw away every free action *and* spent the seat's real turn on a
+pass. Issachar never placed a token again once it could study.
 
 `src/engine/judges.ts` owns the one-shots. Each declares its window in
 `JUDGE_POWER_WINDOW` — `action` for powers that fire on your turn, `preResolve`
@@ -66,19 +73,27 @@ With `tuning.freePlacementPhase` off, `placement` is skipped entirely and
 
 ## Known stubs
 
-Seven of the thirty-nine leader upgrades are design-complete in data and UI but
-have no engine effect — see `LEADER_UPGRADE_ACTIVE`, which is the authority.
-They fall into three groups:
+Three of the thirty-nine leader upgrades have no engine effect — see
+`LEADER_UPGRADE_ACTIVE`, which is the authority.
 
-| Group | Upgrades | What they need |
-|---|---|---|
-| Peeks | Manasseh I (Fleece Test), Issachar I (Understanding of Times) | A pre-placement information window; the state they would read is public already, so the value is in the *timing* |
-| Doublers | Asher III (Rich Harvest), Zebulun III (Profitable Venture) | A once-per-game hook on a Goods gain, which has no single choke point yet |
-| Token manipulation | Judah III (First in Line), Issachar III (Wise Counsel) | A `preResolve` prompt; Issachar III moves *another player's* token, which nothing else in the engine does |
+| Upgrade | What it needs |
+|---|---|
+| Judah III — First in Line | A `preResolve` prompt to move one of your own tokens. `applyShiftToken` already does exactly this for Dan and Naphtali; Judah's differs only in being once per *game* rather than once per round, so this is a table entry and a flag, not new machinery |
+| Manasseh I — Fleece Test | "Look at one track's current special modifier" — the Crisis and Oppressor modifiers are already face up, so as written it reveals nothing. It needs a decision about what it should actually show before it can be wired |
 
 Levi II (Intercession) is deliberately unwired: Levi's unique action already
 does what the upgrade text describes, so wiring it would give Levi the same
 ability twice.
+
+## Goods, and the one way in
+
+Every gain of Goods goes through `grantGoods`, the way every positive Glory goes
+through `grantGlory`. Asher III and Zebulun III double a single gain once per
+game, and a source that bypassed the choke point would silently never double —
+a bug with no symptom. `grantGoods` takes a `GoodsSource` because the two cards
+differ: Asher's names actions and Champion rewards, Zebulun's names any source
+at all. Spending Goods still goes through `mutateResources`; only gains can be
+doubled.
 
 ## Tests
 
@@ -90,7 +105,9 @@ ability twice.
 | `placement.test.ts` | costs, Crisis 1/3 token values, Simeon carryover, placement-triggered leader bonuses, immutability |
 | `actions.test.ts` | every standard action, each unique, Micah's Idol, round-1 gate, `dispatch` phase flow |
 | `leaderTrades.test.ts` | Zebulun I / Simeon III / Ephraim III rates, once-per-round, and that a trade never eats the turn |
-| `../ai/bots.test.ts` | bot placement, and that Banner *and* Supply both get played |
+| `goodsDoubler.test.ts` | Asher III / Zebulun III, per source, and that the two cards' different scopes are honoured |
+| `issachar.test.ts` | Understanding of Times reads face-down Influence; Wise Counsel's fences |
+| `../ai/bots.test.ts` | bot placement, Banner *and* Supply both played, and that a free action never costs the turn |
 | `resolve.test.ts` | Champions and tie-breaks, failures, Covenant zone effects, Crisis 13/14, deferred uniques, Broken clock, `endGame` |
 | `game.test.ts` | full bot-vs-bot games across seeds and player counts, asserting invariants |
 | `../data/gameData.test.ts` | shipped data still matches the CSV design package |

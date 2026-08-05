@@ -11,9 +11,10 @@
  */
 import { it } from 'vitest';
 import { chooseBotAction } from '../src/ai/bots';
+import { stepBot } from '../src/ai/botStep';
 import { DEFAULT_TUNING, type TuningConfig } from '../src/config/tuning';
 import { createGame } from '../src/engine/createGame';
-import { currentActor, isBannerToken } from '../src/engine/helpers';
+import { isBannerToken } from '../src/engine/helpers';
 import { dispatch } from '../src/engine/index';
 import type { GameState, TrackId, TribeId } from '../src/engine/types';
 
@@ -166,15 +167,7 @@ function playGame(seed: number, players: number, stats: Stats): void {
       continue;
     }
 
-    const action = chooseBotAction(s);
-    const before = s;
-    s = action ? dispatch(s, action) : s;
-    if (s.phase === before.phase && currentActor(s)?.id === currentActor(before)?.id) {
-      s =
-        before.phase === 'placement'
-          ? dispatch(before, { type: 'confirmPlacement', plan: {} })
-          : dispatch(before, { type: 'standard', action: 'pass' });
-    }
+    s = stepBot(s);
   }
 
   stats.games += 1;

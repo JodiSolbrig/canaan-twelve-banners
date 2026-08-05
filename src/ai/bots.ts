@@ -1,5 +1,9 @@
 import { TRIBE_BY_ID } from '../data/gameData';
-import { availableLeaderTrade } from '../engine/actions';
+import {
+  availableLeaderTrade,
+  canArmGoodsDoubler,
+  canStudyTrack,
+} from '../engine/actions';
 import {
   baseThreshold,
   cryThreshold,
@@ -13,7 +17,12 @@ import {
   TRACK_AFFINITY_RESOURCE,
 } from '../engine/helpers';
 import { JUDGE_POWER_WINDOW } from '../engine/judges';
-import { canDeclareAlliance, canRescue, canShiftToken } from '../engine/resolve';
+import {
+  canDeclareAlliance,
+  canRescue,
+  canShiftToken,
+  canWiseCounsel,
+} from '../engine/resolve';
 import type {
   GameState,
   OppressorId,
@@ -63,6 +72,15 @@ export function chooseBotAction(state: GameState): PlayerAction | null {
   }
 
   if (state.phase === 'placement') {
+    // Understanding of Times is free and strictly informative, so it is always
+    // worth taking before committing. The track nearest to falling is the one
+    // worth knowing about.
+    if (canStudyTrack(state, actor.id)) {
+      const track = [...TRACKS].sort(
+        (a, b) => trackShortfall(state, b) - trackShortfall(state, a),
+      )[0]!;
+      return { type: 'studyTrack', track };
+    }
     const plan = planPlacement(state, actor.id);
     return {
       type: 'confirmPlacement',
@@ -146,6 +164,14 @@ function choosePreResolve(state: GameState): PlayerAction | null {
     if (move) return move;
   }
 
+  // Wise Counsel, spent to strip a Championship rather than to save a track:
+  // a Banner dragged onto another track becomes Supply and claims nothing.
+  for (const p of state.players) {
+    if (p.isHuman || !canWiseCounsel(state, p.id)) continue;
+    const move = bestCounsel(state, p.id);
+    if (move) return move;
+  }
+
   // Naphtali's alliance, spent on the two tracks nearest to falling.
   for (const p of state.players) {
     if (p.isHuman || !canDeclareAlliance(state, p.id)) continue;
@@ -201,6 +227,48 @@ function bestShift(state: GameState, playerId: string): PlayerAction | null {
       if (value > bestScore) {
         bestScore = value;
         best = { type: 'shiftToken', tokenId: token.id, toTrack: to };
+      }
+    }
+  }
+  return best;
+}
+
+/**
+ * Wise Counsel, weighed the way Issachar would: it is worth spending only if it
+ * takes a Championship off the current leader, or saves a track that would
+ * otherwise fail. Moving a token for its own sake wastes a once-per-game.
+ */
+function bestCounsel(state: GameState, playerId: string): PlayerAction | null {
+  const score = (s: GameState) => {
+    const totals = getTrackTotals(s);
+    let mine = 0;
+    let holding = 0;
+    for (const track of TRACKS) {
+      const grand = Object.values(totals.total[track]).reduce((a, b) => a + b, 0);
+      if (grand >= baseThreshold(s, track)) holding += 1;
+      const entries = Object.entries(totals.banner[track]).filter(([, v]) => v > 0);
+      entries.sort((a, b) => b[1] - a[1]);
+      if (entries[0]?.[0] === playerId) mine += 1;
+    }
+    return mine * 10 + holding;
+  };
+
+  const theirs = state.tokens.filter(
+    (t) => t.playerId !== playerId && !t.temporary,
+  );
+  let best: PlayerAction | null = null;
+  let bestScore = score(state);
+  for (const token of theirs) {
+    for (const to of TRACKS) {
+      if (to === token.track) continue;
+      const moved: GameState = {
+        ...state,
+        tokens: state.tokens.map((t) => (t.id === token.id ? { ...t, track: to } : t)),
+      };
+      const value = score(moved);
+      if (value > bestScore) {
+        bestScore = value;
+        best = { type: 'wiseCounsel', tokenId: token.id, toTrack: to };
       }
     }
   }
@@ -345,6 +413,18 @@ function chooseAction(state: GameState, playerId: string): PlayerAction {
   const agr = state.tuningSnapshot.botAggression;
   const zoneLowLoyalty = p.resources.loyalty <= 2;
   const covenantLow = state.covenant <= 4;
+
+  // Arm the once-per-game doubler immediately before the biggest Goods gain the
+  // bot can actually reach — its own Harvest or Gather. Arming costs nothing and
+  // the doubler waits rather than expiring, but arming early spends it on
+  // whatever trickle arrives first, which is usually income.
+  if (canArmGoodsDoubler(state, playerId)) {
+    const aboutToHarvest =
+      (p.tribe === 'Asher' && p.resources.faith >= 1) ||
+      p.resources.warriors >= 1 ||
+      p.resources.faith >= 1;
+    if (aboutToHarvest) return { type: 'armGoodsDoubler' };
+  }
 
   // A leader's standing trade costs no action, so it is taken before deciding
   // what to do with the turn itself — and the turn is still there afterwards.

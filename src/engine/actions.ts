@@ -4,8 +4,12 @@
 import { TRACK_LABELS, TRIBE_BY_ID, uniqueCanCostFaith } from '../data/gameData';
 import {
   addLog,
+  baseThreshold,
   cryThreshold,
   getPlayer,
+  getTrackTotals,
+  goodsDoublerOf,
+  grantGoods,
   mulberry32,
   mutateResources,
   nextTokenId,
@@ -121,6 +125,89 @@ export function applyLeaderTrade(
   return { state: s, ok: true };
 }
 
+/** Whether this player can still arm their once-per-game Goods doubler. */
+export function canArmGoodsDoubler(state: GameState, playerId: string): boolean {
+  const p = getPlayer(state, playerId);
+  if (!goodsDoublerOf(p.tribe)) return false;
+  return (
+    p.leaderLevel >= 3 &&
+    !p.oncePerGameUsed['goodsDoubler'] &&
+    !p.goodsDoublerArmed
+  );
+}
+
+/**
+ * Arm the doubler. It costs no action and no resource — the whole of the
+ * decision is *when*, since it then waits for a gain rather than expiring.
+ */
+export function armGoodsDoubler(
+  state: GameState,
+  playerId: string,
+): { state: GameState; ok: boolean } {
+  if (!canArmGoodsDoubler(state, playerId)) {
+    return { state: addLog(state, 'No doubler to arm.', 'bad'), ok: false };
+  }
+  const p = getPlayer(state, playerId);
+  const doubler = goodsDoublerOf(p.tribe)!;
+  let s = updatePlayer(state, playerId, (pl) => ({
+    ...pl,
+    goodsDoublerArmed: true,
+    oncePerGameUsed: { ...pl.oncePerGameUsed, goodsDoubler: true },
+  }));
+  s = addLog(
+    s,
+    `${p.tribe} makes ready — ${doubler.name} will double their next gain of Goods.`,
+    'good',
+  );
+  return { state: s, ok: true };
+}
+
+/** Issachar I — one look a round at how a track actually stands. */
+export function canStudyTrack(state: GameState, playerId: string): boolean {
+  const p = getPlayer(state, playerId);
+  return (
+    p.tribe === 'Issachar' &&
+    p.leaderLevel >= 1 &&
+    !p.oncePerRoundUsed['understanding']
+  );
+}
+
+/**
+ * Read one track's current standing.
+ *
+ * This deliberately looks at face-down Influence, which no *rule* is allowed to
+ * do (see `Conventions` in the engine README). That is the whole ability: the
+ * information exists, everyone else is denied it, and Issachar is the tribe that
+ * "had understanding of the times, to know what Israel ought to do" (1 Chr
+ * 12:32). Studying early sees less than studying late, which is the cost of
+ * knowing sooner.
+ */
+export function studyTrack(
+  state: GameState,
+  playerId: string,
+  track: TrackId,
+): { state: GameState; ok: boolean } {
+  if (!canStudyTrack(state, playerId)) {
+    return { state: addLog(state, 'No study available.', 'bad'), ok: false };
+  }
+  const total = getTrackTotals(state).total[track];
+  const standing = Object.values(total).reduce((a, b) => a + b, 0);
+  const threshold = baseThreshold(state, track);
+  const p = getPlayer(state, playerId);
+  let s = updatePlayer(state, playerId, (pl) => ({
+    ...pl,
+    peekedTrack: { track, total: standing, threshold },
+    oncePerRoundUsed: { ...pl.oncePerRoundUsed, understanding: true },
+  }));
+  s = addLog(
+    s,
+    `${p.tribe} understands the times — ${TRACK_LABELS[track]} stands at ` +
+      `${standing} of ${threshold}.`,
+    'info',
+  );
+  return { state: s, ok: true };
+}
+
 function capLoyalty(state: GameState, playerId: string): GameState {
   return updatePlayer(state, playerId, (p) => ({
     ...p,
@@ -178,11 +265,9 @@ export function applyStandardAction(
       }
       s = updatePlayer(s, playerId, (pl) => ({
         ...pl,
-        resources: mutateResources(pl.resources, {
-          [spend]: -1,
-          goods: goodsGain,
-        }),
+        resources: mutateResources(pl.resources, { [spend]: -1 }),
       }));
+      s = grantGoods(s, playerId, goodsGain, 'action');
       s = addLog(s, `${p.tribe} Gathers (+${goodsGain} Goods).`, 'info');
       break;
     }
@@ -222,9 +307,10 @@ export function applyStandardAction(
         ...pl,
         resources: mutateResources(pl.resources, {
           [c.from]: -2,
-          [c.to]: 1,
+          ...(c.to === 'goods' ? {} : { [c.to]: 1 }),
         }),
       }));
+      if (c.to === 'goods') s = grantGoods(s, playerId, 1, 'action');
       s = addLog(s, `${p.tribe} Converts 2 ${c.from} → 1 ${c.to}.`, 'info');
       break;
     }
@@ -396,13 +482,15 @@ export function applyUniqueAction(
     case 'Ephraim': {
       if (p.resources.goods < 1) return { state: addLog(s, 'Need 1 Goods.', 'bad'), ok: false };
       const mode = action.ephraimMode ?? 'doubleGoods';
-      s = updatePlayer(s, playerId, (pl) => {
-        let r = mutateResources(pl.resources, { goods: -1 });
-        if (mode === 'doubleGoods') r = mutateResources(r, { goods: 2 });
-        else if (mode === 'goodsPlusFaith') r = mutateResources(r, { goods: 1, faith: 1 });
-        else r = mutateResources(r, { goods: 1, warriors: 1 });
-        return { ...pl, resources: r };
-      });
+      s = updatePlayer(s, playerId, (pl) => ({
+        ...pl,
+        resources: mutateResources(pl.resources, {
+          goods: -1,
+          ...(mode === 'goodsPlusFaith' ? { faith: 1 } : {}),
+          ...(mode === 'goodsPlusWarriors' ? { warriors: 1 } : {}),
+        }),
+      }));
+      s = grantGoods(s, playerId, mode === 'doubleGoods' ? 2 : 1, 'action');
       s = addLog(s, `${p.tribe} Double Portion.`, 'good');
       break;
     }
@@ -521,21 +609,20 @@ export function applyUniqueAction(
         if (!spendFaith(1)) return { state: addLog(s, 'Need 1 Faith.', 'bad'), ok: false };
         s = updatePlayer(s, playerId, (pl) => ({
           ...pl,
-          resources: mutateResources(pl.resources, { faith: -1, goods: 2 }),
-        }));
-      } else {
-        s = updatePlayer(s, playerId, (pl) => ({
-          ...pl,
-          resources: mutateResources(pl.resources, { goods: 2 }),
+          resources: mutateResources(pl.resources, { faith: -1 }),
         }));
       }
+      // Fertile Blessing rides on the same harvest, so the two are granted as
+      // one gain — Rich Harvest doubles the whole of it, not the base alone.
+      let harvest = 2;
       if (p.leaderLevel >= 2 && !getPlayer(s, playerId).oncePerRoundUsed['fertile']) {
+        harvest += 1;
         s = updatePlayer(s, playerId, (pl) => ({
           ...pl,
-          resources: mutateResources(pl.resources, { goods: 1 }),
           oncePerRoundUsed: { ...pl.oncePerRoundUsed, fertile: true },
         }));
       }
+      s = grantGoods(s, playerId, harvest, 'action');
       s = addLog(s, `${p.tribe} Harvests Goods.`, 'good');
       break;
     }
@@ -580,8 +667,12 @@ export function applyUniqueAction(
         if (!isValidConversion(c.from, c.to)) continue;
         s = updatePlayer(s, playerId, (x) => ({
           ...x,
-          resources: mutateResources(x.resources, { [c.from]: -2, [c.to]: 1 }),
+          resources: mutateResources(x.resources, {
+            [c.from]: -2,
+            ...(c.to === 'goods' ? {} : { [c.to]: 1 }),
+          }),
         }));
+        if (c.to === 'goods') s = grantGoods(s, playerId, 1, 'action');
         done += 1;
       }
       const skipped = Math.min(converts.length, 2) - done;

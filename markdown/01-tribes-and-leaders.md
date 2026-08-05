@@ -82,17 +82,17 @@ face-down tokens, and it would make your result depend on where you sat.
 ### Asher
 1. **Blessed Abundance**: When Provision Track reaches High, gain +1 extra Goods.  
 2. **Fertile Blessing**: Once per round, when you take a Generate Goods action, gain 1 additional Goods.  
-3. **Rich Harvest**: Once per game, double the Goods you gain from any single action or Champion reward.
+3. **Rich Harvest**: Once per game, double the Goods you gain from any single action or Champion reward. Make it ready on your turn — **this costs no action** — and it then waits until such a gain arrives, so it can never be wasted. It does not fire on income, spoil or a zone bonus; the card names actions and Championships.
 
 ### Issachar
-1. **Understanding of Times**: Once per round, before placing tokens, look at one track’s current threshold status.  
+1. **Understanding of Times**: Once per round, before you place, name a track and see what actually stands on it against its threshold — **face-down Influence included**. This is the one ability that reads hidden Influence, and it is the whole point of it. What you see is a snapshot: tribes placing after you will change it, so studying early sees less than studying late. It costs no placement.  
 2. **Strategic Insight**: When you become Champion of any track, gain +1 Faith.  
-3. **Wise Counsel**: Once per game, after all tokens are placed, you may force one other player to move 1 of their tokens.
+3. **Wise Counsel**: Once per game, after the reveal, force one other player to move 1 of their own tokens. **You** name the token and the track it goes to — a victim who chose would move it somewhere harmless, which is no counsel at all. Gifted and temporary tokens are out of reach: you advise a tribe, you do not confiscate a gift. Note what this really does — a Banner dragged onto a track it did not pay for becomes **Supply**, and Supply claims nothing.
 
 ### Zebulun
 1. **Sea Trader**: Once per round, convert 1 Faith ↔ 1 Goods at 1:1. **This costs no action** — trade and still take your turn.  
 2. **Commerce Route**: When you become Provision Champion, gain +1 Glory.  
-3. **Profitable Venture**: Once per game, after gaining Goods from any source, gain that many again.
+3. **Profitable Venture**: Once per game, after gaining Goods from **any** source — an action, a Championship, spoil, even income — gain that many again. Make it ready on your turn (**this costs no action**); it then waits. Zebulun's card says *any source* where Asher's names only actions and Championships, and that difference is played as written.
 
 ---
 

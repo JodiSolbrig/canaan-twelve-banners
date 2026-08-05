@@ -79,6 +79,13 @@ export type PlayerState = {
   covenantProtect: boolean;
   /** Reduce covenant penalty on a failed track by 1 (Manasseh) */
   holdTheLine: boolean;
+  /**
+   * Asher III / Zebulun III — a once-per-game doubler, armed and waiting for the
+   * next gain of Goods it applies to. Arming spends the right; it then sits
+   * until it fires, so it can never be wasted, and the decision is *when* to
+   * commit rather than whether.
+   */
+  goodsDoublerArmed: boolean;
   /** Free military token next round (Simeon) */
   freeMilitaryNextRound: number;
   /**
@@ -123,6 +130,14 @@ export type PlayerState = {
   rescueArmed: boolean;
   /** Peeked crisis cards for UI */
   peekedCrisis: CrisisCardDef[] | null;
+  /**
+   * Issachar I — Understanding of Times. What one track looked like at the
+   * moment it was studied, during placement and before committing.
+   *
+   * A snapshot, not a live reading: tribes placing after you will change it, and
+   * the card promises what you saw, not what will be true at the Reveal.
+   */
+  peekedTrack: { track: TrackId; total: number; threshold: number } | null;
 };
 
 export type OppressorId =
@@ -369,4 +384,10 @@ export type PlayerAction =
       from: SpendableResource;
       to: SpendableResource;
     }
+  /** Asher III / Zebulun III — arm the once-per-game Goods doubler. */
+  | { type: 'armGoodsDoubler' }
+  /** Issachar I — study one track's standing before you commit. */
+  | { type: 'studyTrack'; track: TrackId }
+  /** Issachar III — force another player's token onto a different track. */
+  | { type: 'wiseCounsel'; tokenId: string; toTrack: TrackId }
   | { type: 'advance' }; // for auto phases / human done

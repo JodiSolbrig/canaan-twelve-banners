@@ -18,6 +18,7 @@ import type {
   ResourceSpend,
   SpendableResource,
   TrackId,
+  TribeId,
 } from './types';
 
 let logCounter = 0;
@@ -413,6 +414,67 @@ export function raiseCovenant(state: GameState, amount: number, reason: string):
   return s;
 }
 
+/**
+ * Where a gain of Goods came from. Asher's Rich Harvest doubles only what an
+ * action or a Championship paid; Zebulun's Profitable Venture doubles anything.
+ */
+export type GoodsSource = 'action' | 'champion' | 'spoil' | 'income' | 'zone';
+
+/** Which sources each tribe's once-per-game doubler will fire on. */
+const DOUBLER: Partial<Record<TribeId, { name: string; sources: GoodsSource[] }>> =
+  {
+    // "double the Goods you gain from any single action or Champion reward"
+    Asher: {
+      name: 'Rich Harvest',
+      sources: ['action', 'champion'],
+    },
+    // "after gaining Goods from any source, gain that many again"
+    Zebulun: {
+      name: 'Profitable Venture',
+      sources: ['action', 'champion', 'spoil', 'income', 'zone'],
+    },
+  };
+
+export function goodsDoublerOf(tribe: TribeId) {
+  return DOUBLER[tribe] ?? null;
+}
+
+/**
+ * The one way Goods are ever added to a player.
+ *
+ * Every gain has to pass through here, the way every positive Glory passes
+ * through `grantGlory`: a doubler that quietly missed one source would be a bug
+ * nobody could see. Spending Goods still goes through `mutateResources` — only
+ * gains can be doubled.
+ */
+export function grantGoods(
+  state: GameState,
+  playerId: string,
+  amount: number,
+  source: GoodsSource,
+): GameState {
+  if (amount <= 0) return state;
+  const p = getPlayer(state, playerId);
+  const doubler = goodsDoublerOf(p.tribe);
+  let gain = amount;
+  let s = state;
+
+  if (p.goodsDoublerArmed && doubler?.sources.includes(source)) {
+    gain = amount * 2;
+    s = updatePlayer(s, playerId, (pl) => ({ ...pl, goodsDoublerArmed: false }));
+    s = addLog(
+      s,
+      `${p.tribe} — ${doubler.name}: ${amount} Goods becomes ${gain}.`,
+      'good',
+    );
+  }
+
+  return updatePlayer(s, playerId, (pl) => ({
+    ...pl,
+    resources: mutateResources(pl.resources, { goods: gain }),
+  }));
+}
+
 export function grantGlory(
   state: GameState,
   playerId: string,
@@ -467,7 +529,6 @@ export function applyRoundIncome(state: GameState): GameState {
       let r = mutateResources(pl.resources, {
         faith: (inc.faith ?? 0) + pl.incomeBonus.faith,
         warriors: (inc.warriors ?? 0) + pl.incomeBonus.warriors,
-        goods: (inc.goods ?? 0) + pl.incomeBonus.goods,
       });
       if (inc.loyalty && r.loyalty < pl.startingLoyalty) {
         const gain = Math.min(inc.loyalty, pl.startingLoyalty - r.loyalty);
@@ -475,6 +536,7 @@ export function applyRoundIncome(state: GameState): GameState {
       }
       return { ...pl, resources: r };
     });
+    s = grantGoods(s, p.id, (inc.goods ?? 0) + p.incomeBonus.goods, 'income');
     const bonusLine = formatIncomeBonus(p.incomeBonus);
     s = addLog(
       s,

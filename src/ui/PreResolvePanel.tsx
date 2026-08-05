@@ -3,7 +3,12 @@ import { TRACK_LABELS, TRIBE_BY_ID } from '../data/gameData';
 import { OPPRESSOR_BY_ID } from '../data/oppressors';
 import { baseThreshold, getTrackTotals } from '../engine/helpers';
 import { JUDGE_POWER_NEEDS_TRACK, JUDGE_POWER_WINDOW } from '../engine/judges';
-import { canDeclareAlliance, canRescue, canShiftToken } from '../engine/resolve';
+import {
+  canDeclareAlliance,
+  canRescue,
+  canShiftToken,
+  canWiseCounsel,
+} from '../engine/resolve';
 import type { GameState, PlayerAction, TrackId } from '../engine/types';
 import { Tip } from './Tip';
 
@@ -27,6 +32,8 @@ export function PreResolvePanel({ state, onAction }: Props) {
   const [track, setTrack] = useState<TrackId>('military');
   const [moveToken, setMoveToken] = useState('');
   const [moveTrack, setMoveTrack] = useState<TrackId>('moral');
+  const [counselToken, setCounselToken] = useState('');
+  const [counselTrack, setCounselTrack] = useState<TrackId>('moral');
   const [allyA, setAllyA] = useState<TrackId>('military');
   const [allyB, setAllyB] = useState<TrackId>('provision');
 
@@ -38,11 +45,16 @@ export function PreResolvePanel({ state, onAction }: Props) {
   const shift = canShiftToken(state, human.id);
   const alliance = canDeclareAlliance(state, human.id);
   const rescue = canRescue(state, human.id);
+  const counsel = canWiseCounsel(state, human.id);
+  const theirTokens = state.tokens.filter(
+    (t) => t.playerId !== human.id && !t.temporary,
+  );
   const myTokens = state.tokens.filter(
     (t) => t.playerId === human.id && !t.temporary,
   );
 
-  const nothingToDo = !canUsePower && !shift && !alliance && !rescue;
+  const nothingToDo =
+    !canUsePower && !shift && !alliance && !rescue && !counsel;
 
   return (
     <div className="panel human-panel">
@@ -153,6 +165,54 @@ export function PreResolvePanel({ state, onAction }: Props) {
             }
           >
             Shift
+          </button>
+        </div>
+      )}
+
+      {counsel && (
+        <div className="field-row" style={{ marginTop: '0.5rem' }}>
+          <Tip
+            wide
+            className="tip-below"
+            text="Wise Counsel — once per game, move one token belonging to another tribe. Dragging a Banner onto a track it did not pay for turns it into Supply, and Supply claims nothing."
+          >
+            <label style={{ cursor: 'help' }}>Wise Counsel</label>
+          </Tip>
+          <select
+            value={counselToken}
+            onChange={(e) => setCounselToken(e.target.value)}
+          >
+            <option value="">Their token…</option>
+            {theirTokens.map((t) => (
+              <option key={t.id} value={t.id}>
+                {state.players.find((p) => p.id === t.playerId)?.tribe} ·{' '}
+                {TRACK_LABELS[t.track]} ({t.id.slice(-4)})
+              </option>
+            ))}
+          </select>
+          <select
+            value={counselTrack}
+            onChange={(e) => setCounselTrack(e.target.value as TrackId)}
+          >
+            {TRACKS.map((t) => (
+              <option key={t} value={t}>
+                → {TRACK_LABELS[t]}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className="btn"
+            disabled={!counselToken}
+            onClick={() =>
+              onAction({
+                type: 'wiseCounsel',
+                tokenId: counselToken,
+                toTrack: counselTrack,
+              })
+            }
+          >
+            Counsel
           </button>
         </div>
       )}

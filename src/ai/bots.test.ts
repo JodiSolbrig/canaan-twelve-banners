@@ -10,6 +10,8 @@ import { describe, expect, it } from 'vitest';
 import { TRACK_AFFINITY_RESOURCE } from '../engine/helpers';
 import {
   idAt,
+  patchPlayer,
+  playerOf,
   scenario,
   setResources,
   withOppression,
@@ -20,6 +22,8 @@ import type {
   SpendableResource,
   TrackId,
 } from '../engine/types';
+import { currentActor } from '../engine';
+import { stepBot } from './botStep';
 import { chooseBotAction } from './bots';
 
 const TRACKS: TrackId[] = ['military', 'moral', 'provision'];
@@ -141,5 +145,54 @@ describe('bot placement — Supply', () => {
     const plan = planFor({ ...state, currentActorIndex: 1 });
     expect(supplyOn(plan, 'moral')).toBe(0);
     expect(supplyOn(plan, 'provision')).toBe(0);
+  });
+});
+
+describe('stepBot — free actions must not cost the turn', () => {
+  it('lets Issachar study AND still place its Influence', () => {
+    // The regression this guards: the stall guard read "same seat still acting"
+    // as a stuck bot, discarded the study, and spent the placement on an empty
+    // plan. Issachar placed nothing for the rest of the game and won 0 of 107.
+    let s = scenario({ tribes: ['Levi', 'Issachar'], round: 3 });
+    const bot = idAt(s, 1);
+    s = patchPlayer(s, bot, { leaderLevel: 1 });
+    s = setResources(s, bot, { faith: 6, warriors: 6, goods: 6 });
+    s = { ...s, currentActorIndex: 1 };
+
+    const studied = stepBot(s);
+    expect(playerOf(studied, bot).peekedTrack).not.toBeNull();
+    // Still Issachar's placement to make.
+    expect(studied.phase).toBe('placement');
+    expect(currentActor(studied)?.id).toBe(bot);
+
+    const placed = stepBot(studied);
+    expect(placed.tokens.filter((t) => t.playerId === bot).length).toBeGreaterThan(0);
+  });
+
+  it('lets Zebulun trade AND still take an action', () => {
+    let s = scenario({ tribes: ['Levi', 'Zebulun'], phase: 'action', crisisId: null, round: 3 });
+    const bot = idAt(s, 1);
+    s = patchPlayer(s, bot, { leaderLevel: 1 });
+    s = setResources(s, bot, { faith: 4, warriors: 4, goods: 4 });
+    s = { ...s, currentActorIndex: 1 };
+
+    const traded = stepBot(s);
+    expect(traded.phase).toBe('action');
+    expect(currentActor(traded)?.id).toBe(bot);
+    // The trade happened rather than being rolled back into a pass.
+    expect(playerOf(traded, bot).oncePerRoundUsed['seaTrader']).toBe(true);
+  });
+
+  it('still forces a stuck bot along when nothing progresses', () => {
+    // A bot with no resources cannot place; the guard must not spin.
+    let s = scenario({ tribes: ['Levi', 'Judah'], round: 3 });
+    const bot = idAt(s, 1);
+    s = setResources(s, bot, { faith: 0, warriors: 0, goods: 0 });
+    s = { ...s, currentActorIndex: 1 };
+
+    const after = stepBot(s);
+    expect(
+      after.phase !== 'placement' || currentActor(after)?.id !== bot,
+    ).toBe(true);
   });
 });

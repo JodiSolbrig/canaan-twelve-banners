@@ -7,10 +7,12 @@
  * Prefer importing from this barrel rather than deep paths when adding UI/AI code.
  */
 import {
+  armGoodsDoubler,
   applyLeaderTrade,
   applyPlaceInfluenceAction,
   applyStandardAction,
   applyUniqueAction,
+  studyTrack,
 } from './actions';
 import { advanceActorOrPhase, applyPlacement } from './placement';
 import { applyJudgePower, JUDGE_POWER_WINDOW } from './judges';
@@ -18,7 +20,9 @@ import {
   advanceToNextRound,
   applyAngelChoice,
   applyShiftToken,
+  applyWiseCounsel,
   canRescue,
+  canWiseCounsel,
   canDeclareAlliance,
   canShiftToken,
   declareAlliance,
@@ -129,6 +133,30 @@ export function dispatch(state: GameState, action: PlayerAction): GameState {
     return applyLeaderTrade(state, actor.id, action).state;
   }
 
+  if (action.type === 'armGoodsDoubler') {
+    if (state.phase !== 'action') return state;
+    const actor = currentActor(state);
+    if (!actor) return state;
+    // Free of the action, like a leader trade — the turn does not advance.
+    return armGoodsDoubler(state, actor.id).state;
+  }
+
+  if (action.type === 'studyTrack') {
+    if (state.phase !== 'placement') return state;
+    const actor = currentActor(state);
+    if (!actor) return state;
+    // Studied before you commit, and it does not spend the placement.
+    return studyTrack(state, actor.id, action.track).state;
+  }
+
+  if (action.type === 'wiseCounsel') {
+    if (state.phase !== 'preResolve') return state;
+    const issachar = state.players.find((p) => canWiseCounsel(state, p.id));
+    if (!issachar) return state;
+    return applyWiseCounsel(state, issachar.id, action.tokenId, action.toTrack)
+      .state;
+  }
+
   if (action.type === 'judgePower') {
     const actor = judgeActor(state);
     if (!actor) return state;
@@ -176,7 +204,14 @@ export function dispatch(state: GameState, action: PlayerAction): GameState {
 
 export { createGame } from './createGame';
 export { startRound } from './round';
-export { availableLeaderTrade, LEADER_TRADES } from './actions';
+export {
+  availableLeaderTrade,
+  canArmGoodsDoubler,
+  canStudyTrack,
+  LEADER_TRADES,
+} from './actions';
+export { canWiseCounsel } from './resolve';
+export { goodsDoublerOf } from './helpers';
 export type { LeaderTrade } from './actions';
 export {
   compareStandings,

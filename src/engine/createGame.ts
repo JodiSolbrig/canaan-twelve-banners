@@ -41,6 +41,7 @@ function makePlayer(
     standFirm: false,
     covenantProtect: false,
     holdTheLine: false,
+    goodsDoublerArmed: false,
     freeMilitaryNextRound: 0,
     pendingTempInfluenceGift: 0,
     alliance: null,
@@ -52,6 +53,7 @@ function makePlayer(
     judgeArmed: null,
     rescueArmed: false,
     peekedCrisis: null,
+    peekedTrack: null,
   };
 }
 

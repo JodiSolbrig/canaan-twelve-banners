@@ -60,8 +60,9 @@ a season — see *Game Length* in `markdown/04-setup-scoring-and-scaling.md`.
 
 There is one seat at the table, so table-wide choices fall to you: **The Angel of
 the Lord** (Crisis 12) is resolved by the human player on everyone's behalf.
-Seven of the 39 leader upgrades have no engine effect yet and are labelled
-*Planned* in the Leader panel — `src/engine/README.md` groups what they need.
+Three of the 39 leader upgrades have no engine effect and are labelled *Planned*
+in the Leader panel — `src/engine/README.md` says what each still needs. Ten of
+the thirteen tribes play with all three upgrades working.
 
 ## Rules deviations
 
@@ -100,12 +101,14 @@ Where to look for the reasoning behind a rule that reads oddly:
   the Level III covenant rescue, and every Judge power. Only genuinely passive
   bonuses with no decision attached still apply themselves — Othniel II, Ehud II,
   Nazirite Strength, and Gad's Enduring Defense.
-- **32 of the 39 leader upgrades** are wired. The rest are shown in the UI as
-  *Planned* for teaching and planning; active ones are labeled in the Leader
-  panel. `src/data/leaderImpl.ts` is the authority, and
-  `src/engine/README.md` groups what the remaining seven still need.
-- **Leader trades** (Zebulun's Sea Trader, Simeon's Raid Leader, Ephraim's
-  Landed Authority) cost no action — take the trade *and* your turn.
+- **36 of the 39 leader upgrades** are wired, and ten of the thirteen tribes are
+  complete. The rest are shown in the UI as *Planned* for teaching and planning;
+  active ones are labeled in the Leader panel. `src/data/leaderImpl.ts` is the
+  authority, and `src/engine/README.md` says what the remaining three need.
+- Several abilities are **free of your turn** — the leader trades (Zebulun's Sea
+  Trader, Simeon's Raid Leader, Ephraim's Landed Authority), arming a Goods
+  doubler (Asher III, Zebulun III), Issachar's study during placement, and a
+  Judge one-shot that fires on your turn. Take them *and* your full action.
 - Defaults for Champion rewards, track thresholds, and Low/High zones live in
   `src/config/tuning.ts`; the design package documents the same numbers in
   `markdown/03-standard-actions-and-player-aid.md`.

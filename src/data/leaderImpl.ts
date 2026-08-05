@@ -19,9 +19,9 @@ export const LEADER_UPGRADE_ACTIVE: Record<TribeId, [boolean, boolean, boolean]>
     Dan: [true, true, true], // I Nazirite; II Riddle & Cunning; III Final Stand
     Naphtali: [true, true, true],
     Gad: [true, true, true], // I loyalty; II Mil Low; III Overcomer
-    Asher: [true, true, false], // I Provision High; II Gather/Harvest; III once
-    Issachar: [false, true, false], // II +1 Faith on Champ
-    Zebulun: [true, true, false], // I leader trade; II Provision Champ Glory
+    Asher: [true, true, true], // I Provision High; II Gather/Harvest; III doubler
+    Issachar: [true, true, true], // I study a track; II +1 Faith on Champ; III Wise Counsel
+    Zebulun: [true, true, true], // I leader trade; II Provision Champ Glory; III doubler
   };
 
 export function isLeaderUpgradeActive(tribe: TribeId, level: number): boolean {
