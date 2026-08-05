@@ -145,7 +145,7 @@ export const TRIBES: TribeDef[] = [
     upgrades: [
       'Deborah – Prophetic Voice: Moral Champion → +1 Faith.',
       'Abdon I – Many Sons: +1 Goods permanently when unlocked.',
-      'Abdon II – Landed Authority: Convert 2 Goods → 1 Faith/Warrior once/round.',
+      'Abdon II – Landed Authority: Convert 2 Goods → 1 Faith/Warrior once/round. Costs no action.',
     ],
     income: {
       goods: 1,
@@ -217,7 +217,7 @@ export const TRIBES: TribeDef[] = [
     upgrades: [
       'Vengeful Strike: Military Champion → +1 Warrior.',
       'Furious Assault: Free Military token next round after failure.',
-      'Raid Leader: Convert Goods ↔ Warrior 1:1 once/round.',
+      'Raid Leader: Convert Goods ↔ Warrior 1:1 once/round. Costs no action.',
     ],
     income: { warriors: 2, label: '2 Warriors', note: 'Skirmisher' },
   },
@@ -346,7 +346,7 @@ export const TRIBES: TribeDef[] = [
     color: TRIBE_COLORS.Zebulun,
     bias: BIAS.Zebulun,
     upgrades: [
-      'Sea Trader: Convert Faith ↔ Goods 1:1 once/round.',
+      'Sea Trader: Convert Faith ↔ Goods 1:1 once/round. Costs no action.',
       'Commerce Route: Provision Champion → +1 Glory.',
       'Profitable Venture: Once/game double Goods gained.',
     ],

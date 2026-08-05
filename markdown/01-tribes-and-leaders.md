@@ -42,7 +42,7 @@ but playable).
 ### Ephraim — Deborah / Abdon
 1. **Deborah – Prophetic Voice**: Once per round, when investing in Moral Track, gain +1 Faith if you become Champion.  
 2. **Abdon I – Many Sons**: When you unlock this, gain 1 Goods permanently to your starting total for the rest of the game.  
-3. **Abdon II – Landed Authority**: Once per round, you may convert 2 Goods into 1 Faith or 1 Warrior.
+3. **Abdon II – Landed Authority**: Once per round, you may convert 2 Goods into 1 Faith or 1 Warrior. **This costs no action** — trade and still take your turn.
 
 ### Manasseh — Gideon / Jair / Jephthah
 1. **Gideon – Fleece Test**: Once per round, before placing Influence, look at one track’s current special modifier (if any).  
@@ -57,7 +57,7 @@ but playable).
 ### Simeon
 1. **Simeonite Raider – Vengeful Strike**: When you become Military Champion, gain +1 Warrior.  
 2. **Furious Assault**: After a Military Track failure you invested in, you may immediately place 1 token on it next round for free.  
-3. **Raid Leader**: Once per round, convert 1 Goods into 1 Warrior or vice versa at no loss.
+3. **Raid Leader**: Once per round, convert 1 Goods into 1 Warrior or vice versa at no loss. **This costs no action** — trade and still take your turn.
 
 ### Dan — Samson
 1. **Samson I – Nazirite Strength**: If all your Banners are on a single track, they count double.  
@@ -85,9 +85,18 @@ but playable).
 3. **Wise Counsel**: Once per game, after all tokens are placed, you may force one other player to move 1 of their tokens.
 
 ### Zebulun
-1. **Sea Trader**: Once per round, convert 1 Faith ↔ 1 Goods at 1:1.  
+1. **Sea Trader**: Once per round, convert 1 Faith ↔ 1 Goods at 1:1. **This costs no action** — trade and still take your turn.  
 2. **Commerce Route**: When you become Provision Champion, gain +1 Glory.  
 3. **Profitable Venture**: Once per game, after gaining Goods from any source, gain that many again.
+
+---
+
+**Leader trades.** Sea Trader, Raid Leader and Landed Authority are the three
+standing trades, and all three are free of your action. Landed Authority is why:
+2 Goods for 1 Faith or 1 Warrior *is* the printed Convert rate, so if it also
+cost an action it would grant nothing at all. Being free of the action is the
+only thing that upgrade can be giving, and the other two read the same way — one
+rule instead of three.
 
 ---
 

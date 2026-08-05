@@ -19,10 +19,8 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { DEFAULT_TUNING as T } from '../src/config/tuning.ts';
-import { LEADER_TRADES } from '../src/engine/leaderTrades.ts';
 import { CRISIS_CARDS, TRACK_LABELS, TRIBES } from '../src/data/gameData.ts';
 import { OPPRESSORS } from '../src/data/oppressors.ts';
-import type { TribeId } from '../src/engine/types.ts';
 
 const ROOT = join(import.meta.dirname, '..');
 const OUT = join(ROOT, 'print', 'component-studio');
@@ -333,7 +331,7 @@ writeCsv(
     unique_name: UNIQUE[t.id]!['Unique Action Name']!,
     unique_cost: UNIQUE[t.id]!.Cost!,
     unique_effect: UNIQUE[t.id]!.Effect!,
-    ...upgradeColumns(t.id, upgradesOf(t.id)),
+    ...upgradeColumns(upgradesOf(t.id)),
     art: needArt(`tribe-${slug(t.id)}`, 'Tribe board', TRIBE_ART[t.id]!, '--ar 3:2'),
   })),
 );
@@ -345,35 +343,17 @@ function upgradesOf(tribe: string): string[] {
 }
 
 /** Flatten the three upgrade strings into twelve printable columns. */
-function upgradeColumns(
-  tribeId: string,
-  upgrades: string[],
-): Record<string, string | number> {
+function upgradeColumns(upgrades: string[]): Record<string, string | number> {
   const out: Record<string, string | number> = {};
   upgrades.forEach((raw, i) => {
     const u = parseUpgrade(raw);
     const n = i + 1;
     out[`upgrade_${n}_leader`] = u.leader;
     out[`upgrade_${n}_name`] = u.ability;
-    out[`upgrade_${n}_text`] = u.text + tradeClause(tribeId, n);
+    out[`upgrade_${n}_text`] = u.text;
     out[`upgrade_${n}_glory`] = T.leaderUnlockGlory[i] ?? 0;
   });
   return out;
-}
-
-/**
- * The clause the design CSV cannot carry: a leader trade costs no action.
- *
- * The three "once per round, convert…" upgrades are read as free of your action
- * (see *Rules deviations* in the top-level README), and that is a rule the
- * engine enforces, not prose — so it is appended from `LEADER_TRADES` rather
- * than written into `csv/`. A card printed without it plays a different game
- * from the app.
- */
-function tradeClause(tribe: string, level: number): string {
-  const trade = LEADER_TRADES[tribe as TribeId];
-  if (!trade || trade.level !== level) return '';
-  return `${NL}This costs no action — trade and still take your turn.`;
 }
 
 /** `Othniel I – Lion's Rally: When Champion, +1 extra Glory.` */
@@ -427,7 +407,7 @@ writeCsv(
         level: ['I', 'II', 'III'][i]!,
         leader: u.leader,
         ability_name: u.ability,
-        ability_text: u.text + tradeClause(t.id, i + 1),
+        ability_text: u.text,
         unlock: `${T.leaderUnlockGlory[i]} Glory`,
         art: `tribe-${slug(t.id)}.png`,
       };
