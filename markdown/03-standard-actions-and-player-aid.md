@@ -111,6 +111,13 @@ is**, not from whose board it came off:
 | **Summoned** — Deborah & Barak's judge power | **Supply** | She rallies the tribes; she does not plant their banners. |
 | **Found** — Reuben's Pathfinder | **Supply** | A path opened is not a muster. |
 | **Mustered** — Simeon's Furious Assault | **Banner** | It turns out actual warriors, and it is the payoff for having been beaten on that very track. It is placed for you, on top of whatever you planned. |
+| **Endured** — Manasseh's Spend Your Resilience | **Supply** | Loyalty bought it, not Warriors, Faith or Goods. Nothing was mustered; the tribe simply held on. Were it a Banner, Manasseh could buy Championships with Loyalty and step outside the resource economy entirely. |
+
+**One ability changes what a token already is.** Judah's Claim the Field (Othniel
+III) stands your Supply on a named track up as Banners after the reveal — the
+only rule in the game that rewrites a token's nature rather than its position.
+It cuts both ways: what it promotes now counts toward Champion *and* now takes
+the Loyalty penalty if the track fails.
 
 **Flat Influence bonuses from a leader upgrade add Banner strength** — Othniel II
 (Wholehearted Charge), Ehud II (Hidden Dagger), Samson I (Nazirite Strength) and

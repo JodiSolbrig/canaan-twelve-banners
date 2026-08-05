@@ -23,6 +23,7 @@ export function isFreeOfTheTurn(action: PlayerAction): boolean {
     action.type === 'leaderTrade' ||
     action.type === 'armGoodsDoubler' ||
     action.type === 'studyTrack' ||
+    action.type === 'spendResilience' ||
     action.type === 'judgePower'
   );
 }

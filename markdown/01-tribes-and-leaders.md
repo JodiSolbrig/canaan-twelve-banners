@@ -32,7 +32,7 @@ face-down tokens, and it would make your result depend on where you sat.
 ### Judah — Othniel
 1. **Othniel I – Lion’s Rally**: When you become Champion of any track, gain +1 extra Glory.  
 2. **Othniel II – Wholehearted Charge**: Once per round, when investing in Military, your tokens count as +1.  
-3. **Othniel III – First in Line**: Once per game, after Influence is revealed, you may move 1 of your tokens to a different track.
+3. **Othniel III – Claim the Field**: Once per game, after the reveal, name a track. Every **Supply** token you paid for there stands up as a **Banner** — it now counts toward Champion, and it now takes the Loyalty penalty if the track fails. Gifted and temporary tokens are untouched: you cannot claim credit for what another tribe sent. *"Judah shall go up."*
 
 ### Benjamin — Ehud
 1. **Ehud I – Left-Handed Strike**: When you become Military Champion, gain +1 Warrior.  
@@ -41,7 +41,7 @@ face-down tokens, and it would make your result depend on where you sat.
 
 ### Levi — Phinehas
 1. **Phinehas I – Covenant Zeal**: When you become Moral Champion, raise Covenant Meter by 1.  
-2. **Phinehas II – Intercession**: Once per round, spend 1 Faith to prevent 1 Covenant loss.  
+2. **Phinehas II – The Tithe**: Levi has no inheritance. You may **never be Champion of the Provision Track**. But if you have **any Influence standing on Provision**, whoever does Champion it pays you **1 Goods**. Your Provision Influence still counts toward the threshold — landless does not mean absent, and the tithe is owed for service, not for existing. *"The tithe of Israel I have given to the Levites for an inheritance, for their service which they serve."* (Numbers 18:21)  
 3. **Phinehas III – Turned Away Wrath**: Once per game, one track you held counts twice, cancelling a single failed track for the Covenant.
 
 ### Ephraim — Deborah / Abdon
@@ -50,7 +50,7 @@ face-down tokens, and it would make your result depend on where you sat.
 3. **Abdon II – Landed Authority**: Once per round, you may convert 2 Goods into 1 Faith or 1 Warrior. **This costs no action** — trade and still take your turn.
 
 ### Manasseh — Gideon / Jair / Jephthah
-1. **Gideon – Fleece Test**: Once per round, before placing Influence, look at one track’s current special modifier (if any).  
+1. **Gideon – Spend Your Resilience**: Once per round, during placement, spend 1 **Loyalty** to place 2 Influence on any track for free. They arrive as **Supply** — nothing was mustered; the tribe simply endured. Loyalty is also the first tie-breaker at the end of the game, so this is never free twice.  
 2. **Jair – Thirty Towns**: Gain +1 Goods when the Provision Track reaches High.  
 3. **Jephthah – Outcast’s Resolve**: When a track you invested in fails, you lose 1 less Loyalty (minimum 0).
 

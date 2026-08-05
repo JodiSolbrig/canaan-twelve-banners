@@ -4,10 +4,12 @@ import { OPPRESSOR_BY_ID } from '../data/oppressors';
 import { baseThreshold, getTrackTotals } from '../engine/helpers';
 import { JUDGE_POWER_NEEDS_TRACK, JUDGE_POWER_WINDOW } from '../engine/judges';
 import {
+  canClaimField,
   canDeclareAlliance,
   canRescue,
   canShiftToken,
   canWiseCounsel,
+  supplyOnTrack,
 } from '../engine/resolve';
 import type { GameState, PlayerAction, TrackId } from '../engine/types';
 import { Tip } from './Tip';
@@ -46,6 +48,7 @@ export function PreResolvePanel({ state, onAction }: Props) {
   const alliance = canDeclareAlliance(state, human.id);
   const rescue = canRescue(state, human.id);
   const counsel = canWiseCounsel(state, human.id);
+  const claim = canClaimField(state, human.id);
   const theirTokens = state.tokens.filter(
     (t) => t.playerId !== human.id && !t.temporary,
   );
@@ -54,7 +57,7 @@ export function PreResolvePanel({ state, onAction }: Props) {
   );
 
   const nothingToDo =
-    !canUsePower && !shift && !alliance && !rescue && !counsel;
+    !canUsePower && !shift && !alliance && !rescue && !counsel && !claim;
 
   return (
     <div className="panel human-panel">
@@ -166,6 +169,32 @@ export function PreResolvePanel({ state, onAction }: Props) {
           >
             Shift
           </button>
+        </div>
+      )}
+
+      {claim && (
+        <div className="field-row" style={{ marginTop: '0.5rem' }}>
+          <Tip
+            wide
+            className="tip-below"
+            text="Claim the Field — once per game, the Supply you paid for on one track stands up as Banners. They count toward Champion from now on, and they take the Loyalty penalty if the track fails."
+          >
+            <label style={{ cursor: 'help' }}>Claim the Field</label>
+          </Tip>
+          {TRACKS.map((t) => {
+            const n = supplyOnTrack(state, human.id, t);
+            return (
+              <button
+                key={t}
+                type="button"
+                className="btn"
+                disabled={n === 0}
+                onClick={() => onAction({ type: 'claimField', track: t })}
+              >
+                {TRACK_LABELS[t]} ({n})
+              </button>
+            );
+          })}
         </div>
       )}
 

@@ -12,6 +12,7 @@ import {
   applyPlaceInfluenceAction,
   applyStandardAction,
   applyUniqueAction,
+  spendResilience,
   studyTrack,
 } from './actions';
 import { advanceActorOrPhase, applyPlacement } from './placement';
@@ -19,8 +20,10 @@ import { applyJudgePower, JUDGE_POWER_WINDOW } from './judges';
 import {
   advanceToNextRound,
   applyAngelChoice,
+  applyClaimField,
   applyShiftToken,
   applyWiseCounsel,
+  canClaimField,
   canRescue,
   canWiseCounsel,
   canDeclareAlliance,
@@ -149,6 +152,21 @@ export function dispatch(state: GameState, action: PlayerAction): GameState {
     return studyTrack(state, actor.id, action.track).state;
   }
 
+  if (action.type === 'spendResilience') {
+    if (state.phase !== 'placement') return state;
+    const actor = currentActor(state);
+    if (!actor) return state;
+    // Free of the placement — Manasseh still commits resources of its own.
+    return spendResilience(state, actor.id, action.track).state;
+  }
+
+  if (action.type === 'claimField') {
+    if (state.phase !== 'preResolve') return state;
+    const judah = state.players.find((p) => canClaimField(state, p.id));
+    if (!judah) return state;
+    return applyClaimField(state, judah.id, action.track).state;
+  }
+
   if (action.type === 'wiseCounsel') {
     if (state.phase !== 'preResolve') return state;
     const issachar = state.players.find((p) => canWiseCounsel(state, p.id));
@@ -207,10 +225,16 @@ export { startRound } from './round';
 export {
   availableLeaderTrade,
   canArmGoodsDoubler,
+  canSpendResilience,
   canStudyTrack,
   LEADER_TRADES,
 } from './actions';
-export { canWiseCounsel } from './resolve';
+export {
+  barredFromProvision,
+  canClaimField,
+  canWiseCounsel,
+  supplyOnTrack,
+} from './resolve';
 export { goodsDoublerOf } from './helpers';
 export type { LeaderTrade } from './actions';
 export {

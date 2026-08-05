@@ -39,13 +39,14 @@ Abilities split by whether there is a decision to take away:
 | Nazirite Strength, Gad's Enduring Defense | The Level III covenant rescue — whether to spend it |
 | Champion rewards, spoil, income | All six Judge one-shots |
 | | Leader trades — whether, and which way |
+| Levi's Tithe, once Provision is Championed | Claim the Field, Wise Counsel, Spend Your Resilience |
 
 The rule of thumb: a free bonus with no cost and no target applies itself; anything
 with a cost, a target, or a "once per game" applies only when asked.
 
 Several spends are **free of the turn** and so do not advance the actor: a Judge
-one-shot whose window is `action`, a leader trade, arming a Goods doubler, and
-Issachar's study during placement. They dispatch, take effect, and leave the
+one-shot whose window is `action`, a leader trade, arming a Goods doubler,
+Issachar's study and Manasseh's Resilience during placement. They dispatch, take effect, and leave the
 player their full placement or action.
 
 Anything driving bots must therefore use `src/ai/botStep.ts` rather than calling
@@ -73,17 +74,17 @@ With `tuning.freePlacementPhase` off, `placement` is skipped entirely and
 
 ## Known stubs
 
-Three of the thirty-nine leader upgrades have no engine effect — see
-`LEADER_UPGRADE_ACTIVE`, which is the authority.
+**None.** All thirty-nine leader upgrades have engine effects;
+`src/data/leaderImpl.ts` is the authority and is now `true` throughout.
 
-| Upgrade | What it needs |
-|---|---|
-| Judah III — First in Line | A `preResolve` prompt to move one of your own tokens. `applyShiftToken` already does exactly this for Dan and Naphtali; Judah's differs only in being once per *game* rather than once per round, so this is a table entry and a flag, not new machinery |
-| Manasseh I — Fleece Test | "Look at one track's current special modifier" — the Crisis and Oppressor modifiers are already face up, so as written it reveals nothing. It needs a decision about what it should actually show before it can be wired |
+Three of them were rewritten rather than wired, because implementing the printed
+text would have duplicated something the game already did or done nothing at all:
 
-Levi II (Intercession) is deliberately unwired: Levi's unique action already
-does what the upgrade text describes, so wiring it would give Levi the same
-ability twice.
+| Was | Is | Why |
+|---|---|---|
+| Judah III — First in Line: move 1 of your tokens after the reveal | **Claim the Field**: your Supply on a named track stands up as Banners | The original was `applyShiftToken` with a different cooldown — Dan and Naphtali already do it. The replacement is the only rule that rewrites what a token *is* rather than where it stands |
+| Manasseh I — Fleece Test: look at one track's current special modifier | **Spend Your Resilience**: 1 Loyalty buys 2 Supply | Crisis and Oppressor modifiers are face up, so the original revealed nothing. Loyalty is spent by choice nowhere else, and Manasseh starts with the most of it |
+| Levi II — Intercession: spend 1 Faith to prevent 1 Covenant loss | **The Tithe**: barred from Provision Championship, paid 1 Goods by whoever takes it | Word for word Levi's own unique action. Nothing else in the game pays you off another player's success |
 
 ## Goods, and the one way in
 
@@ -107,6 +108,7 @@ doubled.
 | `leaderTrades.test.ts` | Zebulun I / Simeon III / Ephraim III rates, once-per-round, and that a trade never eats the turn |
 | `goodsDoubler.test.ts` | Asher III / Zebulun III, per source, and that the two cards' different scopes are honoured |
 | `issachar.test.ts` | Understanding of Times reads face-down Influence; Wise Counsel's fences |
+| `newLeaderPowers.test.ts` | Claim the Field, Spend Your Resilience, and the Tithe |
 | `../ai/bots.test.ts` | bot placement, Banner *and* Supply both played, and that a free action never costs the turn |
 | `resolve.test.ts` | Champions and tie-breaks, failures, Covenant zone effects, Crisis 13/14, deferred uniques, Broken clock, `endGame` |
 | `game.test.ts` | full bot-vs-bot games across seeds and player counts, asserting invariants |

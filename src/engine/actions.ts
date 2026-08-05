@@ -208,6 +208,71 @@ export function studyTrack(
   return { state: s, ok: true };
 }
 
+/** Manasseh I — how much Influence one Loyalty buys. */
+const RESILIENCE_TOKENS = 2;
+
+export function canSpendResilience(state: GameState, playerId: string): boolean {
+  const p = getPlayer(state, playerId);
+  return (
+    p.tribe === 'Manasseh' &&
+    p.leaderLevel >= 1 &&
+    !p.oncePerRoundUsed['resilience'] &&
+    p.resources.loyalty >= 1
+  );
+}
+
+/**
+ * Manasseh I — Spend Your Resilience. One Loyalty buys two Influence.
+ *
+ * Loyalty is spent by choice nowhere else in the game; everywhere else it is
+ * only ever lost. Manasseh starts with the most of it, so this puts the
+ * stabilizer's largest number to work instead of leaving it as a buffer — and
+ * because Loyalty is the first tie-breaker at the end of the game, the cost is
+ * paid twice by anyone who leans on it.
+ *
+ * The tokens arrive as Supply: no Warriors, Faith or Goods were mustered. Were
+ * they Banners, Manasseh could buy Championships with Loyalty and step outside
+ * the resource economy altogether.
+ */
+export function spendResilience(
+  state: GameState,
+  playerId: string,
+  track: TrackId,
+): { state: GameState; ok: boolean } {
+  if (!canSpendResilience(state, playerId)) {
+    return { state: addLog(state, 'No resilience to spend.', 'bad'), ok: false };
+  }
+  const p = getPlayer(state, playerId);
+  const tokens = [...state.tokens];
+  for (let i = 0; i < RESILIENCE_TOKENS; i++) {
+    tokens.push({
+      id: nextTokenId(),
+      playerId,
+      track,
+      value: 1,
+      temporary: false,
+      faceDown: true,
+      // No spendable resource bought it, so it is Supply wherever it lands and
+      // stays Supply if anything moves it. Unlike a gift it is not `temporary`:
+      // Manasseh's own people turned out, they were simply not mustered.
+      paidWith: null,
+    });
+  }
+  let s: GameState = { ...state, tokens };
+  s = updatePlayer(s, playerId, (pl) => ({
+    ...pl,
+    resources: mutateResources(pl.resources, { loyalty: -1 }),
+    oncePerRoundUsed: { ...pl.oncePerRoundUsed, resilience: true },
+  }));
+  s = addLog(
+    s,
+    `${p.tribe} endures — 1 Loyalty becomes ${RESILIENCE_TOKENS} Supply on ` +
+      `${TRACK_LABELS[track]}.`,
+    'good',
+  );
+  return { state: s, ok: true };
+}
+
 function capLoyalty(state: GameState, playerId: string): GameState {
   return updatePlayer(state, playerId, (p) => ({
     ...p,

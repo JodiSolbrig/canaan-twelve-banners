@@ -388,6 +388,10 @@ export type PlayerAction =
   | { type: 'armGoodsDoubler' }
   /** Issachar I — study one track's standing before you commit. */
   | { type: 'studyTrack'; track: TrackId }
+  /** Manasseh I — spend 1 Loyalty for 2 Supply on a track. */
+  | { type: 'spendResilience'; track: TrackId }
+  /** Judah III — stand your Supply on a track up as Banners. */
+  | { type: 'claimField'; track: TrackId }
   /** Issachar III — force another player's token onto a different track. */
   | { type: 'wiseCounsel'; tokenId: string; toTrack: TrackId }
   | { type: 'advance' }; // for auto phases / human done

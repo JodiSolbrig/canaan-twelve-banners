@@ -4,6 +4,7 @@ import { OPPRESSOR_BY_ID } from '../data/oppressors';
 import {
   availableLeaderTrade,
   canArmGoodsDoubler,
+  canSpendResilience,
   canStudyTrack,
   currentActor,
   getPlayer,
@@ -73,6 +74,10 @@ export function HumanControls({ state, onAction, flashLeaderLevel = null }: Prop
       : null;
   const canStudy =
     isOurTurn && state.phase === 'placement' && canStudyTrack(state, human.id);
+  const canEndure =
+    isOurTurn &&
+    state.phase === 'placement' &&
+    canSpendResilience(state, human.id);
 
   useEffect(() => {
     if (state.phase !== 'action') setPlacingMore(false);
@@ -248,6 +253,28 @@ export function HumanControls({ state, onAction, flashLeaderLevel = null }: Prop
       {isOurTurn && state.phase === 'placement' && (
         <div className="placement-controls">
           <div className="help-callout">{HELP.placementHint}</div>
+
+          {canEndure && (
+            <div className="field-row" style={{ marginBottom: '0.5rem' }}>
+              <Tip
+                wide
+                className="tip-below"
+                text="Spend Your Resilience — 1 Loyalty buys 2 Supply on any track, once a generation, without spending your placement. Loyalty is also the first tie-breaker at the end of the game."
+              >
+                <label style={{ cursor: 'help' }}>Endure (1 Loyalty)</label>
+              </Tip>
+              {TRACKS.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  className="btn"
+                  onClick={() => onAction({ type: 'spendResilience', track: t })}
+                >
+                  {TRACK_LABELS[t]}
+                </button>
+              ))}
+            </div>
+          )}
 
           {canStudy && (
             <div className="field-row" style={{ marginBottom: '0.5rem' }}>

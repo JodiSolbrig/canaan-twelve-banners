@@ -2,6 +2,7 @@ import { TRIBE_BY_ID } from '../data/gameData';
 import {
   availableLeaderTrade,
   canArmGoodsDoubler,
+  canSpendResilience,
   canStudyTrack,
 } from '../engine/actions';
 import {
@@ -18,10 +19,13 @@ import {
 } from '../engine/helpers';
 import { JUDGE_POWER_WINDOW } from '../engine/judges';
 import {
+  barredFromProvision,
+  canClaimField,
   canDeclareAlliance,
   canRescue,
   canShiftToken,
   canWiseCounsel,
+  supplyOnTrack,
 } from '../engine/resolve';
 import type {
   GameState,
@@ -81,6 +85,18 @@ export function chooseBotAction(state: GameState): PlayerAction | null {
       )[0]!;
       return { type: 'studyTrack', track };
     }
+    // Manasseh trades Loyalty for Influence, but only while it can spare the
+    // Loyalty — it is the first tie-break at the end, and dropping to the
+    // bottom of the table invites the Judgment discard.
+    if (canSpendResilience(state, actor.id) && actor.resources.loyalty >= 3) {
+      const short = [...TRACKS].sort(
+        (a, b) => trackShortfall(state, b) - trackShortfall(state, a),
+      )[0]!;
+      if (trackShortfall(state, short) > 0) {
+        return { type: 'spendResilience', track: short };
+      }
+    }
+
     const plan = planPlacement(state, actor.id);
     return {
       type: 'confirmPlacement',
@@ -164,6 +180,14 @@ function choosePreResolve(state: GameState): PlayerAction | null {
     if (move) return move;
   }
 
+  // Claim the Field, spent only where standing the Supply up actually takes
+  // the track — the promotion also buys the Loyalty penalty if it then fails.
+  for (const p of state.players) {
+    if (p.isHuman || !canClaimField(state, p.id)) continue;
+    const claim = bestClaim(state, p.id);
+    if (claim) return claim;
+  }
+
   // Wise Counsel, spent to strip a Championship rather than to save a track:
   // a Banner dragged onto another track becomes Supply and claims nothing.
   for (const p of state.players) {
@@ -231,6 +255,28 @@ function bestShift(state: GameState, playerId: string): PlayerAction | null {
     }
   }
   return best;
+}
+
+/**
+ * Claim the Field is worth spending only where the promoted Supply would win
+ * the track outright. It is once per game and it buys exposure as well as
+ * Banners, so a claim that merely narrows a gap is a claim wasted.
+ */
+function bestClaim(state: GameState, playerId: string): PlayerAction | null {
+  const totals = getTrackTotals(state);
+  for (const track of TRACKS) {
+    const gain = supplyOnTrack(state, playerId, track);
+    if (gain === 0) continue;
+    const banners = totals.banner[track];
+    const mine = (banners[playerId] ?? 0) + gain;
+    const best = Object.entries(banners)
+      .filter(([pid]) => pid !== playerId)
+      .reduce((m, [, v]) => Math.max(m, v), 0);
+    if (mine > best && (banners[playerId] ?? 0) <= best) {
+      return { type: 'claimField', track };
+    }
+  }
+  return null;
 }
 
 /**
@@ -364,6 +410,8 @@ function planPlacement(state: GameState, playerId: string): PlacementPlan {
     if (!concentrates) {
       for (const track of TRACKS) {
         if (track === primary || banners <= 0) continue;
+        // A Banner on a track you can never Champion buys nothing but risk.
+        if (track === 'provision' && barredFromProvision(state, playerId)) continue;
         const res = TRACK_AFFINITY_RESOURCE[track];
         if (pool[res] >= 3) {
           banners -= add(track, res, Math.min(banners, agr > 0.5 ? 2 : 1));
@@ -393,13 +441,19 @@ function planPlacement(state: GameState, playerId: string): PlacementPlan {
   // to contest, so it keeps a generation's worth back before lending any.
   reserve[primaryRes] = Math.max(reserve[primaryRes], 2);
 
+  // A barred Levi still wants Influence on Provision: the tithe is owed for
+  // service, so being absent from the harvest forfeits it.
+  const tithed = barredFromProvision(state, playerId);
+
   for (const track of TRACKS) {
     // Paying a track's own affinity plants a Banner, which is the decision this
     // pass has already declined to make.
     if (plan[track]?.[TRACK_AFFINITY_RESOURCE[track]]) continue;
     for (const res of SPENDABLE) {
       if (res === TRACK_AFFINITY_RESOURCE[track]) continue;
-      if (pool[res] <= reserve[res]) continue;
+      // The tithe is worth digging a little deeper for than an ordinary spoil.
+      const floor = tithed && track === 'provision' ? 0 : reserve[res];
+      if (pool[res] <= floor) continue;
       if (add(track, res, 1) > 0) break;
     }
   }

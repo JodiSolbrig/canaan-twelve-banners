@@ -197,6 +197,84 @@ export function applyWiseCounsel(
   };
 }
 
+/**
+ * Judah III — Claim the Field. Once a game, the Supply you sent to a track
+ * stands up as Banners.
+ *
+ * The only rule in the game that rewrites what a token *is* rather than where it
+ * stands, and it cuts both ways: what it promotes now counts toward Champion and
+ * now takes the Loyalty penalty if the track gives way. Gifted and temporary
+ * tokens are untouched — Judah claims its own effort, not another tribe's.
+ */
+export function canClaimField(state: GameState, playerId: string): boolean {
+  const p = getPlayer(state, playerId);
+  return (
+    p.tribe === 'Judah' &&
+    p.leaderLevel >= 3 &&
+    !p.oncePerGameUsed['claimField'] &&
+    TRACKS.some((t) => supplyOnTrack(state, playerId, t) > 0)
+  );
+}
+
+/** That player's own paid-for Supply standing on one track. */
+export function supplyOnTrack(
+  state: GameState,
+  playerId: string,
+  track: TrackId,
+): number {
+  return state.tokens.filter(
+    (t) =>
+      t.playerId === playerId &&
+      t.track === track &&
+      !t.temporary &&
+      t.paidWith !== null &&
+      !isBannerToken(t),
+  ).length;
+}
+
+export function applyClaimField(
+  state: GameState,
+  playerId: string,
+  track: TrackId,
+): { state: GameState; ok: boolean } {
+  if (!canClaimField(state, playerId)) {
+    return { state: addLog(state, 'No claim available.', 'bad'), ok: false };
+  }
+  const promoted = supplyOnTrack(state, playerId, track);
+  if (promoted === 0) {
+    return {
+      state: addLog(state, `No Supply of yours on ${label(track)}.`, 'bad'),
+      ok: false,
+    };
+  }
+  const affinity = TRACK_AFFINITY_RESOURCE[track];
+  let s: GameState = {
+    ...state,
+    tokens: state.tokens.map((t) =>
+      t.playerId === playerId &&
+      t.track === track &&
+      !t.temporary &&
+      t.paidWith !== null &&
+      !isBannerToken(t)
+        ? { ...t, paidWith: affinity }
+        : t,
+    ),
+  };
+  s = updatePlayer(s, playerId, (p) => ({
+    ...p,
+    oncePerGameUsed: { ...p.oncePerGameUsed, claimField: true },
+  }));
+  return {
+    state: addLog(
+      s,
+      `${getPlayer(s, playerId).tribe} claims ${label(track)} — ` +
+        `${promoted} Supply stands up as Banners.`,
+      'good',
+    ),
+    ok: true,
+  };
+}
+
 /** Naphtali III — the alliance is sworn once a game, before scoring. */
 export function canDeclareAlliance(state: GameState, playerId: string): boolean {
   const p = getPlayer(state, playerId);
@@ -268,11 +346,26 @@ export function declareCovenantRescue(
  * Gideon's Three Hundred: whoever armed it takes the named track outright, so
  * long as they actually planted a Banner on it.
  */
+/**
+ * Levi II — The Tithe. Levi has no inheritance, so it can never Champion
+ * Provision; instead whoever does pays it a Goods.
+ *
+ * The bar is absolute: it outranks even Gideon's Three Hundred, which otherwise
+ * takes a track outright. Levi's Provision Influence still counts toward the
+ * threshold and still takes the failure penalty if it was a Banner — landless
+ * does not mean absent. It simply means the harvest is never Levi's to claim.
+ */
+export function barredFromProvision(state: GameState, playerId: string): boolean {
+  const p = getPlayer(state, playerId);
+  return p.tribe === 'Levi' && p.leaderLevel >= 2;
+}
+
 function gideonClaimant(state: GameState, track: TrackId): string | null {
   const claimant = state.players.find(
     (p) => p.judgeArmed?.power === 'midian' && p.judgeArmed.track === track,
   );
   if (!claimant) return null;
+  if (track === 'provision' && barredFromProvision(state, claimant.id)) return null;
   const banners = state.tokens.some(
     (t) =>
       t.playerId === claimant.id &&
@@ -353,7 +446,18 @@ export function resolveRound(state: GameState): GameState {
       // entirely by Supply succeeds with no Champion at all.
       // Gideon's Three Hundred overrides the count outright: the fewest carry
       // the day, provided they turned out at all.
-      championId: gideonClaimant(s, track) ?? pickChampion(s, bannerByPlayer),
+      championId:
+        gideonClaimant(s, track) ??
+        pickChampion(
+          s,
+          track === 'provision'
+            ? Object.fromEntries(
+                Object.entries(bannerByPlayer).filter(
+                  ([pid]) => !barredFromProvision(s, pid),
+                ),
+              )
+            : bannerByPlayer,
+        ),
       zone: trackZone(grand, base, tuning.lowHighOffset),
     });
   }
@@ -918,6 +1022,40 @@ function awardChampion(state: GameState, res: TrackResolution): GameState {
     resources: mutateResources(p.resources, delta),
   }));
   if (reward.goods) s = grantGoods(s, res.championId, reward.goods, 'champion');
+
+  // Levi II — The Tithe, paid out of the harvest the Champion just took in.
+  // Settled after the reward so there is something to tithe from.
+  //
+  // Levi must have Influence standing on Provision to collect: "for their
+  // service which they serve" (Numbers 18:21). Without that clause the
+  // prohibition costs a Moral tribe nothing at all — Levi was never going to
+  // Champion Provision — and the tithe is pure income. Requiring presence makes
+  // it what it should be: Levi spends real resources on a track it can never
+  // win, in exchange for a share of what the harvest brings in.
+  if (res.track === 'provision') {
+    const levite = s.players.find(
+      (p) =>
+        p.id !== res.championId &&
+        barredFromProvision(s, p.id) &&
+        s.tokens.some((t) => t.playerId === p.id && t.track === 'provision'),
+    );
+    if (levite) {
+      const due = Math.min(1, getPlayer(s, res.championId).resources.goods);
+      if (due > 0) {
+        s = updatePlayer(s, res.championId, (p) => ({
+          ...p,
+          resources: mutateResources(p.resources, { goods: -due }),
+        }));
+        s = grantGoods(s, levite.id, due, 'tithe');
+        s = addLog(
+          s,
+          `${getPlayer(s, res.championId).tribe} renders the tithe — ` +
+            `${levite.tribe} receives ${due} Goods.`,
+          'good',
+        );
+      }
+    }
+  }
 
   // Judah Othniel I
   if (champ.tribe === 'Judah' && champ.leaderLevel >= 1) {

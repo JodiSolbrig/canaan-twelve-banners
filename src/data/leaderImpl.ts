@@ -9,11 +9,11 @@ import type { TribeId } from '../engine/types';
  */
 export const LEADER_UPGRADE_ACTIVE: Record<TribeId, [boolean, boolean, boolean]> =
   {
-    Judah: [true, true, false], // I Glory; II auto on Military placement; III needs UI
+    Judah: [true, true, true], // I Glory; II auto on Military placement; III Claim the Field
     Benjamin: [true, true, true], // I Warrior; II auto on Military placement; III free Recruit
-    Levi: [true, false, true], // I Covenant on Moral Champ; III covenant rescue
+    Levi: [true, true, true], // I Covenant on Moral Champ; II the Tithe; III covenant rescue
     Ephraim: [true, true, true], // I Faith; II +1 Goods on unlock; III leader trade
-    Manasseh: [false, true, true], // I peek; II Provision High; III loyalty soften
+    Manasseh: [true, true, true], // I spend Loyalty; II Provision High; III loyalty soften
     Reuben: [true, true, true],
     Simeon: [true, true, true], // I Warrior; II free Mil next round; III leader trade
     Dan: [true, true, true], // I Nazirite; II Riddle & Cunning; III Final Stand

@@ -418,7 +418,14 @@ export function raiseCovenant(state: GameState, amount: number, reason: string):
  * Where a gain of Goods came from. Asher's Rich Harvest doubles only what an
  * action or a Championship paid; Zebulun's Profitable Venture doubles anything.
  */
-export type GoodsSource = 'action' | 'champion' | 'spoil' | 'income' | 'zone';
+export type GoodsSource =
+  | 'action'
+  | 'champion'
+  | 'spoil'
+  | 'income'
+  | 'zone'
+  /** Levi's due from a Provision Champion. */
+  | 'tithe';
 
 /** Which sources each tribe's once-per-game doubler will fire on. */
 const DOUBLER: Partial<Record<TribeId, { name: string; sources: GoodsSource[] }>> =
@@ -431,7 +438,7 @@ const DOUBLER: Partial<Record<TribeId, { name: string; sources: GoodsSource[] }>
     // "after gaining Goods from any source, gain that many again"
     Zebulun: {
       name: 'Profitable Venture',
-      sources: ['action', 'champion', 'spoil', 'income', 'zone'],
+      sources: ['action', 'champion', 'spoil', 'income', 'zone', 'tithe'],
     },
   };
 
