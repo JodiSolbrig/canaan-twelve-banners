@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { formatTribeIncome, TRACK_LABELS, TRIBE_BY_ID } from '../data/gameData';
 import { OPPRESSOR_BY_ID } from '../data/oppressors';
-import { currentActor, getPlayer } from '../engine';
+import { availableLeaderTrade, currentActor, getPlayer } from '../engine';
 import { JUDGE_POWER_NEEDS_TRACK, JUDGE_POWER_WINDOW } from '../engine/judges';
 import type { GameState, PlacementPlan, PlayerAction, TrackId } from '../engine/types';
 import { HELP, RESOURCE_HELP } from './helpText';
@@ -54,6 +54,12 @@ export function HumanControls({ state, onAction, flashLeaderLevel = null }: Prop
   const [judgeTarget, setJudgeTarget] = useState('');
   const [placingMore, setPlacingMore] = useState(false);
   const freePlacement = state.tuningSnapshot.freePlacementPhase;
+  // Only offered on our own turn in the action phase, which is the window the
+  // engine accepts it in.
+  const leaderTrade =
+    isOurTurn && state.phase === 'action'
+      ? availableLeaderTrade(state, human.id)
+      : null;
 
   useEffect(() => {
     if (state.phase !== 'action') setPlacingMore(false);
@@ -589,6 +595,35 @@ export function HumanControls({ state, onAction, flashLeaderLevel = null }: Prop
                 </div>
               </div>
             )}
+
+          {leaderTrade && (
+            <div className="judge-box" style={{ marginTop: '0.5rem' }}>
+              <div className="judge-title">
+                {leaderTrade.name} — free of your action
+              </div>
+              <p className="judge-text">
+                Once each round, and it does not cost you your turn.
+              </p>
+              <div className="field-row">
+                {leaderTrade.trades.map((t) => {
+                  const affordable = human.resources[t.from] >= leaderTrade.rate;
+                  return (
+                    <button
+                      key={`${t.from}-${t.to}`}
+                      type="button"
+                      className="btn btn-primary"
+                      disabled={!affordable}
+                      onClick={() =>
+                        onAction({ type: 'leaderTrade', from: t.from, to: t.to })
+                      }
+                    >
+                      {leaderTrade.rate} {t.from} → 1 {t.to}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {human.tribe === 'Judah' && (
             <div className="field-row" style={{ marginTop: '0.5rem' }}>

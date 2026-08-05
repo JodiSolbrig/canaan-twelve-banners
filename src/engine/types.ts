@@ -69,7 +69,6 @@ export type PlayerState = {
   isHuman: boolean;
   resources: Resources;
   startingLoyalty: number;
-  influencePool: number;
   championships: number;
   leaderLevel: number; // 0–3 unlocked
   oncePerGameUsed: Record<string, boolean>;
@@ -80,8 +79,6 @@ export type PlayerState = {
   covenantProtect: boolean;
   /** Reduce covenant penalty on a failed track by 1 (Manasseh) */
   holdTheLine: boolean;
-  /** Gad Overcomer pending */
-  overcomerAvailable: boolean;
   /** Free military token next round (Simeon) */
   freeMilitaryNextRound: number;
   /**
@@ -113,7 +110,6 @@ export type PlayerState = {
    * A judge does not outlive their generation — "and whenever the judge died,
    * they turned back and were more corrupt than their fathers" (Judges 2:19).
    * The power lapses at the end of `judgePowerExpires`, spent or not.
-   * The powers themselves are not wired yet.
    */
   judgePower: OppressorId | null;
   /** Round after which an unspent `judgePower` lapses. */
@@ -364,4 +360,13 @@ export type PlayerAction =
   | { type: 'covenantRescue' }
   /** Naphtali III — name two tracks whose Influence each counts +1. */
   | { type: 'northernAlliance'; tracks: [TrackId, TrackId] }
+  /**
+   * A leader's standing trade (Zebulun I, Simeon III, Ephraim III) — once a
+   * round, on your turn, without spending the turn.
+   */
+  | {
+      type: 'leaderTrade';
+      from: SpendableResource;
+      to: SpendableResource;
+    }
   | { type: 'advance' }; // for auto phases / human done

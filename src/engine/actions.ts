@@ -13,8 +13,12 @@ import {
   shuffle,
   updatePlayer,
 } from './helpers';
+import { LEADER_TRADES } from './leaderTrades';
 import { applyPlacement } from './placement';
 import type { GameState, PlayerAction, TrackId, TribeId } from './types';
+
+export { LEADER_TRADES } from './leaderTrades';
+export type { LeaderTrade } from './leaderTrades';
 
 /**
  * Tribes whose Unique Action is itself once-per-game. Round 1 bars these along
@@ -32,6 +36,89 @@ function isValidConversion(from: Tradeable, to: Tradeable): boolean {
   if (from === to) return false;
   if (from === 'warriors') return to === 'goods';
   return true;
+}
+
+/** The trade this player could make right now, or null. */
+export function availableLeaderTrade(
+  state: GameState,
+  playerId: string,
+): import('./leaderTrades').LeaderTrade | null {
+  const p = getPlayer(state, playerId);
+  const trade = LEADER_TRADES[p.tribe];
+  if (!trade) return null;
+  if (p.leaderLevel < trade.level) return null;
+  if (p.oncePerRoundUsed[trade.key]) return null;
+  return trade;
+}
+
+export function applyLeaderTrade(
+  state: GameState,
+  playerId: string,
+  action: Extract<PlayerAction, { type: 'leaderTrade' }>,
+): { state: GameState; ok: boolean } {
+  const p = getPlayer(state, playerId);
+  const trade = LEADER_TRADES[p.tribe];
+  if (!trade) {
+    return { state: addLog(state, `${p.tribe} has no leader trade.`, 'bad'), ok: false };
+  }
+  if (p.leaderLevel < trade.level) {
+    return {
+      state: addLog(state, `${trade.name} is not unlocked yet.`, 'bad'),
+      ok: false,
+    };
+  }
+  if (p.oncePerRoundUsed[trade.key]) {
+    return {
+      state: addLog(state, `${trade.name} is once per round.`, 'bad'),
+      ok: false,
+    };
+  }
+  const legal = trade.trades.some(
+    (t) => t.from === action.from && t.to === action.to,
+  );
+  if (!legal) {
+    return {
+      state: addLog(state, `${trade.name} cannot trade that way.`, 'bad'),
+      ok: false,
+    };
+  }
+  // Micah's Idol (Crisis 7) forbids spending Faith on unique actions. A leader
+  // trade is not a unique action, but paying Faith to an idolatrous market is
+  // the same act the card is aimed at, so the Faith side is barred too.
+  if (action.from === 'faith' && state.activeCrisis?.id === 7) {
+    return {
+      state: addLog(
+        state,
+        'Micah’s Idol blocks trading Faith away.',
+        'bad',
+      ),
+      ok: false,
+    };
+  }
+  if (p.resources[action.from] < trade.rate) {
+    return {
+      state: addLog(
+        state,
+        `${trade.name} needs ${trade.rate} ${action.from}.`,
+        'bad',
+      ),
+      ok: false,
+    };
+  }
+  let s = updatePlayer(state, playerId, (pl) => ({
+    ...pl,
+    resources: mutateResources(pl.resources, {
+      [action.from]: -trade.rate,
+      [action.to]: 1,
+    }),
+    oncePerRoundUsed: { ...pl.oncePerRoundUsed, [trade.key]: true },
+  }));
+  s = addLog(
+    s,
+    `${p.tribe} — ${trade.name}: ${trade.rate} ${action.from} → 1 ${action.to}.`,
+    'good',
+  );
+  return { state: s, ok: true };
 }
 
 function capLoyalty(state: GameState, playerId: string): GameState {

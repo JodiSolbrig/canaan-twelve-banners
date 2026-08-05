@@ -17,7 +17,13 @@ Open the URL Vite prints (usually `http://localhost:5173`).
 npm test        # rules-engine + design-data test suite
 npm run lint    # oxlint
 npm run build   # tsc -b && vite build
+npm run balance # 300 all-bot games; prints how the rules are behaving
 ```
+
+`npm run balance` is the tuning instrument, and it is only as good as the bot:
+anything the bot never plays, it cannot measure. Read `scripts/balance.test.ts`
+for the `BALANCE_*` environment overrides that sweep a dial without editing the
+shipped defaults.
 
 ## What you can do
 
@@ -68,6 +74,7 @@ listed here is implemented as written.
 | Raid / Skirmish "Low zone" | `01` — Benjamin, Simeon | The Warrior is spent on your turn; the Low-zone outcome settles after Reveal | Checking the zone mid-round would read opponents' face-down tokens and make the result depend on seat order. |
 | Iron Chariots unpaid token | `02` card 3 — "count as –1 Influence" | The token contributes **0** | Read as "reduce this token's Influence by 1". A true −1 would make an unpaid token worse than not placing at all. |
 | Ephraim, Abdon I | `01` — "+1 Goods permanently to your starting total" | +1 Goods to **per-round income**, permanently | The only reading of "permanently" that does anything, given round income exists. |
+| **Leader trades** — Zebulun I, Simeon III, Ephraim III | `01` — three "once per round, convert…" upgrades | All three are **free of your action**: you trade on your turn and still take a full action | Ephraim's rate — 2 Goods for 1 Faith or Warrior — *is* the printed Convert rate, so being free of the action is the only thing that upgrade can be granting. Reading the other two the same way keeps one rule instead of three. Same reading as Benjamin's "free Recruit action". |
 | Benjamin, Ehud III | `01` — "a free Recruit action" | The *action* is free; its cost is still paid (1 Goods → 2 Warriors, else the Faith mode) | Granting 2 Warriors outright was strictly better than the action it names. |
 | Reuben, Firstborn Advance | `01` — "place 1 token after seeing one other player's placement" | Reuben places **last** in the placement phase | Placement is face down, so "seeing" one placement could only mean seeing the *weight* of it. Placing last delivers exactly that against the whole table, without exposing anyone's composition. |
 | Naphtali, Swift Response | `01` — "give 1 temporary Influence to another player next round" | Naphtali names the recipient **and the track** at its next placement | The card leaves both unstated, and a gift that lands on a track of nobody's choosing is a gift to no one. |
@@ -89,8 +96,12 @@ listed here is implemented as written.
   the Level III covenant rescue, and every Judge power. Only genuinely passive
   bonuses with no decision attached still apply themselves — Othniel II, Ehud II,
   Nazirite Strength, and Gad's Enduring Defense.
-- Some leader upgrades are **Planned** (shown in UI, not fully wired). Active ones
-  are labeled in the Leader panel — see `src/data/leaderImpl.ts`.
+- **32 of the 39 leader upgrades** are wired. The rest are shown in the UI as
+  *Planned* for teaching and planning; active ones are labeled in the Leader
+  panel. `src/data/leaderImpl.ts` is the authority, and
+  `src/engine/README.md` groups what the remaining seven still need.
+- **Leader trades** (Zebulun's Sea Trader, Simeon's Raid Leader, Ephraim's
+  Landed Authority) cost no action — take the trade *and* your turn.
 - Defaults for Champion rewards, track thresholds, and Low/High zones live in
   `src/config/tuning.ts`; the design package documents the same numbers in
   `markdown/03-standard-actions-and-player-aid.md`.

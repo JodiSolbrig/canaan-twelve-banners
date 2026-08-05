@@ -4,7 +4,7 @@ Player Aid — front,6,Front — the generation,One generation,"1. Reveal the Cr
 3. Action — one standard action or your Unique Action.
 4. Reveal all Influence.
 5. Before scoring — spend anything that reads the full board.
-6. Score each track, then move the Covenant.","Threshold: 1 Influence per player on every track.
+6. Score each track, then move the Covenant.","Threshold: 1 Influence per player +1 on every track.
 Banner = the track’s affinity resource. Counts for the threshold AND for Champion, and loses 1 Loyalty if the track fails.
 Supply = anything else. Counts for the threshold only. Risks nothing, shares the spoil.
 Warriors → Military · Faith → Moral · Goods → Provision"

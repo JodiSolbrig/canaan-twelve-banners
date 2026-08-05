@@ -34,8 +34,6 @@ function makePlayer(
       glory: 0,
     },
     startingLoyalty: def.loyalty,
-    /** Soft cap for future placement limits; not enforced yet. */
-    influencePool: 10,
     championships: 0,
     leaderLevel: 0,
     oncePerGameUsed: {},
@@ -43,10 +41,7 @@ function makePlayer(
     standFirm: false,
     covenantProtect: false,
     holdTheLine: false,
-    /** Gad III — flag reserved; effect not wired. */
-    overcomerAvailable: true,
     freeMilitaryNextRound: 0,
-    /** Naphtali II — consumed in placement if set; never set yet. */
     pendingTempInfluenceGift: 0,
     alliance: null,
     incomeBonus: { faith: 0, warriors: 0, goods: 0 },

@@ -12,16 +12,16 @@ export const LEADER_UPGRADE_ACTIVE: Record<TribeId, [boolean, boolean, boolean]>
     Judah: [true, true, false], // I Glory; II auto on Military placement; III needs UI
     Benjamin: [true, true, true], // I Warrior; II auto on Military placement; III free Recruit
     Levi: [true, false, true], // I Covenant on Moral Champ; III covenant rescue
-    Ephraim: [true, true, false], // I Faith; II +1 Goods on unlock; III convert UI
+    Ephraim: [true, true, true], // I Faith; II +1 Goods on unlock; III leader trade
     Manasseh: [false, true, true], // I peek; II Provision High; III loyalty soften
     Reuben: [true, true, true],
-    Simeon: [true, true, false], // I Warrior; II free Mil next round; III convert
+    Simeon: [true, true, true], // I Warrior; II free Mil next round; III leader trade
     Dan: [true, true, true], // I Nazirite; II Riddle & Cunning; III Final Stand
     Naphtali: [true, true, true],
     Gad: [true, true, true], // I loyalty; II Mil Low; III Overcomer
     Asher: [true, true, false], // I Provision High; II Gather/Harvest; III once
     Issachar: [false, true, false], // II +1 Faith on Champ
-    Zebulun: [false, true, false], // II Provision Champ Glory
+    Zebulun: [true, true, false], // I leader trade; II Provision Champ Glory
   };
 
 export function isLeaderUpgradeActive(tribe: TribeId, level: number): boolean {

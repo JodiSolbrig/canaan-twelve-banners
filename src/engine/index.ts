@@ -7,6 +7,7 @@
  * Prefer importing from this barrel rather than deep paths when adding UI/AI code.
  */
 import {
+  applyLeaderTrade,
   applyPlaceInfluenceAction,
   applyStandardAction,
   applyUniqueAction,
@@ -119,6 +120,15 @@ export function dispatch(state: GameState, action: PlayerAction): GameState {
     return s;
   }
 
+  if (action.type === 'leaderTrade') {
+    if (state.phase !== 'action') return state;
+    const actor = currentActor(state);
+    if (!actor) return state;
+    // A leader trade is free of the action, so the turn does not advance —
+    // the player still has their full action to take afterwards.
+    return applyLeaderTrade(state, actor.id, action).state;
+  }
+
   if (action.type === 'judgePower') {
     const actor = judgeActor(state);
     if (!actor) return state;
@@ -166,6 +176,8 @@ export function dispatch(state: GameState, action: PlayerAction): GameState {
 
 export { createGame } from './createGame';
 export { startRound } from './round';
+export { availableLeaderTrade, LEADER_TRADES } from './actions';
+export type { LeaderTrade } from './actions';
 export {
   compareStandings,
   currentActor,

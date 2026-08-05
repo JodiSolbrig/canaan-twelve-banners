@@ -21,6 +21,11 @@ export type TuningConfig = {
   /**
    * Added to every track's threshold at every table size.
    *
+   * This is the dial that decides how often a track holds, and therefore how
+   * often the Covenant falls far enough to sell Israel into a hand. It has to be
+   * read against how much Influence the table actually turns out — a threshold
+   * is only hard relative to what players are willing to spend.
+   *
    * Matters most under `perTrackNet`, where the Covenant is a random walk driven
    * by track outcomes: if tracks succeed more often than they fail the meter
    * drifts to the ceiling and the cycle never fires, so that mode wants tracks
@@ -159,8 +164,17 @@ export const DEFAULT_TUNING: TuningConfig = {
    *   +1 / −2       −1          8.26       11.3%          9.5
    *
    * A heavier failure weight needs an *easier* threshold, not a harder one.
+   *
+   * Raised from +0 to +1 in 0.10.0, when the bot learned to send Supply. Every
+   * figure above was sampled against an opponent that spent 94% of its Influence
+   * on Banners and left the rest in hand, so the thresholds were tuned against a
+   * table that under-committed. Once Supply was actually being played the same
+   * +0 threshold gave 90/82/81 track success, a final Covenant of 8.8, and 0.48
+   * oppressions a game — the Cycle of the Judges barely turning. +1 puts it back
+   * at 79/68/64 and 0.91 oppressions. The dial did not change; what the table
+   * turns out did.
    */
-  thresholdBonus: 0,
+  thresholdBonus: 1,
   lowHighOffset: 2,
   freePlacementPhase: true,
   failedTrackLoyaltyLoss: 1,
