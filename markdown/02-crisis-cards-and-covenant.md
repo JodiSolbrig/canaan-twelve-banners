@@ -139,6 +139,24 @@ generations** and then lapses, spent or not — *"and whenever the judge died, t
 turned back and were more corrupt than their fathers"* (Judges 2:19). No
 deliverance is permanent; that is the argument of the whole book.
 
+### The six Judge powers
+
+Each is spent **once**, and only in its window. *On your turn* means during the
+action phase; *after the reveal* means in the window between Influence turning
+face up and the generation being scored.
+
+| Deliverer | Power | Window |
+|-----------|-------|--------|
+| **Othniel** | Your Moral Banners count **+2** | after the reveal |
+| **Ehud** | Take **1 Influence** off another player | on your turn |
+| **Deborah & Barak** | Every tribe gains 1 Influence on a track you name | on your turn |
+| **Gideon** | **Take a named track outright** — the fewest carry it. You must have a Banner there | after the reveal |
+| **Jephthah** | **+3 Glory now.** At game end you forfeit your largest single store of Faith, Warriors or Goods | on your turn |
+| **Samson** | Your Banners on a named track **count double** | after the reveal |
+
+Deborah's summoned Influence is **Supply** — she rallies the tribes, she does not
+plant their banners for them.
+
 ### 5. Rest
 
 > *"And the land had rest forty years."*

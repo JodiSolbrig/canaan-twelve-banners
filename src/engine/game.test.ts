@@ -36,6 +36,13 @@ function playToEnd(state: GameState, maxSteps = 4000): GameState {
       continue;
     }
 
+    // Pre-resolve: let the bots spend anything worth spending, then score.
+    if (s.phase === 'preResolve') {
+      const choice = chooseBotAction(s);
+      s = choice ? dispatch(s, choice) : dispatch(s, { type: 'advance' });
+      continue;
+    }
+
     if (s.phase === 'crisisChoice') {
       const choice = chooseBotAction(s);
       if (!choice) throw new Error('No bot resolution for the Angel of the Lord');

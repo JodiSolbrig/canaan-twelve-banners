@@ -71,13 +71,43 @@ export function PlayerAidModal({
           </li>
         </ul>
 
-        <h3 style={{ color: 'var(--bronze)', marginTop: '0.75rem' }}>Round sequence</h3>
+        <h3 style={{ color: 'var(--bronze)', marginTop: '0.75rem' }}>
+          The cycle of the Judges
+        </h3>
         <ul>
-          <li>Draw & reveal 1 Crisis card</li>
-          <li>Place Influence (face-down) + take 1 Standard or Unique Action</li>
-          <li>Reveal Influence → determine Champions</li>
-          <li>Resolve tracks → Covenant changes</li>
-          <li>Champion rewards → clean up</li>
+          <li>
+            The Covenant drops <strong>1 per track that gave way</strong>, and rises 1
+            only if <strong>all three held</strong>.
+          </li>
+          <li>
+            At <strong>5 or below</strong>, Israel is sold into the hand of an{' '}
+            <strong>Oppressor</strong> that replaces the Crisis and tightens every
+            generation.
+          </li>
+          <li>
+            Spend an action to <strong>Cry Out</strong> with Faith. When the Cry is met
+            the oppression breaks, the Covenant is restored to 8, and a{' '}
+            <strong>Judge is raised from the least</strong> among the tribes — the
+            lowest Glory. The next generation is one of rest.
+          </li>
+          <li>
+            A Judge's one-shot lasts <strong>two generations</strong> and then lapses,
+            spent or not.
+          </li>
+        </ul>
+
+        <h3 style={{ color: 'var(--bronze)', marginTop: '0.75rem' }}>
+          Generation sequence
+        </h3>
+        <ul>
+          <li>Income (generations 2+), then the Crisis — or the standing Oppressor</li>
+          <li>Place Influence (face-down) + take 1 Standard, Unique or Judge action</li>
+          <li>
+            <strong>Reveal</strong> — then, before anything is scored, spend any
+            after-the-reveal abilities
+          </li>
+          <li>Champions → resolve tracks → Covenant and the cycle</li>
+          <li>Rewards and spoil → clean up</li>
         </ul>
         <h3 style={{ color: 'var(--bronze)' }}>Standard actions</h3>
         <ul>

@@ -27,7 +27,7 @@ export const HELP = {
     'Provision track — food, trade, and abundance. Affinity: Goods. Goods placed here are Banners: they can win Champion (+1 Glory, +1 Goods) but cost 1 Loyalty if the track fails. Faith or Warriors placed here are Supply: they help it succeed and share the spoil, but never claim it and never risk anything.',
 
   covenant:
-    'Shared Covenant Meter (starts at 8). Drops when tracks fail. Zones: Strength 8–10, Warning 5–7, Judgment 2–4, Broken 0–1. Broken Covenant triggers a final-round clock and Loyalty losses.',
+    'Shared Covenant Meter (starts at 8). At the end of each generation it drops 1 for every track that gave way, and rises 1 only if all three held. Zones: Strength 8–10, Warning 4–7, Judgment 1–3 (failures drop it 1 deeper), Broken 0 (a final-generation clock). At 5 or below Israel is sold into the hand of an Oppressor — cry out with Faith to be delivered.',
   crisis:
     'One Crisis card is revealed each round and modifies that round only. Peek/reorder abilities (Rest & Recover, Reuben, Issachar, Dan) help you prepare.',
   threshold:

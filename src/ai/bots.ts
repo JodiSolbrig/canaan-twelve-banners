@@ -4,14 +4,20 @@ import {
   cryThreshold,
   currentActor,
   getPlayer,
+  getTrackTotals,
+  isBannerToken,
   oppressionSeverity,
   planTotal,
   TRACK_AFFINITY_RESOURCE,
 } from '../engine/helpers';
+import { JUDGE_POWER_WINDOW } from '../engine/judges';
+import { canRescue, canSamsonMove } from '../engine/resolve';
 import type {
   GameState,
+  OppressorId,
   PlacementPlan,
   PlayerAction,
+  PlayerState,
   SpendableResource,
   TrackId,
 } from '../engine/types';
@@ -38,8 +44,20 @@ export function chooseBotAction(state: GameState): PlayerAction | null {
     return null;
   }
 
+  // Once the board is face up, spend what is worth spending.
+  if (state.phase === 'preResolve') return choosePreResolve(state);
+
   const actor = currentActor(state);
   if (!actor || actor.isHuman) return null;
+
+  // A Judge power that lands on your own turn.
+  if (state.phase === 'action' && actor.judgePower) {
+    const power = actor.judgePower;
+    if (JUDGE_POWER_WINDOW[power] === 'action') {
+      const declared = declareJudgePower(state, actor, power);
+      if (declared) return declared;
+    }
+  }
 
   if (state.phase === 'placement') {
     return { type: 'confirmPlacement', plan: planPlacement(state, actor.id) };
@@ -50,6 +68,126 @@ export function chooseBotAction(state: GameState): PlayerAction | null {
   }
 
   return null;
+}
+
+/**
+ * The track a bot most wants to name for a Judge power: wherever its own Banners
+ * already stand thickest, falling back to its affinity track.
+ */
+function strongestTrack(state: GameState, playerId: string): TrackId {
+  const def = TRIBE_BY_ID[getPlayer(state, playerId).tribe];
+  let best: TrackId = def.bias;
+  let bestCount = -1;
+  for (const track of TRACKS) {
+    const n = state.tokens.filter(
+      (t) => t.playerId === playerId && t.track === track && isBannerToken(t),
+    ).length;
+    if (n > bestCount) {
+      bestCount = n;
+      best = track;
+    }
+  }
+  return best;
+}
+
+/** How a bot spends each Judge one-shot. Deliberately simple. */
+function declareJudgePower(
+  state: GameState,
+  actor: PlayerState,
+  power: OppressorId,
+): PlayerAction | null {
+  switch (power) {
+    case 'moab': {
+      // Ehud's dagger: take from whoever leads on Glory.
+      const victim = state.players
+        .filter((p) => p.id !== actor.id && state.tokens.some((t) => t.playerId === p.id))
+        .sort((a, b) => b.resources.glory - a.resources.glory)[0];
+      return victim
+        ? { type: 'judgePower', targetPlayerId: victim.id }
+        : null;
+    }
+    case 'hazor':
+      // Deborah's summons: rally the whole table to the bot's own field.
+      return { type: 'judgePower', track: strongestTrack(state, actor.id) };
+    case 'ammon':
+      // Jephthah's vow: take the Glory; the reckoning is someone else's problem.
+      return { type: 'judgePower' };
+    default:
+      return null;
+  }
+}
+
+/**
+ * Pre-resolve decisions, in the order a bot should care about them: claim a
+ * track outright, then multiply what it already holds, then shift a token, then
+ * stand in the breach.
+ */
+function choosePreResolve(state: GameState): PlayerAction | null {
+  for (const p of state.players) {
+    if (p.isHuman) continue;
+    const power = p.judgePower;
+    if (power && JUDGE_POWER_WINDOW[power] === 'preResolve') {
+      return { type: 'judgePower', track: strongestTrack(state, p.id) };
+    }
+  }
+
+  // Samson's shift, taken only when it wins something.
+  for (const p of state.players) {
+    if (p.isHuman || !canSamsonMove(state, p.id)) continue;
+    const move = bestSamsonMove(state, p.id);
+    if (move) return move;
+  }
+
+  // The rescue, spent only when exactly one track is short.
+  for (const p of state.players) {
+    if (p.isHuman || !canRescue(state, p.id)) continue;
+    const short = TRACKS.filter((t) => trackShortfall(state, t) > 0);
+    if (short.length === 1) return { type: 'covenantRescue' };
+  }
+  return null;
+}
+
+/** How far a track is from its threshold right now (0 when it is holding). */
+function trackShortfall(state: GameState, track: TrackId): number {
+  const totals = getTrackTotals(state).total[track];
+  const grand = Object.values(totals).reduce((a, b) => a + b, 0);
+  return Math.max(0, baseThreshold(state, track) - grand);
+}
+
+/** Dan's shift, chosen only when it gains a Championship or saves a track. */
+function bestSamsonMove(state: GameState, playerId: string): PlayerAction | null {
+  const score = (s: GameState) => {
+    const totals = getTrackTotals(s);
+    let champs = 0;
+    let holding = 0;
+    for (const track of TRACKS) {
+      const grand = Object.values(totals.total[track]).reduce((a, b) => a + b, 0);
+      if (grand >= baseThreshold(s, track)) holding += 1;
+      const entries = Object.entries(totals.banner[track]).filter(([, v]) => v > 0);
+      entries.sort((a, b) => b[1] - a[1]);
+      if (entries[0]?.[0] === playerId) champs += 1;
+    }
+    return champs * 10 + holding;
+  };
+
+  const mine = state.tokens.filter((t) => t.playerId === playerId && !t.temporary);
+  let best: PlayerAction | null = null;
+  let bestScore = score(state);
+  for (const token of mine) {
+    for (const to of TRACKS) {
+      if (to === token.track) continue;
+      const moved: GameState = {
+        ...state,
+        tokens: state.tokens.map((t) => (t.id === token.id ? { ...t, track: to } : t)),
+      };
+      const value = score(moved);
+      if (value > bestScore) {
+        bestScore = value;
+        best = { type: 'samsonMove', tokenId: token.id, toTrack: to };
+      }
+    }
+  }
+  return best;
 }
 
 function planPlacement(state: GameState, playerId: string): PlacementPlan {

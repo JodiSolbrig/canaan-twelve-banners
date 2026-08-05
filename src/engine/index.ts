@@ -12,9 +12,38 @@ import {
   applyUniqueAction,
 } from './actions';
 import { advanceActorOrPhase, applyPlacement } from './placement';
-import { advanceToNextRound, applyAngelChoice, revealTokens } from './resolve';
+import { applyJudgePower, JUDGE_POWER_WINDOW } from './judges';
+import {
+  advanceToNextRound,
+  applyAngelChoice,
+  applySamsonMove,
+  canRescue,
+  canSamsonMove,
+  declareCovenantRescue,
+  resolveRound,
+  revealTokens,
+} from './resolve';
 import { addLog, currentActor, openingPhase, planTotal } from './helpers';
-import type { GameState, PlayerAction } from './types';
+import type { GameState, PlayerAction, PlayerState } from './types';
+
+/**
+ * Who is spending a Judge power. During the action phase it must be the player
+ * whose turn it is; at pre-resolve the order does not matter, so the holder is
+ * found directly.
+ */
+function judgeActor(state: GameState): PlayerState | null {
+  if (state.phase === 'action') {
+    const actor = currentActor(state);
+    return actor?.judgePower && JUDGE_POWER_WINDOW[actor.judgePower] === 'action'
+      ? actor
+      : null;
+  }
+  if (state.phase !== 'preResolve') return null;
+  const holders = state.players.filter(
+    (p) => p.judgePower && JUDGE_POWER_WINDOW[p.judgePower] === 'preResolve',
+  );
+  return holders.find((p) => p.isHuman) ?? holders[0] ?? null;
+}
 
 /** Apply one legal player/system action; returns next immutable state. */
 export function dispatch(state: GameState, action: PlayerAction): GameState {
@@ -88,9 +117,34 @@ export function dispatch(state: GameState, action: PlayerAction): GameState {
     return s;
   }
 
+  if (action.type === 'judgePower') {
+    const actor = judgeActor(state);
+    if (!actor) return state;
+    return applyJudgePower(state, actor.id, action).state;
+  }
+
+  if (action.type === 'samsonMove') {
+    if (state.phase !== 'preResolve') return state;
+    const dan = state.players.find((p) => canSamsonMove(state, p.id));
+    if (!dan) return state;
+    return applySamsonMove(state, dan.id, action.tokenId, action.toTrack).state;
+  }
+
+  if (action.type === 'covenantRescue') {
+    if (state.phase !== 'preResolve') return state;
+    const human = state.players.find((p) => p.isHuman && canRescue(state, p.id));
+    const who = human ?? state.players.find((p) => canRescue(state, p.id));
+    if (!who) return state;
+    return declareCovenantRescue(state, who.id).state;
+  }
+
   if (action.type === 'advance') {
     if (state.phase === 'crisisReveal') {
       return { ...state, phase: openingPhase(state), currentActorIndex: 0 };
+    }
+    // Everyone is done looking at the revealed board; score it.
+    if (state.phase === 'preResolve') {
+      return resolveRound({ ...state, phase: 'resolve' });
     }
     if (state.phase === 'resolve') {
       return advanceToNextRound(state);

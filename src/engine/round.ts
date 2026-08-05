@@ -34,6 +34,8 @@ export function startRound(state: GameState): GameState {
       covenantProtect: false,
       holdTheLine: false,
       pendingZoneUnique: null,
+      judgeArmed: null,
+      rescueArmed: false,
       peekedCrisis: null,
     })),
   };

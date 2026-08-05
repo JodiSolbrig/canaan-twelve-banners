@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { formatTribeIncome, TRACK_LABELS, TRIBE_BY_ID } from '../data/gameData';
+import { OPPRESSOR_BY_ID } from '../data/oppressors';
 import { currentActor, getPlayer } from '../engine';
+import { JUDGE_POWER_NEEDS_TRACK, JUDGE_POWER_WINDOW } from '../engine/judges';
 import type { GameState, PlacementPlan, PlayerAction, TrackId } from '../engine/types';
 import { HELP, RESOURCE_HELP } from './helpText';
 import { LeaderProgress } from './LeaderProgress';
@@ -45,6 +47,8 @@ export function HumanControls({ state, onAction, flashLeaderLevel = null }: Prop
   const [asherMode, setAsherMode] = useState<'faith' | 'rest'>('rest');
   const [rallyTrack, setRallyTrack] = useState<TrackId>('military');
   const [cryFaith, setCryFaith] = useState(1);
+  const [judgeTrack, setJudgeTrack] = useState<TrackId>('military');
+  const [judgeTarget, setJudgeTarget] = useState('');
   const [placingMore, setPlacingMore] = useState(false);
   const freePlacement = state.tuningSnapshot.freePlacementPhase;
 
@@ -442,6 +446,71 @@ export function HumanControls({ state, onAction, flashLeaderLevel = null }: Prop
               </div>
             </div>
           )}
+
+          {human.judgePower &&
+            JUDGE_POWER_WINDOW[human.judgePower] === 'action' && (
+              <div className="judge-box" style={{ marginTop: '0.5rem' }}>
+                <div className="judge-title">
+                  {OPPRESSOR_BY_ID[human.judgePower].deliverer} — your Judge power
+                </div>
+                <p className="judge-text">
+                  {OPPRESSOR_BY_ID[human.judgePower].judgePower}
+                </p>
+                <div className="field-row">
+                  {JUDGE_POWER_NEEDS_TRACK[human.judgePower] && (
+                    <select
+                      value={judgeTrack}
+                      onChange={(e) => setJudgeTrack(e.target.value as TrackId)}
+                      aria-label="Track for the Judge power"
+                    >
+                      {TRACKS.map((t) => (
+                        <option key={t} value={t}>
+                          {TRACK_LABELS[t]}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {human.judgePower === 'moab' && (
+                    <select
+                      value={judgeTarget}
+                      onChange={(e) => setJudgeTarget(e.target.value)}
+                      aria-label="Target of the dagger"
+                    >
+                      <option value="">Target…</option>
+                      {state.players
+                        .filter(
+                          (p) =>
+                            !p.isHuman &&
+                            state.tokens.some((t) => t.playerId === p.id),
+                        )
+                        .map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.tribe}
+                          </option>
+                        ))}
+                    </select>
+                  )}
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    disabled={human.judgePower === 'moab' && !judgeTarget}
+                    onClick={() =>
+                      onAction({
+                        type: 'judgePower',
+                        ...(JUDGE_POWER_NEEDS_TRACK[human.judgePower!]
+                          ? { track: judgeTrack }
+                          : {}),
+                        ...(human.judgePower === 'moab'
+                          ? { targetPlayerId: judgeTarget }
+                          : {}),
+                      })
+                    }
+                  >
+                    Call on {OPPRESSOR_BY_ID[human.judgePower].deliverer}
+                  </button>
+                </div>
+              </div>
+            )}
 
           {human.tribe === 'Judah' && (
             <div className="field-row" style={{ marginTop: '0.5rem' }}>

@@ -160,6 +160,12 @@ function playGame(seed: number, players: number, stats: Stats): void {
       continue;
     }
 
+    if (s.phase === 'preResolve') {
+      const choice = chooseBotAction(s);
+      s = choice ? dispatch(s, choice) : dispatch(s, { type: 'advance' });
+      continue;
+    }
+
     const action = chooseBotAction(s);
     const before = s;
     s = action ? dispatch(s, action) : s;

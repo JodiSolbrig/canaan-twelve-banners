@@ -760,6 +760,66 @@ h3 {
   color: var(--sand);
 }
 
+/* Pre-resolve: the revealed board and the decisions it allows */
+.reveal-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.85rem;
+  margin: 0.5rem 0 0.75rem;
+}
+
+.reveal-table th,
+.reveal-table td {
+  padding: 0.3rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.reveal-table thead th {
+  color: var(--sand);
+  font-weight: 600;
+}
+
+.reveal-table .holding {
+  color: var(--good);
+}
+
+.reveal-table .short {
+  color: var(--danger);
+}
+
+.judge-box {
+  border: 1px solid var(--bronze);
+  border-radius: 5px;
+  background: rgba(176, 141, 87, 0.09);
+  padding: 0.55rem 0.7rem;
+  margin: 0.5rem 0;
+}
+
+.judge-title {
+  font-family: var(--font-display);
+  color: var(--sand);
+  font-size: 1rem;
+}
+
+.judge-text {
+  font-size: 0.82rem;
+  color: var(--ink-dim);
+  margin: 0.2rem 0 0.45rem;
+}
+
+.judge-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bronze);
+  border: 1px solid var(--bronze);
+  border-radius: 3px;
+  padding: 0 0.25rem;
+  margin-left: 0.3rem;
+}
+
 /* Placement grid — tracks down the side, resources across the top */
 .placement-grid {
   margin: 0.5rem 0;

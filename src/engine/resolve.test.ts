@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { baseThreshold, covenantZone } from './helpers';
-import { advanceToNextRound, endGame, resolveRound } from './resolve';
+import {
+  advanceToNextRound,
+  declareCovenantRescue,
+  endGame,
+  resolveRound,
+} from './resolve';
 import {
   carryAllTracks,
   carryTrack,
@@ -288,42 +293,57 @@ describe('track success and failure', () => {
       return { s, me };
     }
 
+    /** Declare the rescue, as a player must since it is no longer automatic. */
+    function declared(tribe: 'Levi' | 'Dan' | 'Gad') {
+      const { s, me } = oneShort(tribe);
+      return { s: declareCovenantRescue(s, me).state, me };
+    }
+
     // Gad has no other Covenant-moving ability, so it isolates the rescue.
     // Levi's Phinehas I raises the meter again on a Moral Championship, which is
     // correct but would muddy the arithmetic here.
     it('turns a −1 generation into a +1', () => {
-      let { s, me } = oneShort('Gad');
+      let { s, me } = declared('Gad');
       s = resolveRound(s);
       expect(s.covenant).toBe(7);
       expect(playerOf(s, me).oncePerGameUsed['rescue']).toBe(true);
     });
 
     it('stacks with Levi’s own Covenant Zeal', () => {
-      let { s } = oneShort('Levi');
+      let { s } = declared('Levi');
       s = resolveRound(s);
       // +1 rescue, +1 Phinehas I for the Moral Championship.
       expect(s.covenant).toBe(8);
     });
 
     it('charges Dan 2 Warriors for Final Stand', () => {
-      let { s, me } = oneShort('Dan');
-      const warriors = playerOf(s, me).resources.warriors;
+      const { s: before, me } = oneShort('Dan');
+      const warriors = playerOf(before, me).resources.warriors;
+
+      let s = declareCovenantRescue(before, me).state;
+      // The cost is paid on declaration, before anything is scored.
+      expect(playerOf(s, me).resources.warriors).toBe(warriors - 2);
+
       s = resolveRound(s);
       expect(s.covenant).toBe(7);
-      // Champion of Military pays +1 Warrior before the rescue takes its 2.
-      expect(playerOf(s, me).resources.warriors).toBe(warriors + 1 - 2);
+      // Champion of Military then pays its +1 Warrior.
+      expect(playerOf(s, me).resources.warriors).toBe(warriors - 2 + 1);
     });
 
-    it('does not fire for Dan without the Warriors to pay', () => {
+    it('cannot be declared by Dan without the Warriors to pay', () => {
       let { s, me } = oneShort('Dan');
-      s = setResources(s, me, { warriors: 0 });
-      s = resolveRound(s);
+      s = setResources(s, me, { warriors: 1 });
+
+      const attempt = declareCovenantRescue(s, me);
+      expect(attempt.ok).toBe(false);
+
+      s = resolveRound(attempt.state);
       expect(s.covenant).toBe(5);
       expect(playerOf(s, me).oncePerGameUsed['rescue']).toBeUndefined();
     });
 
     it('is spent only once per game', () => {
-      let { s, me } = oneShort('Gad');
+      let { s, me } = declared('Gad');
       s = resolveRound(s);
       expect(s.covenant).toBe(7);
 

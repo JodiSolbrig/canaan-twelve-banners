@@ -3,6 +3,7 @@
  */
 import { TRACK_LABELS } from '../data/gameData';
 import { OPPRESSOR_BY_ID, OPPRESSORS } from '../data/oppressors';
+import { JUDGE_POWER_WINDOW, settleJephthahVows } from './judges';
 import {
   addLog,
   applyCovenantDrop,
@@ -15,6 +16,7 @@ import {
   getPlayer,
   getTrackTotals,
   grantGlory,
+  isBannerToken,
   leastAmongThem,
   mulberry32,
   mutateResources,
@@ -32,14 +34,137 @@ import {
 import { startRound } from './round';
 import type { GameState, TrackId, TrackResolution, TribeId } from './types';
 
+/**
+ * Turn every token face up and stop.
+ *
+ * Resolution does not follow automatically: the board is now public and there
+ * are abilities that are only worth spending once you can see it. `dispatch`
+ * moves on to `resolveRound` when the table is done deciding.
+ */
 export function revealTokens(state: GameState): GameState {
   let s: GameState = {
     ...state,
     tokens: state.tokens.map((t) => ({ ...t, faceDown: false })),
-    phase: 'resolve',
+    phase: 'preResolve',
+    currentActorIndex: 0,
   };
   s = addLog(s, 'Influence revealed.', 'info');
-  return resolveRound(s);
+  return s;
+}
+
+/** Anyone still holding a decision that must be made before scoring. */
+export function hasPreResolveChoice(state: GameState, playerId: string): boolean {
+  const p = getPlayer(state, playerId);
+  if (p.judgePower && JUDGE_POWER_WINDOW[p.judgePower] === 'preResolve') return true;
+  if (canSamsonMove(state, playerId)) return true;
+  return canRescue(state, playerId);
+}
+
+/** Dan, Samson II — one shift a round once the board is face up. */
+export function canSamsonMove(state: GameState, playerId: string): boolean {
+  const p = getPlayer(state, playerId);
+  return (
+    p.tribe === 'Dan' &&
+    p.leaderLevel >= 2 &&
+    !p.oncePerRoundUsed['samsonII'] &&
+    state.tokens.some((t) => t.playerId === playerId && !t.temporary)
+  );
+}
+
+/** Whether this player still holds an unspent Level III covenant rescue. */
+export function canRescue(state: GameState, playerId: string): boolean {
+  const p = getPlayer(state, playerId);
+  return (
+    COVENANT_RESCUE[p.tribe] !== undefined &&
+    p.leaderLevel >= 3 &&
+    !p.oncePerGameUsed['rescue'] &&
+    !p.rescueArmed &&
+    p.resources.warriors >= (COVENANT_RESCUE[p.tribe]?.warriors ?? 0)
+  );
+}
+
+/** Dan shifts one token after the reveal. */
+export function applySamsonMove(
+  state: GameState,
+  playerId: string,
+  tokenId: string,
+  toTrack: TrackId,
+): { state: GameState; ok: boolean } {
+  if (!canSamsonMove(state, playerId)) {
+    return { state: addLog(state, 'No shift available.', 'bad'), ok: false };
+  }
+  const token = state.tokens.find(
+    (t) => t.id === tokenId && t.playerId === playerId && !t.temporary,
+  );
+  if (!token) {
+    return { state: addLog(state, 'That is not your token.', 'bad'), ok: false };
+  }
+  if (token.track === toTrack) {
+    return { state: addLog(state, 'Pick a different track.', 'bad'), ok: false };
+  }
+  let s: GameState = {
+    ...state,
+    tokens: state.tokens.map((t) => (t.id === tokenId ? { ...t, track: toTrack } : t)),
+  };
+  s = updatePlayer(s, playerId, (p) => ({
+    ...p,
+    oncePerRoundUsed: { ...p.oncePerRoundUsed, samsonII: true },
+  }));
+  return {
+    state: addLog(
+      s,
+      `${getPlayer(s, playerId).tribe} strikes after the reveal (Riddle & Cunning): ` +
+        `1 Influence ${label(token.track)} → ${label(toTrack)}.`,
+      'good',
+    ),
+    ok: true,
+  };
+}
+
+/** Declare the Level III rescue; it is paid for now and lands at resolution. */
+export function declareCovenantRescue(
+  state: GameState,
+  playerId: string,
+): { state: GameState; ok: boolean } {
+  if (!canRescue(state, playerId)) {
+    return { state: addLog(state, 'No rescue available.', 'bad'), ok: false };
+  }
+  const p = getPlayer(state, playerId);
+  const cost = COVENANT_RESCUE[p.tribe]?.warriors ?? 0;
+  let s = updatePlayer(state, playerId, (pl) => ({
+    ...pl,
+    resources: mutateResources(pl.resources, { warriors: -cost }),
+    oncePerGameUsed: { ...pl.oncePerGameUsed, rescue: true },
+    rescueArmed: true,
+  }));
+  return {
+    state: addLog(
+      s,
+      `${p.tribe} stands in the breach${cost ? ` (${cost} Warriors)` : ''} — ` +
+        'one track they hold will count twice.',
+      'good',
+    ),
+    ok: true,
+  };
+}
+
+/**
+ * Gideon's Three Hundred: whoever armed it takes the named track outright, so
+ * long as they actually planted a Banner on it.
+ */
+function gideonClaimant(state: GameState, track: TrackId): string | null {
+  const claimant = state.players.find(
+    (p) => p.judgeArmed?.power === 'midian' && p.judgeArmed.track === track,
+  );
+  if (!claimant) return null;
+  const banners = state.tokens.some(
+    (t) =>
+      t.playerId === claimant.id &&
+      t.track === track &&
+      t.value > 0 &&
+      isBannerToken(t),
+  );
+  return banners ? claimant.id : null;
 }
 
 function pickChampion(
@@ -60,80 +185,9 @@ function pickChampion(
   return entries[0]![0];
 }
 
-/**
- * How good a board is for one player: Championships first, then how much of
- * Israel is holding. Used to pick Samson's post-reveal shift.
- */
-function evaluateFor(state: GameState, playerId: string) {
-  const totals = getTrackTotals(state);
-  let champs = 0;
-  let successes = 0;
-  for (const track of TRACKS) {
-    const grand = Object.values(totals.total[track]).reduce((a, b) => a + b, 0);
-    if (grand >= baseThreshold(state, track)) successes += 1;
-    if (pickChampion(state, totals.banner[track]) === playerId) champs += 1;
-  }
-  return { champs, successes };
-}
-
-/**
- * Dan, Samson II — Riddle & Cunning: once a round, shift one token after
- * everything else is face up.
- *
- * Resolved automatically, and only when it strictly improves Dan's position —
- * a Championship first, otherwise a track pulled over its threshold. Striking
- * after everyone has committed is the whole of Samson's method.
- */
-function applySamsonCunning(state: GameState): GameState {
-  const dan = state.players.find(
-    (p) =>
-      p.tribe === 'Dan' && p.leaderLevel >= 2 && !p.oncePerRoundUsed['samsonII'],
-  );
-  if (!dan) return state;
-
-  const mine = state.tokens.filter((t) => t.playerId === dan.id && !t.temporary);
-  if (mine.length === 0) return state;
-
-  const before = evaluateFor(state, dan.id);
-  let best: { state: GameState; from: TrackId; to: TrackId } | null = null;
-  let bestScore = before;
-
-  for (const token of mine) {
-    for (const to of TRACKS) {
-      if (to === token.track) continue;
-      const moved: GameState = {
-        ...state,
-        tokens: state.tokens.map((t) => (t.id === token.id ? { ...t, track: to } : t)),
-      };
-      const score = evaluateFor(moved, dan.id);
-      const better =
-        score.champs > bestScore.champs ||
-        (score.champs === bestScore.champs && score.successes > bestScore.successes);
-      if (better) {
-        bestScore = score;
-        best = { state: moved, from: token.track, to };
-      }
-    }
-  }
-
-  if (!best) return state;
-  let s = best.state;
-  s = updatePlayer(s, dan.id, (p) => ({
-    ...p,
-    oncePerRoundUsed: { ...p.oncePerRoundUsed, samsonII: true },
-  }));
-  return addLog(
-    s,
-    `Dan strikes after the reveal (Riddle & Cunning): 1 Influence ${label(best.from)} → ${label(best.to)}.`,
-    'good',
-  );
-}
-
 export function resolveRound(state: GameState): GameState {
   let s = state;
   const tuning = s.tuningSnapshot;
-  // Samson moves before anything is counted.
-  s = applySamsonCunning(s);
   const totals = getTrackTotals(s);
 
   // Simeon's Furious Assault token is good for the round after the failure only.
@@ -181,7 +235,9 @@ export function resolveRound(state: GameState): GameState {
       success: grand >= thr,
       // Supply helps a track succeed but never claims it. A track carried
       // entirely by Supply succeeds with no Champion at all.
-      championId: pickChampion(s, bannerByPlayer),
+      // Gideon's Three Hundred overrides the count outright: the fewest carry
+      // the day, provided they turned out at all.
+      championId: gideonClaimant(s, track) ?? pickChampion(s, bannerByPlayer),
       zone: trackZone(grand, base, tuning.lowHighOffset),
     });
   }
@@ -414,42 +470,12 @@ const COVENANT_RESCUE: Partial<Record<TribeId, { warriors?: number }>> = {
 };
 
 /**
- * Spend a Level III rescue if one is available and would turn a losing
- * generation into a faithful one.
- *
- * Fired automatically rather than prompted: the engine only spends it on the one
- * case that actually pays — a single failed track, where cancelling it swings the
- * Covenant from −1 to +1 — so there is no interesting decision to surrender. It
- * is deliberately *not* spent turning −3 into −2.
+ * A rescue declared this generation cancels one failed track, provided its owner
+ * actually held a track for it to count twice.
  */
-function spendCovenantRescue(
-  state: GameState,
-  failedCount: number,
-  held: number,
-): { state: GameState; rescued: boolean } {
-  let s = state;
-  if (failedCount !== 1 || held < 1) return { state: s, rescued: false };
-
-  for (const p of s.players) {
-    const rescue = COVENANT_RESCUE[p.tribe];
-    if (!rescue || p.leaderLevel < 3 || p.oncePerGameUsed['rescue']) continue;
-    const cost = rescue.warriors ?? 0;
-    if (p.resources.warriors < cost) continue;
-
-    s = updatePlayer(s, p.id, (pl) => ({
-      ...pl,
-      resources: mutateResources(pl.resources, { warriors: -cost }),
-      oncePerGameUsed: { ...pl.oncePerGameUsed, rescue: true },
-    }));
-    s = addLog(
-      s,
-      `${p.tribe} spends a lifetime's standing${cost ? ` and ${cost} Warriors` : ''} — ` +
-        'one track they held counts twice, and the Covenant is spared.',
-      'good',
-    );
-    return { state: s, rescued: true };
-  }
-  return { state: s, rescued: false };
+function rescueApplies(state: GameState, results: TrackResolution[]): boolean {
+  if (!results.some((r) => r.success)) return false;
+  return state.players.some((p) => p.rescueArmed);
 }
 
 function moveCovenantForGeneration(
@@ -459,13 +485,20 @@ function moveCovenantForGeneration(
   let s = state;
   const tuning = s.tuningSnapshot;
   let failed = results.filter((r) => !r.success);
+
+  // A declared rescue makes one held track count twice, covering a failure.
+  if (failed.length > 0 && rescueApplies(s, results)) {
+    const rescuer = s.players.find((p) => p.rescueArmed)!;
+    failed = failed.slice(1);
+    s = addLog(
+      s,
+      `${rescuer.tribe}'s stand covers ${label(results.find((r) => !r.success)!.track)} — ` +
+        'the Covenant is spared that failure.',
+      'good',
+    );
+  }
+
   const held = results.length - failed.length;
-
-  // A rescue makes one held track count twice, so it covers a failure.
-  const attempt = spendCovenantRescue(s, failed.length, held);
-  s = attempt.state;
-  if (attempt.rescued) failed = [];
-
   const names = failed.map((r) => label(r.track)).join(', ');
   const vow =
     s.activeCrisis?.id === 9 && failed.some((r) => r.track === 'moral') ? 1 : 0;
@@ -613,7 +646,7 @@ function resolveOppression(state: GameState): GameState {
   };
   s = addLog(
     s,
-    `The Covenant is in Judgment — Israel is sold into the hand of ${def.name}. ` +
+    `The Covenant has fallen to ${s.covenant} — Israel is sold into the hand of ${def.name}. ` +
       `${TRACK_LABELS[def.attacks]} is pressed until the tribes cry out (${cryThreshold(s)} Faith).`,
     'crisis',
   );
@@ -817,6 +850,9 @@ function awardChampion(state: GameState, res: TrackResolution): GameState {
 export function endGame(state: GameState): GameState {
   let s = state;
   const tuning = s.tuningSnapshot;
+
+  // Vows come due before anything is scored.
+  s = settleJephthahVows(s);
 
   if (tuning.endCovenantBonus) {
     const z = covenantZone(s.covenant, tuning);

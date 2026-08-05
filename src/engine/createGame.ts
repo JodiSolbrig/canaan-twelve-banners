@@ -53,6 +53,9 @@ function makePlayer(
     judgeships: 0,
     judgePower: null,
     judgePowerExpires: 0,
+    judgeArmed: null,
+    jephthahVow: false,
+    rescueArmed: false,
     peekedCrisis: null,
   };
 }

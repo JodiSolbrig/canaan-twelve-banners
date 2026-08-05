@@ -11,19 +11,41 @@ Pure TypeScript game logic. React holds one `GameState` and calls `dispatch` / r
 | `round.ts` | Start of round: flags, income (r2+), Crisis draw |
 | `placement.ts` | Face-down Influence, token values, turn advancement |
 | `actions.ts` | Standard + unique actions |
-| `resolve.ts` | Reveal, track success/fail, Champions, next round, end game |
+| `resolve.ts` | Reveal, pre-resolve choices, track success/fail, Champions, the cycle, end game |
+| `judges.ts` | The six Judge one-shots and Jephthah's end-game reckoning |
 | `helpers.ts` | Shared mutators, thresholds, Glory/unlocks, standings |
 | `types.ts` | State and action types |
 | `testSupport.ts` | Test-only fixtures (`scenario`, `withTokens`, …) |
 
 ## Phase loop
 
-`crisisReveal` → (`crisisChoice`) → `placement` → `action` → `reveal` → `resolve` → next `startRound` or `gameEnd`.
+`crisisReveal` → (`crisisChoice`) → `placement` → `action` → `preResolve` → `resolve` → next round or `gameEnd`.
 
-`resolve` is a **pause**, not a transition: `resolveRound` settles the round and
-stops there so the revealed board, `trackResults`, and Champions stay on screen.
-Dispatching `advance` from `resolve` runs `advanceToNextRound`, which rotates the
-first player and deals the next Crisis.
+Two of these are **pauses**, not transitions:
+
+- **`preResolve`** — every token is face up and nothing is scored. This is where
+  abilities that need full information are spent: Samson's shift, the Level III
+  covenant rescue, and the Judge powers that read the board. `advance` scores it.
+- **`resolve`** — the generation is settled and `trackResults` is populated, so
+  the outcome stays on screen. `advance` runs `advanceToNextRound`.
+
+## Who decides what
+
+Abilities split by whether there is a decision to take away:
+
+| Applied automatically | Player-declared |
+|---|---|
+| Othniel II, Ehud II (arm on a Military Banner) | Samson II — which token, which track |
+| Nazirite Strength, Gad's Enduring Defense | The Level III covenant rescue — whether to spend it |
+| Champion rewards, spoil, income | All six Judge one-shots |
+
+The rule of thumb: a free bonus with no cost and no target applies itself; anything
+with a cost, a target, or a "once per game" applies only when asked.
+
+`src/engine/judges.ts` owns the one-shots. Each declares its window in
+`JUDGE_POWER_WINDOW` — `action` for powers that fire on your turn, `preResolve`
+for those that modify scoring — and declaring one clears `judgePower`, so it can
+never be spent twice.
 
 With `tuning.freePlacementPhase` off, `placement` is skipped entirely and
 `placeInfluence` becomes one of the action-phase choices — the printed rules.

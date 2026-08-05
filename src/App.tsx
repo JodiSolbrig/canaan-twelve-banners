@@ -3,6 +3,7 @@ import { chooseBotAction } from './ai/bots';
 import { cloneTuning, DEFAULT_TUNING, type TuningConfig } from './config/tuning';
 import { TRIBE_BY_ID } from './data/gameData';
 import { createGame, currentActor, dispatch, type GameState, type PlayerAction } from './engine';
+import { hasPreResolveChoice } from './engine/resolve';
 import type { TribeId } from './engine/types';
 import {
   CovenantMeter,
@@ -18,6 +19,7 @@ import {
   type LeaderUnlockNotice,
 } from './ui/LeaderProgress';
 import { PlayerAidModal } from './ui/PlayerAidModal';
+import { PreResolvePanel } from './ui/PreResolvePanel';
 import { SetupScreen } from './ui/SetupScreen';
 import { TuningDrawer } from './ui/TuningDrawer';
 
@@ -144,6 +146,22 @@ export default function App() {
       return;
     }
 
+    // Pre-resolve: let the bots spend what they want, then wait for the human.
+    // If the human has nothing to decide, move on by itself.
+    if (state.phase === 'preResolve') {
+      const t = window.setTimeout(() => {
+        setState((prev) => {
+          if (!prev || prev.phase !== 'preResolve') return prev;
+          const botMove = chooseBotAction(prev);
+          if (botMove) return dispatch(prev, botMove);
+          const human = prev.players.find((p) => p.isHuman);
+          if (human && hasPreResolveChoice(prev, human.id)) return prev;
+          return dispatch(prev, { type: 'advance' });
+        });
+      }, 700);
+      return () => clearTimeout(t);
+    }
+
     const actor = currentActor(state);
     if (!actor || actor.isHuman) return;
     if (state.phase !== 'placement' && state.phase !== 'action') return;
@@ -230,11 +248,15 @@ export default function App() {
               <CrisisPanel state={state} />
             </div>
             <TracksBoard state={state} />
-            <HumanControls
-              state={state}
-              onAction={applyAction}
-              flashLeaderLevel={flashLeaderLevel}
-            />
+            {state.phase === 'preResolve' ? (
+              <PreResolvePanel state={state} onAction={applyAction} />
+            ) : (
+              <HumanControls
+                state={state}
+                onAction={applyAction}
+                flashLeaderLevel={flashLeaderLevel}
+              />
+            )}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <PlayersStrip state={state} flashPlayerIds={flashPlayerIds} />

@@ -224,6 +224,11 @@ export function PlayersStrip({
                       ))}
                     </span>
                     Leader {p.leaderLevel}/3 · Champs {p.championships}
+                    {p.judgePower && (
+                      <span className="judge-badge">
+                        {OPPRESSOR_BY_ID[p.judgePower].deliverer}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div className="stats" style={{ textAlign: 'right' }}>

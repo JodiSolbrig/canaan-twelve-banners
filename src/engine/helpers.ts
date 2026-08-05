@@ -27,6 +27,13 @@ let tokenCounter = 0;
 export const TRACKS: TrackId[] = ['military', 'moral', 'provision'];
 
 /**
+ * Extra Moral Influence Othniel's Zeal is worth.
+ * Lives here rather than in `judges.ts` so the tally can read it without the
+ * two modules importing each other.
+ */
+export const OTHNIEL_ZEAL_BONUS = 2;
+
+/**
  * The resource that plants a Banner on each track. Paying with anything else
  * places Supply instead.
  */
@@ -251,6 +258,23 @@ export function getTrackTotals(state: GameState): TrackTallies {
       addMilitary(p.id, 1);
     }
     // Gad Enduring Defense needs the zone, so it is applied in resolve.
+
+    // Judge powers armed this round that change what Influence counts for.
+    const armed = p.judgeArmed;
+    if (armed) {
+      const t = armed.track;
+      const mine = banner[t][p.id] ?? 0;
+      if (armed.power === 'aram' && mine > 0) {
+        // Othniel's Zeal
+        total[t][p.id] = (total[t][p.id] ?? 0) + OTHNIEL_ZEAL_BONUS;
+        banner[t][p.id] = mine + OTHNIEL_ZEAL_BONUS;
+      }
+      if (armed.power === 'philistia' && mine > 0) {
+        // Samson's Strength
+        total[t][p.id] = (total[t][p.id] ?? 0) + mine;
+        banner[t][p.id] = mine * 2;
+      }
+    }
   }
 
   return { total, banner };

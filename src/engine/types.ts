@@ -14,6 +14,12 @@ export type Phase =
   | 'placement'
   | 'action'
   | 'reveal'
+  /**
+   * Influence is face up and nothing has been scored yet. Discretionary
+   * abilities that read the revealed board are spent here — Samson's shift, the
+   * Level III covenant rescue, and the Judge powers that modify resolution.
+   */
+  | 'preResolve'
   | 'resolve'
   | 'gameEnd';
 
@@ -104,6 +110,15 @@ export type PlayerState = {
   judgePower: OppressorId | null;
   /** Round after which an unspent `judgePower` lapses. */
   judgePowerExpires: number;
+  /**
+   * A Judge power spent this round whose effect lands during resolution
+   * (Othniel's Zeal, Gideon's Three Hundred, Samson's Strength).
+   */
+  judgeArmed: { power: OppressorId; track: TrackId } | null;
+  /** Jephthah's Vow taken — the price falls due at the end of the game. */
+  jephthahVow: boolean;
+  /** Level III covenant rescue declared this round, to cancel one failure. */
+  rescueArmed: boolean;
   /** Peeked crisis cards for UI */
   peekedCrisis: CrisisCardDef[] | null;
 };
@@ -318,4 +333,18 @@ export type PlayerAction =
         covenantDelta: 1 | -1;
       };
     }
+  /** Spend the one-shot a deliverance left you. */
+  | {
+      type: 'judgePower';
+      /** Track the power names, where it needs one. */
+      track?: TrackId;
+      /** Victim of Ehud's Hidden Dagger. */
+      targetPlayerId?: string;
+      /** Which of the victim's tokens the dagger takes. */
+      tokenId?: string;
+    }
+  /** Dan, Samson II — shift one token once the board is face up. */
+  | { type: 'samsonMove'; tokenId: string; toTrack: TrackId }
+  /** Level III — one track you held counts twice, cancelling a failure. */
+  | { type: 'covenantRescue' }
   | { type: 'advance' }; // for auto phases / human done

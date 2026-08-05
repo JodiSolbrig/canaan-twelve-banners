@@ -144,13 +144,15 @@ see *How it moves* in `02-crisis-cards-and-covenant.md`.
 **Resources**  
 Faith • Warriors • Goods • Loyalty • Glory • Influence Tokens
 
-**Round Sequence**
-1. Draw & reveal 1 Crisis card  
-2. Place Influence (face-down) + take 1 Standard or Unique Action  
-3. Reveal all Influence → determine Champions  
-4. Resolve tracks (success/failure) → apply Covenant Meter changes  
-5. Score Champion rewards + any end-of-round effects  
-6. Clean up → next round
+**Generation Sequence**
+1. Collect income (generations 2+), then draw & reveal 1 Crisis — or face the standing Oppressor  
+2. Place Influence (face-down) + take 1 Standard, Unique or Judge Action  
+3. **Reveal all Influence** — then, before anything is scored, spend any
+   after-the-reveal abilities (Samson's shift, a covenant rescue, the Judge
+   powers that read the board)  
+4. Determine Champions and resolve each track  
+5. Move the Covenant, settle the cycle, score Champion rewards and spoil  
+6. Clean up → next generation
 
 **Standard Actions (choose one)**  
 • **Place Influence** — 1 Faith/Warrior/Goods = 1 token  

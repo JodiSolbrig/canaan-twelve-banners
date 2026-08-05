@@ -514,6 +514,11 @@ describe('dispatch round flow', () => {
     expect(s.phase).toBe('action');
     s = dispatch(s, { type: 'standard', action: 'pass' });
 
+    // Influence is face up, but nothing is scored until the table is ready.
+    expect(s.phase).toBe('preResolve');
+    expect(s.tokens.every((t) => !t.faceDown)).toBe(true);
+    s = dispatch(s, { type: 'advance' });
+
     // Resolution pauses so the results stay on screen.
     expect(s.phase).toBe('resolve');
     expect(s.trackResults).not.toBeNull();
@@ -537,7 +542,8 @@ describe('dispatch round flow', () => {
 
     s = dispatch(s, { type: 'placeInfluence', plan: { military: { warriors: 1 } } });
     s = dispatch(s, { type: 'standard', action: 'pass' });
-    expect(s.phase).toBe('resolve');
+    expect(s.phase).toBe('preResolve');
+    expect(dispatch(s, { type: 'advance' }).phase).toBe('resolve');
   });
 
   it('holds the turn when a placement cannot be afforded', () => {

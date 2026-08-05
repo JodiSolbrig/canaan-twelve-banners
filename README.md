@@ -78,6 +78,13 @@ listed here is implemented as written.
 
 ## Prototype notes
 
+- All six **Judge one-shots** are wired. Powers that read the revealed board
+  (Othniel, Gideon, Samson) are spent in the `preResolve` window; the rest on
+  your turn. See *The six Judge powers* in `markdown/02-crisis-cards-and-covenant.md`.
+- **Discretionary abilities are player-chosen**, not auto-fired: Samson's shift,
+  the Level III covenant rescue, and every Judge power. Only genuinely passive
+  bonuses with no decision attached still apply themselves — Othniel II, Ehud II,
+  Nazirite Strength, and Gad's Enduring Defense.
 - Some leader upgrades are **Planned** (shown in UI, not fully wired). Active ones
   are labeled in the Leader panel — see `src/data/leaderImpl.ts`.
 - Defaults for Champion rewards, track thresholds, and Low/High zones live in
