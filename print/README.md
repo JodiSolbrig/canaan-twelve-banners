@@ -37,7 +37,7 @@ first, then import the CSV.
 **The column names here are a proposal.** Rename them to match your layers, or
 rename your layers to match these. Either works; they just have to agree.
 
-Files are UTF-8 with no BOM and CRLF line endings. Text that should wrap across
+Files are UTF-8 with no BOM and LF line endings. Text that should wrap across
 several lines in a layer contains real newlines inside a quoted field — set those
 layers to multi-line.
 

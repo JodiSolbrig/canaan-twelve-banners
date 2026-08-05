@@ -96,7 +96,9 @@ function writeCsv(file: string, rows: Record<string, string | number>[]): void {
     ...rows.map((r) => headers.map((h) => csvCell(r[h] ?? '')).join(',')),
   ];
   // No BOM: the importer reads UTF-8 and a BOM shows up inside the first header.
-  writeFileSync(join(OUT, file), lines.join('\r\n') + '\r\n', 'utf8');
+  // LF, not CRLF: the repo normalises to LF everywhere (see .gitattributes), and
+  // every CSV reader worth the name accepts either.
+  writeFileSync(join(OUT, file), lines.join(NL) + NL, 'utf8');
   console.log(`  ${file.padEnd(26)} ${String(rows.length).padStart(3)} rows`);
 }
 
