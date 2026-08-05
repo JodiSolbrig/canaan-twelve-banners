@@ -4,10 +4,10 @@
 import { describe, expect, it } from 'vitest';
 import { getTrackTotals, OTHNIEL_ZEAL_BONUS } from './helpers';
 import { dispatch } from './index';
-import { applyJudgePower, JUDGE_POWER_WINDOW, settleJephthahVows } from './judges';
+import { applyJudgePower, JUDGE_POWER_WINDOW } from './judges';
 import {
   canRescue,
-  canSamsonMove,
+  canShiftToken,
   endGame,
   hasPreResolveChoice,
   resolveRound,
@@ -166,40 +166,52 @@ describe("Gideon's Three Hundred", () => {
 });
 
 describe("Jephthah's Vow", () => {
-  it('pays 3 Glory at once', () => {
-    const { s, me } = holding('ammon', { phase: 'action' });
-    const r = applyJudgePower(s, me, { type: 'judgePower' });
-    expect(playerOf(r.state, me).resources.glory).toBe(3);
-    expect(playerOf(r.state, me).jephthahVow).toBe(true);
-  });
-
-  it('takes the largest single store at the end of the game', () => {
+  it('pays 3 Glory and takes the largest store on the spot', () => {
     let { s, me } = holding('ammon', { phase: 'action' });
-    s = applyJudgePower(s, me, { type: 'judgePower' }).state;
     s = setResources(s, me, { faith: 2, warriors: 7, goods: 3 });
 
-    s = settleJephthahVows(s);
+    s = applyJudgePower(s, me, { type: 'judgePower' }).state;
 
     const p = playerOf(s, me);
+    expect(p.resources.glory).toBe(3);
+    // The whole pile, not a token of it — and only the largest.
     expect(p.resources.warriors).toBe(0);
     expect(p.resources.faith).toBe(2);
     expect(p.resources.goods).toBe(3);
   });
 
-  it('comes due automatically when the game ends', () => {
+  it('breaks a tie toward the earlier store', () => {
     let { s, me } = holding('ammon', { phase: 'action' });
-    s = applyJudgePower(s, me, { type: 'judgePower' }).state;
-    s = setResources(s, me, { faith: 0, warriors: 5, goods: 0 });
+    s = setResources(s, me, { faith: 4, warriors: 4, goods: 1 });
 
-    s = endGame(s);
-    expect(playerOf(s, me).resources.warriors).toBe(0);
+    s = applyJudgePower(s, me, { type: 'judgePower' }).state;
+
+    expect(playerOf(s, me).resources.faith).toBe(0);
+    expect(playerOf(s, me).resources.warriors).toBe(4);
   });
 
-  it('costs nothing from a player left with nothing', () => {
+  it('cannot be sworn by a player with nothing to vow', () => {
     let { s, me } = holding('ammon', { phase: 'action' });
-    s = applyJudgePower(s, me, { type: 'judgePower' }).state;
     s = setResources(s, me, { faith: 0, warriors: 0, goods: 0 });
-    expect(() => settleJephthahVows(s)).not.toThrow();
+
+    const r = applyJudgePower(s, me, { type: 'judgePower' });
+
+    expect(r.ok).toBe(false);
+    expect(playerOf(r.state, me).resources.glory).toBe(0);
+    // Still held, so it can be sworn later when there is something to give.
+    expect(playerOf(r.state, me).judgePower).toBe('ammon');
+  });
+
+  it('leaves nothing owing at the end of the game', () => {
+    let { s, me } = holding('ammon', { phase: 'action' });
+    s = setResources(s, me, { faith: 0, warriors: 5, goods: 0 });
+    s = applyJudgePower(s, me, { type: 'judgePower' }).state;
+    expect(playerOf(s, me).resources.warriors).toBe(0);
+
+    // Whatever is rebuilt afterwards is the player's to keep.
+    s = setResources(s, me, { warriors: 6 });
+    s = endGame(s);
+    expect(playerOf(s, me).resources.warriors).toBe(6);
   });
 });
 
@@ -236,7 +248,7 @@ describe('the pre-resolve window', () => {
 
     s = patchPlayer(s, dan, { leaderLevel: 2 });
     s = carryTrack(s, dan, 'military');
-    expect(canSamsonMove(s, dan)).toBe(true);
+    expect(canShiftToken(s, dan)).toBe(true);
     expect(hasPreResolveChoice(s, dan)).toBe(true);
   });
 

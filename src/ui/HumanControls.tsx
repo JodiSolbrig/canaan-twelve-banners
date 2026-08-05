@@ -7,7 +7,7 @@ import type { GameState, PlacementPlan, PlayerAction, TrackId } from '../engine/
 import { HELP, RESOURCE_HELP } from './helpText';
 import { LeaderProgress } from './LeaderProgress';
 import { PlacementGrid } from './PlacementGrid';
-import { planIsAffordable, planTokens } from './placementPlan';
+import { PLAN_TRACKS, planIsAffordable, planTokens, tokensOn } from './placementPlan';
 import { Tip } from './Tip';
 
 const TRACKS: TrackId[] = ['military', 'moral', 'provision'];
@@ -47,6 +47,9 @@ export function HumanControls({ state, onAction, flashLeaderLevel = null }: Prop
   const [asherMode, setAsherMode] = useState<'faith' | 'rest'>('rest');
   const [rallyTrack, setRallyTrack] = useState<TrackId>('military');
   const [cryFaith, setCryFaith] = useState(1);
+  const [pathfinder, setPathfinder] = useState('');
+  const [giftTo, setGiftTo] = useState('');
+  const [giftTrack, setGiftTrack] = useState<TrackId>('military');
   const [judgeTrack, setJudgeTrack] = useState<TrackId>('military');
   const [judgeTarget, setJudgeTarget] = useState('');
   const [placingMore, setPlacingMore] = useState(false);
@@ -59,6 +62,15 @@ export function HumanControls({ state, onAction, flashLeaderLevel = null }: Prop
   const ironChariots = state.activeCrisis?.id === 3;
   const plannedTotal = planTokens(plan);
   const planAffordable = planIsAffordable(plan, human.resources, ironChariots);
+
+  // Reuben II opens a second track only once one track is genuinely committed to,
+  // and only onto ground it has not already taken.
+  const emptyTracks = PLAN_TRACKS.filter((t) => tokensOn(plan, t) === 0);
+  const pathfinderOpen =
+    human.tribe === 'Reuben' &&
+    human.leaderLevel >= 2 &&
+    PLAN_TRACKS.some((t) => tokensOn(plan, t) >= 2) &&
+    emptyTracks.length > 0;
 
   const phaseLabel: Record<string, string> = {
     crisisReveal: 'Crisis revealed',
@@ -210,12 +222,78 @@ export function HumanControls({ state, onAction, flashLeaderLevel = null }: Prop
             resources={human.resources}
             ironChariots={ironChariots}
           />
+          {pathfinderOpen && (
+            <div className="field-row">
+              <Tip
+                wide
+                className="tip-below"
+                text="Gilead Tie I — Pathfinder: you have 2+ Influence on one track, so you may open a second. Name a track you left empty for 1 temporary Supply Influence."
+              >
+                <label style={{ cursor: 'help' }}>Pathfinder →</label>
+              </Tip>
+              <select
+                value={pathfinder}
+                onChange={(e) => setPathfinder(e.target.value)}
+              >
+                <option value="">Decline</option>
+                {emptyTracks.map((t) => (
+                  <option key={t} value={t}>
+                    {TRACK_LABELS[t]}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {human.pendingTempInfluenceGift > 0 && (
+            <div className="field-row">
+              <Tip
+                wide
+                className="tip-below"
+                text="Barak II — Swift Response: your Championship owes another tribe Influence. Name them and where it lands. It arrives as Supply, so it cannot win them a Championship."
+              >
+                <label style={{ cursor: 'help' }}>Swift Response →</label>
+              </Tip>
+              <select value={giftTo} onChange={(e) => setGiftTo(e.target.value)}>
+                <option value="">Hold it</option>
+                {state.players
+                  .filter((p) => p.id !== human.id)
+                  .map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.tribe}
+                    </option>
+                  ))}
+              </select>
+              <select
+                value={giftTrack}
+                onChange={(e) => setGiftTrack(e.target.value as TrackId)}
+              >
+                {PLAN_TRACKS.map((t) => (
+                  <option key={t} value={t}>
+                    {TRACK_LABELS[t]}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <Tip text={HELP.confirmPlacement} wide className="tip-below">
             <button
               type="button"
               className="btn btn-primary"
               disabled={!planAffordable}
-              onClick={() => onAction({ type: 'confirmPlacement', plan })}
+              onClick={() =>
+                onAction({
+                  type: 'confirmPlacement',
+                  plan,
+                  extras: {
+                    ...(pathfinderOpen && pathfinder
+                      ? { pathfinder: pathfinder as TrackId }
+                      : {}),
+                    ...(giftTo ? { giftTo: { playerId: giftTo, track: giftTrack } } : {}),
+                  },
+                })
+              }
             >
               Confirm Placement ({plannedTotal})
             </button>

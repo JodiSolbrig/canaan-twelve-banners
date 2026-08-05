@@ -3,7 +3,7 @@
  */
 import { TRACK_LABELS } from '../data/gameData';
 import { OPPRESSOR_BY_ID, OPPRESSORS } from '../data/oppressors';
-import { JUDGE_POWER_WINDOW, settleJephthahVows } from './judges';
+import { JUDGE_POWER_WINDOW } from './judges';
 import {
   addLog,
   applyCovenantDrop,
@@ -56,17 +56,29 @@ export function revealTokens(state: GameState): GameState {
 export function hasPreResolveChoice(state: GameState, playerId: string): boolean {
   const p = getPlayer(state, playerId);
   if (p.judgePower && JUDGE_POWER_WINDOW[p.judgePower] === 'preResolve') return true;
-  if (canSamsonMove(state, playerId)) return true;
+  if (canShiftToken(state, playerId)) return true;
+  if (canDeclareAlliance(state, playerId)) return true;
   return canRescue(state, playerId);
 }
 
-/** Dan, Samson II — one shift a round once the board is face up. */
-export function canSamsonMove(state: GameState, playerId: string): boolean {
+/**
+ * Tribes that may shift one of their own tokens once the board is face up.
+ * Dan reads the board and strikes; Naphtali is simply faster than everyone else
+ * to the ground that matters. Same motion, different reason.
+ */
+const SHIFT_ABILITY: Partial<Record<TribeId, { level: number; key: string; name: string }>> = {
+  Dan: { level: 2, key: 'samsonII', name: 'Riddle & Cunning' },
+  Naphtali: { level: 1, key: 'doesLeap', name: "Doe's Leap" },
+};
+
+/** One post-reveal shift a round, for the tribes that have one. */
+export function canShiftToken(state: GameState, playerId: string): boolean {
   const p = getPlayer(state, playerId);
+  const ability = SHIFT_ABILITY[p.tribe];
   return (
-    p.tribe === 'Dan' &&
-    p.leaderLevel >= 2 &&
-    !p.oncePerRoundUsed['samsonII'] &&
+    ability !== undefined &&
+    p.leaderLevel >= ability.level &&
+    !p.oncePerRoundUsed[ability.key] &&
     state.tokens.some((t) => t.playerId === playerId && !t.temporary)
   );
 }
@@ -83,16 +95,17 @@ export function canRescue(state: GameState, playerId: string): boolean {
   );
 }
 
-/** Dan shifts one token after the reveal. */
-export function applySamsonMove(
+/** Move one already-placed token to another track after the reveal. */
+export function applyShiftToken(
   state: GameState,
   playerId: string,
   tokenId: string,
   toTrack: TrackId,
 ): { state: GameState; ok: boolean } {
-  if (!canSamsonMove(state, playerId)) {
+  if (!canShiftToken(state, playerId)) {
     return { state: addLog(state, 'No shift available.', 'bad'), ok: false };
   }
+  const ability = SHIFT_ABILITY[getPlayer(state, playerId).tribe]!;
   const token = state.tokens.find(
     (t) => t.id === tokenId && t.playerId === playerId && !t.temporary,
   );
@@ -108,13 +121,53 @@ export function applySamsonMove(
   };
   s = updatePlayer(s, playerId, (p) => ({
     ...p,
-    oncePerRoundUsed: { ...p.oncePerRoundUsed, samsonII: true },
+    oncePerRoundUsed: { ...p.oncePerRoundUsed, [ability.key]: true },
   }));
   return {
     state: addLog(
       s,
-      `${getPlayer(s, playerId).tribe} strikes after the reveal (Riddle & Cunning): ` +
+      `${getPlayer(s, playerId).tribe} moves after the reveal (${ability.name}): ` +
         `1 Influence ${label(token.track)} → ${label(toTrack)}.`,
+      'good',
+    ),
+    ok: true,
+  };
+}
+
+/** Naphtali III — the alliance is sworn once a game, before scoring. */
+export function canDeclareAlliance(state: GameState, playerId: string): boolean {
+  const p = getPlayer(state, playerId);
+  return (
+    p.tribe === 'Naphtali' &&
+    p.leaderLevel >= 3 &&
+    !p.oncePerGameUsed['alliance'] &&
+    p.alliance === null
+  );
+}
+
+/** Name the two tracks the alliance strengthens. */
+export function declareAlliance(
+  state: GameState,
+  playerId: string,
+  tracks: [TrackId, TrackId],
+): { state: GameState; ok: boolean } {
+  if (!canDeclareAlliance(state, playerId)) {
+    return { state: addLog(state, 'No alliance available.', 'bad'), ok: false };
+  }
+  if (tracks[0] === tracks[1]) {
+    return { state: addLog(state, 'Name two different tracks.', 'bad'), ok: false };
+  }
+  const p = getPlayer(state, playerId);
+  let s = updatePlayer(state, playerId, (pl) => ({
+    ...pl,
+    alliance: tracks,
+    oncePerGameUsed: { ...pl.oncePerGameUsed, alliance: true },
+  }));
+  return {
+    state: addLog(
+      s,
+      `${p.tribe} calls the Northern Alliance — ${label(tracks[0])} and ` +
+        `${label(tracks[1])} each count 1 more.`,
       'good',
     ),
     ok: true,
@@ -283,6 +336,8 @@ export function resolveRound(state: GameState): GameState {
 
     s = awardChampion(s, res);
   }
+
+  s = settleBoldClaim(s, results, totals.banner);
 
   // Civil Strife
   if (s.activeCrisis?.id === 11) {
@@ -750,6 +805,47 @@ function label(t: TrackId): string {
   return t[0]!.toUpperCase() + t.slice(1);
 }
 
+/**
+ * Reuben III — Bold Claim. Reuben's whole character is the tribe that turns up
+ * in strength and still is not first (Judges 5:15-16, "great searchings of
+ * heart"). Once a game, coming second is worth something. It costs nothing and
+ * takes no decision, so it simply fires the first generation it can.
+ */
+function settleBoldClaim(
+  state: GameState,
+  results: TrackResolution[],
+  banner: Record<TrackId, Record<string, number>>,
+): GameState {
+  let s = state;
+  for (const p of s.players) {
+    if (p.tribe !== 'Reuben' || p.leaderLevel < 3) continue;
+    if (p.oncePerGameUsed['boldClaim']) continue;
+
+    const claimed = results.find((res) => {
+      if (res.championId === p.id) return false;
+      const mine = banner[res.track][p.id] ?? 0;
+      if (mine <= 0) return false;
+      const above = Object.entries(banner[res.track]).filter(
+        ([pid, v]) => pid !== p.id && v > mine,
+      );
+      return above.length === 1;
+    });
+    if (!claimed) continue;
+
+    s = updatePlayer(s, p.id, (pl) => ({
+      ...pl,
+      oncePerGameUsed: { ...pl.oncePerGameUsed, boldClaim: true },
+    }));
+    s = addLog(
+      s,
+      `${p.tribe} makes a Bold Claim on ${label(claimed.track)} — second in strength, +1 Glory.`,
+      'good',
+    );
+    s = grantGlory(s, p.id, 1, false);
+  }
+  return s;
+}
+
 function awardChampion(state: GameState, res: TrackResolution): GameState {
   if (!res.championId) return state;
   let s = state;
@@ -785,6 +881,19 @@ function awardChampion(state: GameState, res: TrackResolution): GameState {
       ...p,
       resources: mutateResources(p.resources, { warriors: 1 }),
     }));
+  }
+  // Naphtali II — Swift Response. The debt is banked now and handed to a tribe
+  // of Naphtali's choosing at its next placement.
+  if (champ.tribe === 'Naphtali' && champ.leaderLevel >= 2) {
+    s = updatePlayer(s, res.championId, (p) => ({
+      ...p,
+      pendingTempInfluenceGift: p.pendingTempInfluenceGift + 1,
+    }));
+    s = addLog(
+      s,
+      `${champ.tribe} answers swiftly — 1 temporary Influence owed to a tribe of their choosing.`,
+      'good',
+    );
   }
   // Levi Phinehas I
   if (champ.tribe === 'Levi' && champ.leaderLevel >= 1 && res.track === 'moral') {
@@ -850,9 +959,6 @@ function awardChampion(state: GameState, res: TrackResolution): GameState {
 export function endGame(state: GameState): GameState {
   let s = state;
   const tuning = s.tuningSnapshot;
-
-  // Vows come due before anything is scored.
-  s = settleJephthahVows(s);
 
   if (tuning.endCovenantBonus) {
     const z = covenantZone(s.covenant, tuning);

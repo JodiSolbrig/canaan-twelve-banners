@@ -14,10 +14,10 @@ export const LEADER_UPGRADE_ACTIVE: Record<TribeId, [boolean, boolean, boolean]>
     Levi: [true, false, true], // I Covenant on Moral Champ; III covenant rescue
     Ephraim: [true, true, false], // I Faith; II +1 Goods on unlock; III convert UI
     Manasseh: [false, true, true], // I peek; II Provision High; III loyalty soften
-    Reuben: [false, false, false],
+    Reuben: [true, true, true],
     Simeon: [true, true, false], // I Warrior; II free Mil next round; III convert
     Dan: [true, true, true], // I Nazirite; II Riddle & Cunning; III Final Stand
-    Naphtali: [false, false, false], // II gift flag exists but never set
+    Naphtali: [true, true, true],
     Gad: [true, true, true], // I loyalty; II Mil Low; III Overcomer
     Asher: [true, true, false], // I Provision High; II Gather/Harvest; III once
     Issachar: [false, true, false], // II +1 Faith on Champ

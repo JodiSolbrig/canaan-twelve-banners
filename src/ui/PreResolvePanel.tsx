@@ -3,7 +3,7 @@ import { TRACK_LABELS, TRIBE_BY_ID } from '../data/gameData';
 import { OPPRESSOR_BY_ID } from '../data/oppressors';
 import { baseThreshold, getTrackTotals } from '../engine/helpers';
 import { JUDGE_POWER_NEEDS_TRACK, JUDGE_POWER_WINDOW } from '../engine/judges';
-import { canRescue, canSamsonMove } from '../engine/resolve';
+import { canDeclareAlliance, canRescue, canShiftToken } from '../engine/resolve';
 import type { GameState, PlayerAction, TrackId } from '../engine/types';
 import { Tip } from './Tip';
 
@@ -27,19 +27,22 @@ export function PreResolvePanel({ state, onAction }: Props) {
   const [track, setTrack] = useState<TrackId>('military');
   const [moveToken, setMoveToken] = useState('');
   const [moveTrack, setMoveTrack] = useState<TrackId>('moral');
+  const [allyA, setAllyA] = useState<TrackId>('military');
+  const [allyB, setAllyB] = useState<TrackId>('provision');
 
   if (!human) return null;
 
   const tallies = getTrackTotals(state);
   const power = human.judgePower;
   const canUsePower = power && JUDGE_POWER_WINDOW[power] === 'preResolve';
-  const samson = canSamsonMove(state, human.id);
+  const shift = canShiftToken(state, human.id);
+  const alliance = canDeclareAlliance(state, human.id);
   const rescue = canRescue(state, human.id);
   const myTokens = state.tokens.filter(
     (t) => t.playerId === human.id && !t.temporary,
   );
 
-  const nothingToDo = !canUsePower && !samson && !rescue;
+  const nothingToDo = !canUsePower && !shift && !alliance && !rescue;
 
   return (
     <div className="panel human-panel">
@@ -108,14 +111,20 @@ export function PreResolvePanel({ state, onAction }: Props) {
         </div>
       )}
 
-      {samson && (
+      {shift && (
         <div className="field-row" style={{ marginTop: '0.5rem' }}>
           <Tip
             wide
             className="tip-below"
-            text="Samson II — Riddle & Cunning: shift one of your tokens now that every board is face up. Once a generation."
+            text={
+              human.tribe === 'Dan'
+                ? 'Samson II — Riddle & Cunning: shift one of your tokens now that every board is face up. Once a generation.'
+                : 'Barak I — Doe’s Leap: you are first to the ground that matters. Move one of your tokens once every board is face up. Once a generation.'
+            }
           >
-            <label style={{ cursor: 'help' }}>Riddle &amp; Cunning</label>
+            <label style={{ cursor: 'help' }}>
+              {human.tribe === 'Dan' ? 'Riddle & Cunning' : 'Doe’s Leap'}
+            </label>
           </Tip>
           <select value={moveToken} onChange={(e) => setMoveToken(e.target.value)}>
             <option value="">Token…</option>
@@ -140,10 +149,44 @@ export function PreResolvePanel({ state, onAction }: Props) {
             className="btn"
             disabled={!moveToken}
             onClick={() =>
-              onAction({ type: 'samsonMove', tokenId: moveToken, toTrack: moveTrack })
+              onAction({ type: 'shiftToken', tokenId: moveToken, toTrack: moveTrack })
             }
           >
             Shift
+          </button>
+        </div>
+      )}
+
+      {alliance && (
+        <div className="field-row" style={{ marginTop: '0.5rem' }}>
+          <Tip
+            wide
+            className="tip-below"
+            text="Barak III — Northern Alliance: once per game, name two tracks. Your Influence on each counts 1 more, and your Banner with it."
+          >
+            <label style={{ cursor: 'help' }}>Northern Alliance</label>
+          </Tip>
+          <select value={allyA} onChange={(e) => setAllyA(e.target.value as TrackId)}>
+            {TRACKS.map((t) => (
+              <option key={t} value={t}>
+                {TRACK_LABELS[t]}
+              </option>
+            ))}
+          </select>
+          <select value={allyB} onChange={(e) => setAllyB(e.target.value as TrackId)}>
+            {TRACKS.map((t) => (
+              <option key={t} value={t}>
+                {TRACK_LABELS[t]}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className="btn"
+            disabled={allyA === allyB}
+            onClick={() => onAction({ type: 'northernAlliance', tracks: [allyA, allyB] })}
+          >
+            Call the alliance
           </button>
         </div>
       )}

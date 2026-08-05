@@ -36,6 +36,7 @@ export function startRound(state: GameState): GameState {
       pendingZoneUnique: null,
       judgeArmed: null,
       rescueArmed: false,
+      alliance: null,
       peekedCrisis: null,
     })),
   };

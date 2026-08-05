@@ -6,7 +6,7 @@
  * Champion, exposed to the failure penalty), anything else sends **Supply**
  * (counts only toward the success threshold, and risks nothing).
  */
-import { TRIBE_BY_ID } from '../data/gameData';
+import { TRACK_LABELS } from '../data/gameData';
 import {
   addLog,
   getPlayer,
@@ -19,6 +19,7 @@ import {
 } from './helpers';
 import type {
   GameState,
+  PlacementExtras,
   PlacementPlan,
   Resources,
   SpendableResource,
@@ -92,6 +93,7 @@ export function applyPlacement(
   state: GameState,
   playerId: string,
   plan: PlacementPlan,
+  extras?: PlacementExtras,
 ): GameState {
   let s = state;
   const p = getPlayer(s, playerId);
@@ -161,18 +163,42 @@ export function applyPlacement(
     });
   }
 
-  // Pending temp gift (Naphtali II) — consumed here when set. Gifted Influence is
-  // Supply: you are sending help, not planting someone else's banner.
-  if (p.pendingTempInfluenceGift > 0) {
-    newTokens.push({
-      id: nextTokenId(),
-      playerId,
-      track: TRIBE_BY_ID[p.tribe].bias,
-      value: p.pendingTempInfluenceGift,
-      temporary: true,
-      faceDown: true,
-      paidWith: null,
-    });
+  // Reuben II — Pathfinder: committing 2+ to one track opens a second.
+  let pathfinderTrack: TrackId | null = null;
+  if (p.tribe === 'Reuben' && p.leaderLevel >= 2 && extras?.pathfinder) {
+    const invested = TRACKS.some((t) => plannedTokenCount(plan[t]) >= 2);
+    if (invested && plannedTokenCount(plan[extras.pathfinder]) === 0) {
+      pathfinderTrack = extras.pathfinder;
+      newTokens.push({
+        id: nextTokenId(),
+        playerId,
+        track: pathfinderTrack,
+        value: 1,
+        temporary: true,
+        faceDown: true,
+        paidWith: null,
+      });
+    }
+  }
+
+  // Naphtali II — Swift Response: the Influence owed from Championing is handed
+  // to another tribe now. Gifted Influence is Supply: you are sending help, not
+  // planting someone else's banner.
+  let gifted: string | null = null;
+  if (p.pendingTempInfluenceGift > 0 && extras?.giftTo) {
+    const { playerId: toId, track } = extras.giftTo;
+    if (toId !== playerId && s.players.some((x) => x.id === toId)) {
+      gifted = toId;
+      newTokens.push({
+        id: nextTokenId(),
+        playerId: toId,
+        track,
+        value: p.pendingTempInfluenceGift,
+        temporary: true,
+        faceDown: true,
+        paidWith: null,
+      });
+    }
   }
 
   s = { ...s, tokens: newTokens };
@@ -189,10 +215,26 @@ export function applyPlacement(
       ...pl,
       resources,
       freeMilitaryNextRound: 0,
-      pendingTempInfluenceGift: 0,
+      pendingTempInfluenceGift: gifted ? 0 : pl.pendingTempInfluenceGift,
       oncePerRoundUsed: once,
     };
   });
+
+  if (pathfinderTrack) {
+    s = addLog(
+      s,
+      `${p.tribe} finds a path — +1 temporary Influence on ${TRACK_LABELS[pathfinderTrack]}.`,
+      'good',
+    );
+  }
+  if (gifted) {
+    s = addLog(
+      s,
+      `${p.tribe} answers swiftly — ${getPlayer(s, gifted).tribe} gains ` +
+        `${p.pendingTempInfluenceGift} temporary Influence.`,
+      'good',
+    );
+  }
 
   const placed = planTotal(plan) + freeMilitary;
   if (placed > 0) {

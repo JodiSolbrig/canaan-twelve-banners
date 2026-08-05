@@ -50,9 +50,9 @@ but playable).
 3. **Jephthah – Outcast’s Resolve**: When a track you invested in fails, you lose 1 less Loyalty (minimum 0).
 
 ### Reuben
-1. **Reubenite Scout – Firstborn Advance**: Once per round, you may place 1 token after seeing one other player’s placement.  
-2. **Gilead Tie I – Pathfinder**: When you invest at least 2 tokens on any track, gain 1 temporary Influence on a second track.  
-3. **Gilead Tie II – Bold Claim**: Once per game, after resolution, gain +1 Glory if you were not Champion but invested the second-most.
+1. **Reubenite Scout – Firstborn Advance**: You always place last in the placement phase, seeing how heavily every other tribe has committed before you commit.  
+2. **Gilead Tie I – Pathfinder**: When you place at least 2 Influence on one track, name a second track you left empty and gain 1 temporary Supply Influence there.  
+3. **Gilead Tie II – Bold Claim**: Once per game, gain +1 Glory for a track where you were not Champion but stood second in Banner strength.
 
 ### Simeon
 1. **Simeonite Raider – Vengeful Strike**: When you become Military Champion, gain +1 Warrior.  
@@ -65,9 +65,9 @@ but playable).
 3. **Samson III – Final Stand**: Once per game, spend 2 Warriors so one track you held counts twice, cancelling a failed track.
 
 ### Naphtali — Barak
-1. **Barak I – Doe’s Leap**: Once per round, after Influence is placed, you may move 1 of your tokens to another track.  
-2. **Barak II – Swift Response**: When you become Champion, you may give 1 temporary Influence to another player next round.  
-3. **Barak III – Northern Alliance**: Once per game, two of your tokens on different tracks both count as +1.
+1. **Barak I – Doe’s Leap**: Once per round, after the reveal, you may move 1 of your placed tokens to another track.  
+2. **Barak II – Swift Response**: When you become Champion, you owe 1 temporary Influence to another tribe — name them and the track at your next placement. It arrives as Supply.  
+3. **Barak III – Northern Alliance**: Once per game, after the reveal, name two tracks; your Influence on each counts 1 more.
 
 ### Gad
 1. **Gadite Warrior – Raider’s Resolve**: Reduce all Loyalty loss you suffer by 1 (minimum 0).  

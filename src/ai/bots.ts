@@ -7,14 +7,16 @@ import {
   getTrackTotals,
   isBannerToken,
   oppressionSeverity,
+  plannedTokenCount,
   planTotal,
   TRACK_AFFINITY_RESOURCE,
 } from '../engine/helpers';
 import { JUDGE_POWER_WINDOW } from '../engine/judges';
-import { canRescue, canSamsonMove } from '../engine/resolve';
+import { canDeclareAlliance, canRescue, canShiftToken } from '../engine/resolve';
 import type {
   GameState,
   OppressorId,
+  PlacementExtras,
   PlacementPlan,
   PlayerAction,
   PlayerState,
@@ -60,7 +62,12 @@ export function chooseBotAction(state: GameState): PlayerAction | null {
   }
 
   if (state.phase === 'placement') {
-    return { type: 'confirmPlacement', plan: planPlacement(state, actor.id) };
+    const plan = planPlacement(state, actor.id);
+    return {
+      type: 'confirmPlacement',
+      plan,
+      extras: planExtras(state, actor.id, plan),
+    };
   }
 
   if (state.phase === 'action') {
@@ -131,11 +138,20 @@ function choosePreResolve(state: GameState): PlayerAction | null {
     }
   }
 
-  // Samson's shift, taken only when it wins something.
+  // A post-reveal shift, taken only when it wins something.
   for (const p of state.players) {
-    if (p.isHuman || !canSamsonMove(state, p.id)) continue;
-    const move = bestSamsonMove(state, p.id);
+    if (p.isHuman || !canShiftToken(state, p.id)) continue;
+    const move = bestShift(state, p.id);
     if (move) return move;
+  }
+
+  // Naphtali's alliance, spent on the two tracks nearest to falling.
+  for (const p of state.players) {
+    if (p.isHuman || !canDeclareAlliance(state, p.id)) continue;
+    const rescuable = TRACKS.filter((t) => trackShortfall(state, t) === 1);
+    if (rescuable.length >= 2) {
+      return { type: 'northernAlliance', tracks: [rescuable[0]!, rescuable[1]!] };
+    }
   }
 
   // The rescue, spent only when exactly one track is short.
@@ -154,8 +170,8 @@ function trackShortfall(state: GameState, track: TrackId): number {
   return Math.max(0, baseThreshold(state, track) - grand);
 }
 
-/** Dan's shift, chosen only when it gains a Championship or saves a track. */
-function bestSamsonMove(state: GameState, playerId: string): PlayerAction | null {
+/** A shift, chosen only when it gains a Championship or saves a track. */
+function bestShift(state: GameState, playerId: string): PlayerAction | null {
   const score = (s: GameState) => {
     const totals = getTrackTotals(s);
     let champs = 0;
@@ -183,11 +199,52 @@ function bestSamsonMove(state: GameState, playerId: string): PlayerAction | null
       const value = score(moved);
       if (value > bestScore) {
         bestScore = value;
-        best = { type: 'samsonMove', tokenId: token.id, toTrack: to };
+        best = { type: 'shiftToken', tokenId: token.id, toTrack: to };
       }
     }
   }
   return best;
+}
+
+/**
+ * The choices that ride alongside a placement: Reuben's second track and the
+ * tribe Naphtali owes Influence to. Both are free, so a bot takes them whenever
+ * they are on offer.
+ */
+function planExtras(
+  state: GameState,
+  playerId: string,
+  plan: PlacementPlan,
+): PlacementExtras | undefined {
+  const p = getPlayer(state, playerId);
+  const extras: PlacementExtras = {};
+
+  if (p.tribe === 'Reuben' && p.leaderLevel >= 2) {
+    const heavy = TRACKS.some((t) => plannedTokenCount(plan[t]) >= 2);
+    const empty = TRACKS.filter((t) => plannedTokenCount(plan[t]) === 0);
+    if (heavy && empty.length > 0) {
+      // The emptiest track that still needs help is worth the most.
+      extras.pathfinder = [...empty].sort(
+        (a, b) => trackShortfall(state, b) - trackShortfall(state, a),
+      )[0];
+    }
+  }
+
+  if (p.pendingTempInfluenceGift > 0) {
+    // Repay the tribe least able to repay you — it is the cheapest goodwill and
+    // it keeps a track from failing on everyone.
+    const other = state.players
+      .filter((x) => x.id !== playerId)
+      .sort((a, b) => a.resources.glory - b.resources.glory)[0];
+    if (other) {
+      const track = [...TRACKS].sort(
+        (a, b) => trackShortfall(state, b) - trackShortfall(state, a),
+      )[0]!;
+      extras.giftTo = { playerId: other.id, track };
+    }
+  }
+
+  return Object.keys(extras).length > 0 ? extras : undefined;
 }
 
 function planPlacement(state: GameState, playerId: string): PlacementPlan {

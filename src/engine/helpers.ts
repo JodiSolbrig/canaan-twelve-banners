@@ -259,6 +259,16 @@ export function getTrackTotals(state: GameState): TrackTallies {
     }
     // Gad Enduring Defense needs the zone, so it is applied in resolve.
 
+    // Naphtali III — Northern Alliance: two tracks, each counting 1 more.
+    if (p.alliance) {
+      for (const t of p.alliance) {
+        if ((total[t][p.id] ?? 0) <= 0) continue;
+        total[t][p.id] = (total[t][p.id] ?? 0) + 1;
+        // Only strengthens a claim the tribe already has a Banner behind.
+        if ((banner[t][p.id] ?? 0) > 0) banner[t][p.id] = (banner[t][p.id] ?? 0) + 1;
+      }
+    }
+
     // Judge powers armed this round that change what Influence counts for.
     const armed = p.judgeArmed;
     if (armed) {
@@ -527,9 +537,26 @@ export function openingPhase(state: GameState): 'placement' | 'action' {
   return state.tuningSnapshot.freePlacementPhase ? 'placement' : 'action';
 }
 
+/**
+ * Seat order for the phase in play.
+ *
+ * Reuben's Firstborn Advance moves it to the back of the **placement** queue, so
+ * it commits knowing how heavily everyone else already has. It sees the weight of
+ * the board, not its composition — placement stays face down, so the hidden
+ * information stays hidden. Action order is untouched.
+ */
+export function actingOrder(state: GameState): string[] {
+  if (state.phase !== 'placement') return state.turnOrder;
+  const reuben = state.players.find(
+    (p) => p.tribe === 'Reuben' && p.leaderLevel >= 1,
+  );
+  if (!reuben) return state.turnOrder;
+  return [...state.turnOrder.filter((id) => id !== reuben.id), reuben.id];
+}
+
 export function currentActor(state: GameState): PlayerState | null {
   if (state.phase !== 'placement' && state.phase !== 'action') return null;
-  const id = state.turnOrder[state.currentActorIndex];
+  const id = actingOrder(state)[state.currentActorIndex];
   return id ? getPlayer(state, id) : null;
 }
 

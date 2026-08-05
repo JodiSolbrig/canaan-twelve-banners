@@ -48,13 +48,13 @@ function makePlayer(
     freeMilitaryNextRound: 0,
     /** Naphtali II — consumed in placement if set; never set yet. */
     pendingTempInfluenceGift: 0,
+    alliance: null,
     incomeBonus: { faith: 0, warriors: 0, goods: 0 },
     pendingZoneUnique: null,
     judgeships: 0,
     judgePower: null,
     judgePowerExpires: 0,
     judgeArmed: null,
-    jephthahVow: false,
     rescueArmed: false,
     peekedCrisis: null,
   };

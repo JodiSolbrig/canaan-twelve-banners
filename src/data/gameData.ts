@@ -191,9 +191,9 @@ export const TRIBES: TribeDef[] = [
     color: TRIBE_COLORS.Reuben,
     bias: BIAS.Reuben,
     upgrades: [
-      'Firstborn Advance: Place 1 token after seeing one other placement.',
-      'Pathfinder: Invest 2+ on a track → +1 temp on second track.',
-      'Bold Claim: Once/game +1 Glory if second-most on a track.',
+      'Firstborn Advance: You always place last.',
+      'Pathfinder: Place 2+ on a track → 1 temp Supply on an empty track.',
+      'Bold Claim: Once/game +1 Glory for standing second on a track.',
     ],
     income: {
       faith: 1,
@@ -260,9 +260,9 @@ export const TRIBES: TribeDef[] = [
     color: TRIBE_COLORS.Naphtali,
     bias: BIAS.Naphtali,
     upgrades: [
-      'Doe’s Leap: Move 1 token after placement once/round.',
-      'Swift Response: Give temp Influence to another next round.',
-      'Northern Alliance: Once/game two tokens on different tracks +1.',
+      'Doe’s Leap: Move 1 of your tokens after the reveal, once/round.',
+      'Swift Response: Championing owes another tribe 1 temp Influence.',
+      'Northern Alliance: Once/game, name two tracks; each counts +1.',
     ],
     income: {
       faith: 1,

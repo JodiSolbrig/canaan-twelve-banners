@@ -58,7 +58,7 @@ export const OPPRESSORS: OppressorDef[] = [
     reference: 'Judges 10:8',
     attacks: 'military',
     deliverer: 'Jephthah',
-    judgePower: 'Jephthah’s Vow — once, gain 3 Glory; at game end lose your highest single resource.',
+    judgePower: 'Jephthah’s Vow — once, forfeit your largest single store of Faith, Warriors or Goods, and gain 3 Glory.',
   },
   {
     id: 'philistia',

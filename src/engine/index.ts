@@ -16,9 +16,11 @@ import { applyJudgePower, JUDGE_POWER_WINDOW } from './judges';
 import {
   advanceToNextRound,
   applyAngelChoice,
-  applySamsonMove,
+  applyShiftToken,
   canRescue,
-  canSamsonMove,
+  canDeclareAlliance,
+  canShiftToken,
+  declareAlliance,
   declareCovenantRescue,
   resolveRound,
   revealTokens,
@@ -65,7 +67,7 @@ export function dispatch(state: GameState, action: PlayerAction): GameState {
     if (!actor) return state;
     const wanted = planTotal(action.plan);
     const before = state.tokens.length;
-    let s = applyPlacement(state, actor.id, action.plan);
+    let s = applyPlacement(state, actor.id, action.plan, action.extras);
     // An unaffordable plan places nothing; hold the turn so it can be redone
     // rather than silently spending the player's placement on empty air.
     if (wanted > 0 && s.tokens.length <= before) return s;
@@ -123,11 +125,18 @@ export function dispatch(state: GameState, action: PlayerAction): GameState {
     return applyJudgePower(state, actor.id, action).state;
   }
 
-  if (action.type === 'samsonMove') {
+  if (action.type === 'northernAlliance') {
     if (state.phase !== 'preResolve') return state;
-    const dan = state.players.find((p) => canSamsonMove(state, p.id));
-    if (!dan) return state;
-    return applySamsonMove(state, dan.id, action.tokenId, action.toTrack).state;
+    const naphtali = state.players.find((p) => canDeclareAlliance(state, p.id));
+    if (!naphtali) return state;
+    return declareAlliance(state, naphtali.id, action.tracks).state;
+  }
+
+  if (action.type === 'shiftToken') {
+    if (state.phase !== 'preResolve') return state;
+    const mover = state.players.find((p) => canShiftToken(state, p.id));
+    if (!mover) return state;
+    return applyShiftToken(state, mover.id, action.tokenId, action.toTrack).state;
   }
 
   if (action.type === 'covenantRescue') {

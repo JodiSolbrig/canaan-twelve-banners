@@ -21,7 +21,13 @@ import {
   OTHNIEL_ZEAL_BONUS,
   updatePlayer,
 } from './helpers';
-import type { GameState, OppressorId, PlayerAction, TrackId } from './types';
+import type {
+  GameState,
+  OppressorId,
+  PlayerAction,
+  Resources,
+  TrackId,
+} from './types';
 
 /** When each power may be declared. */
 export const JUDGE_POWER_WINDOW: Record<OppressorId, 'action' | 'preResolve'> = {
@@ -187,13 +193,23 @@ export function applyJudgePower(
       break;
     }
 
-    // Jephthah's Vow — Glory now, paid for at the end.
+    // Jephthah's Vow — Glory, and the price paid on the spot.
     case 'ammon': {
+      const [key, amount] = largestStore(p.resources);
+      if (amount <= 0) {
+        return {
+          state: addLog(s, `${p.tribe} has nothing to vow.`, 'bad'),
+          ok: false,
+        };
+      }
       s = spend(s);
-      s = updatePlayer(s, playerId, (pl) => ({ ...pl, jephthahVow: true }));
+      s = updatePlayer(s, playerId, (pl) => ({
+        ...pl,
+        resources: mutateResources(pl.resources, { [key]: -amount }),
+      }));
       s = addLog(
         s,
-        `${p.tribe} swears Jephthah's Vow — 3 Glory now, and a price at the end.`,
+        `${p.tribe} swears Jephthah's Vow — ${amount} ${key} forfeit, and 3 Glory.`,
         'crisis',
       );
       s = grantGlory(s, playerId, 3, false);
@@ -221,35 +237,21 @@ export function applyJudgePower(
 }
 
 /**
- * Settle Jephthah's Vow at the end of the game: the largest single store of
- * Faith, Warriors or Goods is forfeit.
+ * The largest single store of Faith, Warriors or Goods. Ties fall to the earlier
+ * of the three, so Faith is taken before Warriors and Warriors before Goods.
  *
- * "Whatever comes out from the doors of my house to meet me… shall be the
- * Lord's." The vow is paid; it is not haggled over.
+ * "I have opened my mouth to the Lord, and I cannot take it back." The vow is
+ * paid the moment it is sworn, while the resources are still worth something —
+ * deferring it to the end made the price fall on the third tie-breaker, which
+ * almost never decides a game, and turned a terrible bargain into a free one.
  */
-export function settleJephthahVows(state: GameState): GameState {
-  let s = state;
-  for (const p of s.players) {
-    if (!p.jephthahVow) continue;
-    const stores = [
-      ['faith', p.resources.faith],
-      ['warriors', p.resources.warriors],
-      ['goods', p.resources.goods],
-    ] as const;
-    const [key, amount] = stores.reduce((a, b) => (b[1] > a[1] ? b : a));
-    if (amount <= 0) {
-      s = addLog(s, `${p.tribe} has nothing left to pay Jephthah's Vow.`, 'info');
-      continue;
-    }
-    s = updatePlayer(s, p.id, (pl) => ({
-      ...pl,
-      resources: mutateResources(pl.resources, { [key]: -amount }),
-    }));
-    s = addLog(
-      s,
-      `${p.tribe} pays Jephthah's Vow — ${amount} ${key} forfeit.`,
-      'bad',
-    );
-  }
-  return s;
+function largestStore(
+  r: Resources,
+): readonly ['faith' | 'warriors' | 'goods', number] {
+  const stores = [
+    ['faith', r.faith],
+    ['warriors', r.warriors],
+    ['goods', r.goods],
+  ] as const;
+  return stores.reduce((a, b) => (b[1] > a[1] ? b : a));
 }

@@ -84,8 +84,16 @@ export type PlayerState = {
   overcomerAvailable: boolean;
   /** Free military token next round (Simeon) */
   freeMilitaryNextRound: number;
-  /** Temporary influence to give next round (Naphtali) */
+  /**
+   * Naphtali II — Swift Response. Temporary Influence owed to another tribe,
+   * banked when Naphtali Champions and handed over at its next placement.
+   */
   pendingTempInfluenceGift: number;
+  /**
+   * Naphtali III — Northern Alliance, declared before scoring: two tracks whose
+   * Influence each counts +1.
+   */
+  alliance: [TrackId, TrackId] | null;
   /**
    * Permanent addition to this tribe's per-round income, on top of its printed
    * income line. Ephraim's Abdon I ("+1 Goods permanently") is granted here.
@@ -115,8 +123,6 @@ export type PlayerState = {
    * (Othniel's Zeal, Gideon's Three Hundred, Samson's Strength).
    */
   judgeArmed: { power: OppressorId; track: TrackId } | null;
-  /** Jephthah's Vow taken — the price falls due at the end of the game. */
-  jephthahVow: boolean;
   /** Level III covenant rescue declared this round, to cancel one failure. */
   rescueArmed: boolean;
   /** Peeked crisis cards for UI */
@@ -284,6 +290,14 @@ export type ResourceSpend = Partial<Record<SpendableResource, number>>;
  */
 export type PlacementPlan = Partial<Record<TrackId, ResourceSpend>>;
 
+/** Choices some tribes make alongside a placement. */
+export type PlacementExtras = {
+  /** Reuben II — the second track its Pathfinder Influence lands on. */
+  pathfinder?: TrackId;
+  /** Naphtali II — who receives the Influence it owes, and where. */
+  giftTo?: { playerId: string; track: TrackId };
+};
+
 /** Standard action kinds handled by `applyStandardAction` (not unique / placeInfluence). */
 export type StandardActionType =
   | 'recruit'
@@ -295,7 +309,7 @@ export type StandardActionType =
   | 'pass';
 
 export type PlayerAction =
-  | { type: 'confirmPlacement'; plan: PlacementPlan }
+  | { type: 'confirmPlacement'; plan: PlacementPlan; extras?: PlacementExtras }
   | {
       type: 'standard';
       action: StandardActionType;
@@ -344,7 +358,10 @@ export type PlayerAction =
       tokenId?: string;
     }
   /** Dan, Samson II — shift one token once the board is face up. */
-  | { type: 'samsonMove'; tokenId: string; toTrack: TrackId }
+  /** Dan's Riddle & Cunning / Naphtali's Doe's Leap: one token, one track over. */
+  | { type: 'shiftToken'; tokenId: string; toTrack: TrackId }
   /** Level III — one track you held counts twice, cancelling a failure. */
   | { type: 'covenantRescue' }
+  /** Naphtali III — name two tracks whose Influence each counts +1. */
+  | { type: 'northernAlliance'; tracks: [TrackId, TrackId] }
   | { type: 'advance' }; // for auto phases / human done

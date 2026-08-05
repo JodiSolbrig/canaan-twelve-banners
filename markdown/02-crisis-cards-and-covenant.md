@@ -47,11 +47,13 @@ generation into a faithful one:
 | Meter | Status              | Effect |
 |-------|---------------------|--------|
 | 8–10  | **Covenant Strength** | No special effect. Champions gain their normal rewards. |
-| 5–7   | **Warning**           | At the end of any round the meter is in this zone, every player loses 1 Loyalty **unless** at least one track was successfully completed this round. |
-| 2–4   | **Judgment**          | All failed tracks now drop the Covenant Meter by **2** instead of 1. In addition, the player with the lowest Loyalty must discard 1 Goods or 1 Warrior (their choice). |
-| 0–1   | **Broken Covenant**   | Immediate end-of-round check: If the meter is still at 0–1 after resolution, every player loses 2 Loyalty and the game ends after the next full round (final scoring still occurs). If the meter is raised above 1 before that, play continues. |
+| 4–7   | **Warning**           | At the end of any generation the meter is in this zone, every player loses 1 Loyalty **unless** at least one track held. |
+| 1–3   | **Judgment**          | Every failed track drops the meter **1 deeper**. In addition, every player tied for the lowest Loyalty must discard 1 Goods or 1 Warrior. |
+| 0     | **Broken Covenant**   | Immediate end-of-generation check: if the meter is still at 0 after resolution, every player loses 2 Loyalty and the game ends after the next full generation (final scoring still occurs). |
 
-This keeps early pressure light and makes later failures feel heavier without complex bookkeeping.
+**At 5 or below** — the bottom of Warning and all of Judgment — Israel is sold
+into the hand of an Oppressor. That leaves a **4–5 band where the nation is
+oppressed but not yet doubly punished**: room to cry out before it gets bad.
 
 ---
 
@@ -71,12 +73,13 @@ book and the spine of the game.
 When the Covenant Meter falls to **5 or below**, Israel is sold into a hand.
 Draw an **Oppressor**.
 
-> This trigger is deliberately a step above the Judgment band. Judgment also
+It takes the Crisis slot, and **no Crisis card is drawn** while it stands — an
+oppression is not a one-round modifier, it is a condition that endures.
+
+> The trigger sits deliberately a step above the Judgment band. Judgment also
 > deepens every failed track's drop, so tying the two together meant the cycle
 > could only fire more often by making failure hurt sooner — which collapsed more
-> games than it saved. It takes the Crisis slot and **no Crisis card is
-drawn** while it stands — an oppression is not a one-round modifier, it is a
-condition that endures.
+> games than it saved.
 
 | Oppressor | Presses on | Deliverer | Reference |
 |-----------|------------|-----------|-----------|
@@ -151,7 +154,7 @@ face up and the generation being scored.
 | **Ehud** | Take **1 Influence** off another player | on your turn |
 | **Deborah & Barak** | Every tribe gains 1 Influence on a track you name | on your turn |
 | **Gideon** | **Take a named track outright** — the fewest carry it. You must have a Banner there | after the reveal |
-| **Jephthah** | **+3 Glory now.** At game end you forfeit your largest single store of Faith, Warriors or Goods | on your turn |
+| **Jephthah** | Forfeit your **largest single store** of Faith, Warriors or Goods — the whole pile — and gain **+3 Glory**. You cannot swear it holding nothing | on your turn |
 | **Samson** | Your Banners on a named track **count double** | after the reveal |
 
 Deborah's summoned Influence is **Supply** — she rallies the tribes, she does not
