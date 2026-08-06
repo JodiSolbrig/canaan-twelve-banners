@@ -65,7 +65,18 @@ face-down tokens, and it would make your result depend on where you sat.
 3. **Raid Leader**: Once per round, convert 1 Goods into 1 Warrior or vice versa at no loss. **This costs no action** — trade and still take your turn.
 
 ### Dan — Samson
-1. **Samson I – Nazirite Strength**: If all your Banners are on a single track, they count double. *Under review — measured over 2400 games, concentrating on one track costs Dan about five points of win rate against simply contesting two, so as written the card asks for a line that loses. The doubling is not worth the flexibility it demands.*  
+1. **Samson I – Nazirite Strength**: If all your Banners are on a single track, they count double.
+
+> **Under review — the condition, not the effect.** Measured over 2400 games, the
+> doubling itself is Dan's strongest upgrade: switching it off costs 3.3 points of
+> win rate when Dan plays normally and 4.3 when it plays for the condition. The
+> problem is what the condition asks for. *Guaranteeing* the trigger — never
+> bannering a second track — costs 3.9 points (14.7% down to 10.8%) and buys only
+> 1 point of extra Nazirite value. Left alone the condition still holds in 30.7%
+> of Dan's generations anyway, because Dan can rarely afford a second Banner
+> track: it averages 1.76 tracks bannered. So the card pays best to a player who
+> ignores its instruction and lets it fire by accident, which is the wrong way
+> round. It wants a condition Dan can pursue without wrecking its placement.  
 2. **Samson II – Riddle & Cunning**: Once per round, you may move 1 of your tokens after all others are revealed.  
 3. **Samson III – Final Stand**: Once per game, spend 2 Warriors so one track you held counts twice, cancelling a failed track.
 
