@@ -65,7 +65,7 @@ face-down tokens, and it would make your result depend on where you sat.
 3. **Raid Leader**: Once per round, convert 1 Goods into 1 Warrior or vice versa at no loss. **This costs no action** — trade and still take your turn.
 
 ### Dan — Samson
-1. **Samson I – Nazirite Strength**: If all your Banners are on a single track, they count double.  
+1. **Samson I – Nazirite Strength**: If all your Banners are on a single track, they count double. *Under review — measured over 2400 games, concentrating on one track costs Dan about five points of win rate against simply contesting two, so as written the card asks for a line that loses. The doubling is not worth the flexibility it demands.*  
 2. **Samson II – Riddle & Cunning**: Once per round, you may move 1 of your tokens after all others are revealed.  
 3. **Samson III – Final Stand**: Once per game, spend 2 Warriors so one track you held counts twice, cancelling a failed track.
 

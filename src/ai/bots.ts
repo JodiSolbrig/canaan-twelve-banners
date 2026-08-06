@@ -414,26 +414,28 @@ function planPlacement(state: GameState, playerId: string): PlacementPlan {
 
   const primary = def.bias;
   const primaryRes = TRACK_AFFINITY_RESOURCE[primary];
-  // Dan's Nazirite Strength doubles its Banners only while they all stand on a
-  // single track, so Dan commits everything and never contests a second.
-  const concentrates = p.tribe === 'Dan' && p.leaderLevel >= 1;
-
+  // Dan used to be special-cased here: Nazirite Strength doubles its Banners
+  // only while they all stand on one track, so the bot put Dan all-in on
+  // Military and never let it contest a second. Measured over 2400 games that
+  // was costing Dan about five points of win rate — concentrating scored 10.6%
+  // against 15.6% for playing like everyone else, and the table's spread closed
+  // from 20.9 to 16.4 once the special case went. Splitting the two halves of it
+  // showed the damage is the concentration, not the all-in: keeping the single
+  // track but spending only the normal budget recovered barely a point.
+  //
+  // So Dan now plans like any other tribe, and Nazirite Strength will rarely
+  // fire. That is a finding about the card, not a gap in the bot: as written it
+  // asks for a line that loses. See the note in `01-tribes-and-leaders.md`.
   if (banners > 0) {
-    banners -= add(
-      primary,
-      primaryRes,
-      concentrates ? banners : Math.max(1, Math.ceil(banners * 0.7)),
-    );
+    banners -= add(primary, primaryRes, Math.max(1, Math.ceil(banners * 0.7)));
 
-    if (!concentrates) {
-      for (const track of TRACKS) {
-        if (track === primary || banners <= 0) continue;
-        // A Banner on a track you can never Champion buys nothing but risk.
-        if (track === 'provision' && barredFromProvision(state, playerId)) continue;
-        const res = TRACK_AFFINITY_RESOURCE[track];
-        if (pool[res] >= 3) {
-          banners -= add(track, res, Math.min(banners, agr > 0.5 ? 2 : 1));
-        }
+    for (const track of TRACKS) {
+      if (track === primary || banners <= 0) continue;
+      // A Banner on a track you can never Champion buys nothing but risk.
+      if (track === 'provision' && barredFromProvision(state, playerId)) continue;
+      const res = TRACK_AFFINITY_RESOURCE[track];
+      if (pool[res] >= 3) {
+        banners -= add(track, res, Math.min(banners, agr > 0.5 ? 2 : 1));
       }
     }
   }
