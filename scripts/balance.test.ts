@@ -8,6 +8,13 @@
  * Read the numbers as *directional*. The bot is a simple heuristic, so tribe win
  * rates say as much about how well the bot plays a tribe as about the tribe.
  * Changing bot strategy moves these figures more than most rule changes do.
+ *
+ * The run is **reproducible**: identical code and `BALANCE_GAMES` give identical
+ * output, because the bot's coin flips draw from the game's seed rather than
+ * `Math.random()`. Before that they did not, and five identical 1200-game runs
+ * spread 1-2 points of win rate per tribe — wide enough to swallow most tuning
+ * changes whole. A different `BALANCE_GAMES` is a different sample of seeds, so
+ * check a change at two sizes before believing it.
  */
 import { it } from 'vitest';
 import { chooseBotAction } from '../src/ai/bots';

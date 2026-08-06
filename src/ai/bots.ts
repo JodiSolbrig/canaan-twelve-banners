@@ -8,6 +8,7 @@ import {
 import {
   baseThreshold,
   cryThreshold,
+  mulberry32,
   currentActor,
   getPlayer,
   getTrackTotals,
@@ -40,6 +41,23 @@ import type {
 
 const TRACKS: TrackId[] = ['military', 'moral', 'provision'];
 const SPENDABLE: SpendableResource[] = ['warriors', 'faith', 'goods'];
+
+/**
+ * A deterministic stand-in for `Math.random()` in the bot's coin flips.
+ *
+ * The bot used to call `Math.random()` directly, which made the balance harness
+ * irreproducible: five identical 1200-game runs of unchanged code varied by 1–2
+ * points of win rate per tribe — enough to hide any tuning change smaller than
+ * that, which is most of them. Everything else in the engine already draws from
+ * the seeded `mulberry32`, so the bot does too.
+ *
+ * `salt` distinguishes the separate flips within one decision; the seat and
+ * round keep two tribes from rolling the same number on the same generation.
+ */
+function botRoll(state: GameState, playerId: string, salt: number): number {
+  const seat = state.turnOrder.indexOf(playerId);
+  return mulberry32(state.seed + state.round * 1009 + seat * 31 + salt)();
+}
 
 export function chooseBotAction(state: GameState): PlayerAction | null {
   // The Angel of the Lord is resolved for the table, not by a seated actor, so
@@ -505,7 +523,7 @@ function chooseAction(state: GameState, playerId: string): PlayerAction {
   // so contesting Champions has to outrank economy and opportunistic uniques.
   if (!state.tuningSnapshot.freePlacementPhase) {
     const noTokensYet = !state.tokens.some((t) => t.playerId === playerId);
-    if (noTokensYet || Math.random() < agr) {
+    if (noTokensYet || botRoll(state, playerId, 1) < agr) {
       const plan = planPlacement(state, playerId);
       if (planTotal(plan) > 0) {
         return { type: 'placeInfluence', plan };
@@ -543,7 +561,7 @@ function chooseAction(state: GameState, playerId: string): PlayerAction {
   }
 
   // Economy if poor on bias resource
-  if (p.resources.warriors < 2 && p.resources.goods >= 1 && Math.random() > agr) {
+  if (p.resources.warriors < 2 && p.resources.goods >= 1 && botRoll(state, playerId, 2) > agr) {
     return { type: 'standard', action: 'recruit', recruitMode: 'goods' };
   }
   if (p.resources.goods < 2 && (p.resources.warriors >= 1 || p.resources.faith >= 1)) {
