@@ -1,7 +1,14 @@
 import { TRIBE_BY_ID } from '../data/gameData';
 import {
+  availableLeaderTrade,
+  canArmGoodsDoubler,
+  canSpendResilience,
+  canStudyTrack,
+} from '../engine/actions';
+import {
   baseThreshold,
   cryThreshold,
+  mulberry32,
   currentActor,
   getPlayer,
   getTrackTotals,
@@ -12,7 +19,15 @@ import {
   TRACK_AFFINITY_RESOURCE,
 } from '../engine/helpers';
 import { JUDGE_POWER_WINDOW } from '../engine/judges';
-import { canDeclareAlliance, canRescue, canShiftToken } from '../engine/resolve';
+import {
+  barredFromProvision,
+  canClaimField,
+  canDeclareAlliance,
+  canRescue,
+  canShiftToken,
+  canWiseCounsel,
+  supplyOnTrack,
+} from '../engine/resolve';
 import type {
   GameState,
   OppressorId,
@@ -26,6 +41,23 @@ import type {
 
 const TRACKS: TrackId[] = ['military', 'moral', 'provision'];
 const SPENDABLE: SpendableResource[] = ['warriors', 'faith', 'goods'];
+
+/**
+ * A deterministic stand-in for `Math.random()` in the bot's coin flips.
+ *
+ * The bot used to call `Math.random()` directly, which made the balance harness
+ * irreproducible: five identical 1200-game runs of unchanged code varied by 1–2
+ * points of win rate per tribe — enough to hide any tuning change smaller than
+ * that, which is most of them. Everything else in the engine already draws from
+ * the seeded `mulberry32`, so the bot does too.
+ *
+ * `salt` distinguishes the separate flips within one decision; the seat and
+ * round keep two tribes from rolling the same number on the same generation.
+ */
+function botRoll(state: GameState, playerId: string, salt: number): number {
+  const seat = state.turnOrder.indexOf(playerId);
+  return mulberry32(state.seed + state.round * 1009 + seat * 31 + salt)();
+}
 
 export function chooseBotAction(state: GameState): PlayerAction | null {
   // The Angel of the Lord is resolved for the table, not by a seated actor, so
@@ -62,6 +94,27 @@ export function chooseBotAction(state: GameState): PlayerAction | null {
   }
 
   if (state.phase === 'placement') {
+    // Understanding of Times is free and strictly informative, so it is always
+    // worth taking before committing. The track nearest to falling is the one
+    // worth knowing about.
+    if (canStudyTrack(state, actor.id)) {
+      const track = [...TRACKS].sort(
+        (a, b) => trackShortfall(state, b) - trackShortfall(state, a),
+      )[0]!;
+      return { type: 'studyTrack', track };
+    }
+    // Manasseh trades Loyalty for Influence, but only while it can spare the
+    // Loyalty — it is the first tie-break at the end, and dropping to the
+    // bottom of the table invites the Judgment discard.
+    if (canSpendResilience(state, actor.id) && actor.resources.loyalty >= 3) {
+      const short = [...TRACKS].sort(
+        (a, b) => trackShortfall(state, b) - trackShortfall(state, a),
+      )[0]!;
+      if (trackShortfall(state, short) > 0) {
+        return { type: 'spendResilience', track: short };
+      }
+    }
+
     const plan = planPlacement(state, actor.id);
     return {
       type: 'confirmPlacement',
@@ -145,6 +198,22 @@ function choosePreResolve(state: GameState): PlayerAction | null {
     if (move) return move;
   }
 
+  // Claim the Field, spent only where standing the Supply up actually takes
+  // the track — the promotion also buys the Loyalty penalty if it then fails.
+  for (const p of state.players) {
+    if (p.isHuman || !canClaimField(state, p.id)) continue;
+    const claim = bestClaim(state, p.id);
+    if (claim) return claim;
+  }
+
+  // Wise Counsel, spent to strip a Championship rather than to save a track:
+  // a Banner dragged onto another track becomes Supply and claims nothing.
+  for (const p of state.players) {
+    if (p.isHuman || !canWiseCounsel(state, p.id)) continue;
+    const move = bestCounsel(state, p.id);
+    if (move) return move;
+  }
+
   // Naphtali's alliance, spent on the two tracks nearest to falling.
   for (const p of state.players) {
     if (p.isHuman || !canDeclareAlliance(state, p.id)) continue;
@@ -207,6 +276,70 @@ function bestShift(state: GameState, playerId: string): PlayerAction | null {
 }
 
 /**
+ * Claim the Field is worth spending only where the promoted Supply would win
+ * the track outright. It is once per game and it buys exposure as well as
+ * Banners, so a claim that merely narrows a gap is a claim wasted.
+ */
+function bestClaim(state: GameState, playerId: string): PlayerAction | null {
+  const totals = getTrackTotals(state);
+  for (const track of TRACKS) {
+    const gain = supplyOnTrack(state, playerId, track);
+    if (gain === 0) continue;
+    const banners = totals.banner[track];
+    const mine = (banners[playerId] ?? 0) + gain;
+    const best = Object.entries(banners)
+      .filter(([pid]) => pid !== playerId)
+      .reduce((m, [, v]) => Math.max(m, v), 0);
+    if (mine > best && (banners[playerId] ?? 0) <= best) {
+      return { type: 'claimField', track };
+    }
+  }
+  return null;
+}
+
+/**
+ * Wise Counsel, weighed the way Issachar would: it is worth spending only if it
+ * takes a Championship off the current leader, or saves a track that would
+ * otherwise fail. Moving a token for its own sake wastes a once-per-game.
+ */
+function bestCounsel(state: GameState, playerId: string): PlayerAction | null {
+  const score = (s: GameState) => {
+    const totals = getTrackTotals(s);
+    let mine = 0;
+    let holding = 0;
+    for (const track of TRACKS) {
+      const grand = Object.values(totals.total[track]).reduce((a, b) => a + b, 0);
+      if (grand >= baseThreshold(s, track)) holding += 1;
+      const entries = Object.entries(totals.banner[track]).filter(([, v]) => v > 0);
+      entries.sort((a, b) => b[1] - a[1]);
+      if (entries[0]?.[0] === playerId) mine += 1;
+    }
+    return mine * 10 + holding;
+  };
+
+  const theirs = state.tokens.filter(
+    (t) => t.playerId !== playerId && !t.temporary,
+  );
+  let best: PlayerAction | null = null;
+  let bestScore = score(state);
+  for (const token of theirs) {
+    for (const to of TRACKS) {
+      if (to === token.track) continue;
+      const moved: GameState = {
+        ...state,
+        tokens: state.tokens.map((t) => (t.id === token.id ? { ...t, track: to } : t)),
+      };
+      const value = score(moved);
+      if (value > bestScore) {
+        bestScore = value;
+        best = { type: 'wiseCounsel', tokenId: token.id, toTrack: to };
+      }
+    }
+  }
+  return best;
+}
+
+/**
  * The choices that ride alongside a placement: Reuben's second track and the
  * tribe Naphtali owes Influence to. Both are free, so a bot takes them whenever
  * they are on offer.
@@ -258,57 +391,89 @@ function planPlacement(state: GameState, playerId: string): PlacementPlan {
     warriors: p.resources.warriors,
     goods: p.resources.goods,
   };
-  let budget = Math.floor(
-    (pool.faith + pool.warriors + pool.goods) * (0.25 + agr * 0.45),
-  );
-  if (budget <= 0) return plan;
 
-  const add = (track: TrackId, res: SpendableResource, n: number) => {
-    const take = Math.max(0, Math.min(n, pool[res], budget));
-    if (take <= 0) return;
+  const add = (track: TrackId, res: SpendableResource, n: number): number => {
+    const take = Math.max(0, Math.min(n, pool[res]));
+    if (take <= 0) return 0;
     plan[track] = {
       ...(plan[track] ?? {}),
       [res]: (plan[track]?.[res] ?? 0) + take,
     };
     pool[res] -= take;
-    budget -= take;
+    return take;
   };
 
-  // Concentrate: a thin Banner on a track it cannot win is wasted, so it commits
-  // its affinity resource to its own track and only contests elsewhere when it
-  // genuinely has the strength.
-  const primary = def.bias;
-  const primaryRes = TRACK_AFFINITY_RESOURCE[primary];
-  // Dan's Nazirite Strength doubles its Banners only while they all stand on a
-  // single track, so Dan commits everything and never contests a second.
-  const concentrates = p.tribe === 'Dan' && p.leaderLevel >= 1;
-
-  add(
-    primary,
-    primaryRes,
-    concentrates ? pool[primaryRes] : Math.max(1, Math.ceil(budget * 0.7)),
+  // --- Banners -------------------------------------------------------------
+  // Only an affinity token can win a Championship, so the Banner budget is the
+  // tribe's entire appetite for contesting. A thin Banner on a track it cannot
+  // win is wasted, so it commits to its own track and contests elsewhere only
+  // when it genuinely has the strength.
+  let banners = Math.floor(
+    (pool.faith + pool.warriors + pool.goods) * (0.25 + agr * 0.45),
   );
 
-  if (!concentrates) {
+  const primary = def.bias;
+  const primaryRes = TRACK_AFFINITY_RESOURCE[primary];
+  // Dan used to be special-cased here: the old Nazirite Strength doubled its
+  // Banners only while they all stood on one track, so the bot put Dan all-in on
+  // Military and never let it contest a second. Over 2400 games that cost Dan
+  // about five points of win rate, and the card has since been rewritten to ask
+  // for restraint in Supply rather than concentration in Banners — so there is
+  // nothing left to special-case, and Dan plans like any other tribe.
+  //
+  // The bot deliberately does *not* steer for the new condition either. Letting
+  // it keep sending Supply and take the doubling only on the generations it
+  // could not afford any measured better for the table as a whole (spread 14.6
+  // against 16.7) than making it hoard for the trigger.
+  if (banners > 0) {
+    banners -= add(primary, primaryRes, Math.max(1, Math.ceil(banners * 0.7)));
+
     for (const track of TRACKS) {
-      if (track === primary) continue;
+      if (track === primary || banners <= 0) continue;
+      // A Banner on a track you can never Champion buys nothing but risk.
+      if (track === 'provision' && barredFromProvision(state, playerId)) continue;
       const res = TRACK_AFFINITY_RESOURCE[track];
-      if (pool[res] >= 3) add(track, res, agr > 0.5 ? 2 : 1);
+      if (pool[res] >= 3) {
+        banners -= add(track, res, Math.min(banners, agr > 0.5 ? 2 : 1));
+      }
     }
   }
 
-  // Whatever is left goes as Supply to tracks it has not claimed. A failed track
-  // drops the Covenant on everyone, so shoring up the ones it cannot win beats
-  // piling onto one it already leads — and the spoil pays it back in the very
-  // resource it is short of.
-  const unclaimed = TRACKS.filter((t) => !plan[t]?.[TRACK_AFFINITY_RESOURCE[t]]);
-  for (const track of unclaimed) {
+  // --- Supply --------------------------------------------------------------
+  // The spoil is a flat payment to each Supply contributor rather than a
+  // per-token one, so a single off-affinity token on a track that holds comes
+  // back in full at no risk — and a second one on the same track does not. One
+  // token per track it did not Banner is therefore the whole of the play.
+  //
+  // It is bought from its own allowance rather than the Banner budget's
+  // leftovers. While the two competed the Banners always won, and the balance
+  // harness ran 94% Banner to 6% Supply: the asymmetry the rule exists to
+  // create was not being played at all.
+  const reserve: Record<SpendableResource, number> = {
+    // Faith is the Cry. While Israel is under a hand, no track is worth more
+    // than deliverance, so none of it is lent out.
+    faith: state.oppression ? pool.faith : 1,
+    warriors: 1,
+    goods: 1,
+  };
+  // Its own Banner resource is worth more to it than to any track it chose not
+  // to contest, so it keeps a generation's worth back before lending any.
+  reserve[primaryRes] = Math.max(reserve[primaryRes], 2);
+
+  // A barred Levi still wants Influence on Provision: the tithe is owed for
+  // service, so being absent from the harvest forfeits it.
+  const tithed = barredFromProvision(state, playerId);
+
+  for (const track of TRACKS) {
+    // Paying a track's own affinity plants a Banner, which is the decision this
+    // pass has already declined to make.
+    if (plan[track]?.[TRACK_AFFINITY_RESOURCE[track]]) continue;
     for (const res of SPENDABLE) {
-      if (budget <= 0) break;
-      // Never spend what Banners its own track, and never buy Supply with the
-      // resource that would have been a Banner here.
-      if (res === primaryRes || res === TRACK_AFFINITY_RESOURCE[track]) continue;
-      add(track, res, 1);
+      if (res === TRACK_AFFINITY_RESOURCE[track]) continue;
+      // The tithe is worth digging a little deeper for than an ordinary spoil.
+      const floor = tithed && track === 'provision' ? 0 : reserve[res];
+      if (pool[res] <= floor) continue;
+      if (add(track, res, 1) > 0) break;
     }
   }
 
@@ -322,11 +487,50 @@ function chooseAction(state: GameState, playerId: string): PlayerAction {
   const zoneLowLoyalty = p.resources.loyalty <= 2;
   const covenantLow = state.covenant <= 4;
 
+  // Arm the once-per-game doubler immediately before the biggest Goods gain the
+  // bot can actually reach — its own Harvest or Gather. Arming costs nothing and
+  // the doubler waits rather than expiring, but arming early spends it on
+  // whatever trickle arrives first, which is usually income.
+  if (canArmGoodsDoubler(state, playerId)) {
+    const aboutToHarvest =
+      (p.tribe === 'Asher' && p.resources.faith >= 1) ||
+      p.resources.warriors >= 1 ||
+      p.resources.faith >= 1;
+    if (aboutToHarvest) return { type: 'armGoodsDoubler' };
+  }
+
+  // A leader's standing trade costs no action, so it is taken before deciding
+  // what to do with the turn itself — and the turn is still there afterwards.
+  const trade = availableLeaderTrade(state, playerId);
+  if (trade) {
+    const want: SpendableResource = state.oppression
+      ? 'faith'
+      : TRACK_AFFINITY_RESOURCE[def.bias];
+    // Never trade down to nothing: a rate's worth plus one stays in hand. And
+    // never offer a trade the engine will refuse — Micah's Idol bars paying
+    // Faith away, and a rejected trade never sets its once-per-round flag, so
+    // proposing one again next tick loops forever.
+    const idolBarsFaith = state.activeCrisis?.id === 7;
+    const affordable = trade.trades.filter(
+      (t) =>
+        p.resources[t.from] >= trade.rate + 1 &&
+        !(idolBarsFaith && t.from === 'faith'),
+    );
+    const pick =
+      affordable.find((t) => t.to === want) ??
+      // Ephraim can only ever trade its own Banner resource away, so a genuine
+      // surplus is the one time it should — turned into whatever it has least of.
+      affordable
+        .filter((t) => p.resources[t.from] - trade.rate > p.resources[t.to] + 1)
+        .sort((a, b) => p.resources[a.to] - p.resources[b.to])[0];
+    if (pick) return { type: 'leaderTrade', from: pick.from, to: pick.to };
+  }
+
   // Without a free placement phase, the action *is* the only way onto a track,
   // so contesting Champions has to outrank economy and opportunistic uniques.
   if (!state.tuningSnapshot.freePlacementPhase) {
     const noTokensYet = !state.tokens.some((t) => t.playerId === playerId);
-    if (noTokensYet || Math.random() < agr) {
+    if (noTokensYet || botRoll(state, playerId, 1) < agr) {
       const plan = planPlacement(state, playerId);
       if (planTotal(plan) > 0) {
         return { type: 'placeInfluence', plan };
@@ -364,7 +568,7 @@ function chooseAction(state: GameState, playerId: string): PlayerAction {
   }
 
   // Economy if poor on bias resource
-  if (p.resources.warriors < 2 && p.resources.goods >= 1 && Math.random() > agr) {
+  if (p.resources.warriors < 2 && p.resources.goods >= 1 && botRoll(state, playerId, 2) > agr) {
     return { type: 'standard', action: 'recruit', recruitMode: 'goods' };
   }
   if (p.resources.goods < 2 && (p.resources.warriors >= 1 || p.resources.faith >= 1)) {

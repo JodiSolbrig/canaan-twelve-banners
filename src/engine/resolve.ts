@@ -16,6 +16,7 @@ import {
   getPlayer,
   getTrackTotals,
   grantGlory,
+  grantGoods,
   isBannerToken,
   leastAmongThem,
   mulberry32,
@@ -52,12 +53,22 @@ export function revealTokens(state: GameState): GameState {
   return s;
 }
 
-/** Anyone still holding a decision that must be made before scoring. */
+/**
+ * Anyone still holding a decision that must be made before scoring.
+ *
+ * The app auto-advances past `preResolve` when the human has nothing to decide,
+ * so **every** post-reveal ability has to be listed here or it is silently
+ * skipped: the panel offering it renders, but the round has already moved on.
+ * Judah's Claim the Field and Issachar's Wise Counsel both shipped missing from
+ * this list and were unreachable in play.
+ */
 export function hasPreResolveChoice(state: GameState, playerId: string): boolean {
   const p = getPlayer(state, playerId);
   if (p.judgePower && JUDGE_POWER_WINDOW[p.judgePower] === 'preResolve') return true;
   if (canShiftToken(state, playerId)) return true;
   if (canDeclareAlliance(state, playerId)) return true;
+  if (canClaimField(state, playerId)) return true;
+  if (canWiseCounsel(state, playerId)) return true;
   return canRescue(state, playerId);
 }
 
@@ -128,6 +139,146 @@ export function applyShiftToken(
       s,
       `${getPlayer(s, playerId).tribe} moves after the reveal (${ability.name}): ` +
         `1 Influence ${label(token.track)} → ${label(toTrack)}.`,
+      'good',
+    ),
+    ok: true,
+  };
+}
+
+/**
+ * Issachar III — Wise Counsel. Once a game, move someone *else's* token.
+ *
+ * The only ability in the game that reaches across the table and touches
+ * another player's board, so it is fenced: it is spent in the post-reveal
+ * window like the other movers, the counsellor names both the token and where
+ * it goes (a victim who chose would simply move it somewhere harmless, which is
+ * no counsel at all), and gifted or temporary tokens are out of reach — you can
+ * advise a tribe, not confiscate a gift.
+ */
+export function canWiseCounsel(state: GameState, playerId: string): boolean {
+  const p = getPlayer(state, playerId);
+  return (
+    p.tribe === 'Issachar' &&
+    p.leaderLevel >= 3 &&
+    !p.oncePerGameUsed['wiseCounsel'] &&
+    state.tokens.some((t) => t.playerId !== playerId && !t.temporary)
+  );
+}
+
+export function applyWiseCounsel(
+  state: GameState,
+  playerId: string,
+  tokenId: string,
+  toTrack: TrackId,
+): { state: GameState; ok: boolean } {
+  if (!canWiseCounsel(state, playerId)) {
+    return { state: addLog(state, 'No counsel available.', 'bad'), ok: false };
+  }
+  const token = state.tokens.find(
+    (t) => t.id === tokenId && t.playerId !== playerId && !t.temporary,
+  );
+  if (!token) {
+    return {
+      state: addLog(state, 'Counsel needs another player’s own token.', 'bad'),
+      ok: false,
+    };
+  }
+  if (token.track === toTrack) {
+    return { state: addLog(state, 'Pick a different track.', 'bad'), ok: false };
+  }
+  let s: GameState = {
+    ...state,
+    tokens: state.tokens.map((t) =>
+      t.id === tokenId ? { ...t, track: toTrack } : t,
+    ),
+  };
+  s = updatePlayer(s, playerId, (p) => ({
+    ...p,
+    oncePerGameUsed: { ...p.oncePerGameUsed, wiseCounsel: true },
+  }));
+  return {
+    state: addLog(
+      s,
+      `${getPlayer(s, playerId).tribe} counsels ${getPlayer(s, token.playerId).tribe} — ` +
+        `1 Influence ${label(token.track)} → ${label(toTrack)}.`,
+      'good',
+    ),
+    ok: true,
+  };
+}
+
+/**
+ * Judah III — Claim the Field. Once a game, the Supply you sent to a track
+ * stands up as Banners.
+ *
+ * The only rule in the game that rewrites what a token *is* rather than where it
+ * stands, and it cuts both ways: what it promotes now counts toward Champion and
+ * now takes the Loyalty penalty if the track gives way. Gifted and temporary
+ * tokens are untouched — Judah claims its own effort, not another tribe's.
+ */
+export function canClaimField(state: GameState, playerId: string): boolean {
+  const p = getPlayer(state, playerId);
+  return (
+    p.tribe === 'Judah' &&
+    p.leaderLevel >= 3 &&
+    !p.oncePerGameUsed['claimField'] &&
+    TRACKS.some((t) => supplyOnTrack(state, playerId, t) > 0)
+  );
+}
+
+/** That player's own paid-for Supply standing on one track. */
+export function supplyOnTrack(
+  state: GameState,
+  playerId: string,
+  track: TrackId,
+): number {
+  return state.tokens.filter(
+    (t) =>
+      t.playerId === playerId &&
+      t.track === track &&
+      !t.temporary &&
+      t.paidWith !== null &&
+      !isBannerToken(t),
+  ).length;
+}
+
+export function applyClaimField(
+  state: GameState,
+  playerId: string,
+  track: TrackId,
+): { state: GameState; ok: boolean } {
+  if (!canClaimField(state, playerId)) {
+    return { state: addLog(state, 'No claim available.', 'bad'), ok: false };
+  }
+  const promoted = supplyOnTrack(state, playerId, track);
+  if (promoted === 0) {
+    return {
+      state: addLog(state, `No Supply of yours on ${label(track)}.`, 'bad'),
+      ok: false,
+    };
+  }
+  const affinity = TRACK_AFFINITY_RESOURCE[track];
+  let s: GameState = {
+    ...state,
+    tokens: state.tokens.map((t) =>
+      t.playerId === playerId &&
+      t.track === track &&
+      !t.temporary &&
+      t.paidWith !== null &&
+      !isBannerToken(t)
+        ? { ...t, paidWith: affinity }
+        : t,
+    ),
+  };
+  s = updatePlayer(s, playerId, (p) => ({
+    ...p,
+    oncePerGameUsed: { ...p.oncePerGameUsed, claimField: true },
+  }));
+  return {
+    state: addLog(
+      s,
+      `${getPlayer(s, playerId).tribe} claims ${label(track)} — ` +
+        `${promoted} Supply stands up as Banners.`,
       'good',
     ),
     ok: true,
@@ -205,11 +356,26 @@ export function declareCovenantRescue(
  * Gideon's Three Hundred: whoever armed it takes the named track outright, so
  * long as they actually planted a Banner on it.
  */
+/**
+ * Levi II — The Tithe. Levi has no inheritance, so it can never Champion
+ * Provision; instead whoever does pays it a Goods.
+ *
+ * The bar is absolute: it outranks even Gideon's Three Hundred, which otherwise
+ * takes a track outright. Levi's Provision Influence still counts toward the
+ * threshold and still takes the failure penalty if it was a Banner — landless
+ * does not mean absent. It simply means the harvest is never Levi's to claim.
+ */
+export function barredFromProvision(state: GameState, playerId: string): boolean {
+  const p = getPlayer(state, playerId);
+  return p.tribe === 'Levi' && p.leaderLevel >= 2;
+}
+
 function gideonClaimant(state: GameState, track: TrackId): string | null {
   const claimant = state.players.find(
     (p) => p.judgeArmed?.power === 'midian' && p.judgeArmed.track === track,
   );
   if (!claimant) return null;
+  if (track === 'provision' && barredFromProvision(state, claimant.id)) return null;
   const banners = state.tokens.some(
     (t) =>
       t.playerId === claimant.id &&
@@ -290,7 +456,18 @@ export function resolveRound(state: GameState): GameState {
       // entirely by Supply succeeds with no Champion at all.
       // Gideon's Three Hundred overrides the count outright: the fewest carry
       // the day, provided they turned out at all.
-      championId: gideonClaimant(s, track) ?? pickChampion(s, bannerByPlayer),
+      championId:
+        gideonClaimant(s, track) ??
+        pickChampion(
+          s,
+          track === 'provision'
+            ? Object.fromEntries(
+                Object.entries(bannerByPlayer).filter(
+                  ([pid]) => !barredFromProvision(s, pid),
+                ),
+              )
+            : bannerByPlayer,
+        ),
       zone: trackZone(grand, base, tuning.lowHighOffset),
     });
   }
@@ -358,16 +535,10 @@ export function resolveRound(state: GameState): GameState {
       if (res.track === 'provision' && res.zone === 'high') {
         for (const p of s.players) {
           if (p.tribe === 'Manasseh' && p.leaderLevel >= 2) {
-            s = updatePlayer(s, p.id, (pl) => ({
-              ...pl,
-              resources: mutateResources(pl.resources, { goods: 1 }),
-            }));
+            s = grantGoods(s, p.id, 1, 'zone');
           }
           if (p.tribe === 'Asher' && p.leaderLevel >= 1) {
-            s = updatePlayer(s, p.id, (pl) => ({
-              ...pl,
-              resources: mutateResources(pl.resources, { goods: 1 }),
-            }));
+            s = grantGoods(s, p.id, 1, 'zone');
           }
         }
       }
@@ -730,10 +901,14 @@ function paySpoil(
   for (const [pid, influence] of Object.entries(totals)) {
     const supplied = influence - (banners[pid] ?? 0);
     if (supplied <= 0) continue;
-    s = updatePlayer(s, pid, (p) => ({
-      ...p,
-      resources: mutateResources(p.resources, { [resource]: amount }),
-    }));
+    if (resource === 'goods') {
+      s = grantGoods(s, pid, amount, 'spoil');
+    } else {
+      s = updatePlayer(s, pid, (p) => ({
+        ...p,
+        resources: mutateResources(p.resources, { [resource]: amount }),
+      }));
+    }
     s = addLog(
       s,
       `${getPlayer(s, pid).tribe} shares the spoil of ${label(res.track)} (+${amount} ${resource}).`,
@@ -763,10 +938,7 @@ function settleZoneUniques(
     s = updatePlayer(s, id, (p) => ({ ...p, pendingZoneUnique: null }));
 
     if (pending === 'raid') {
-      s = updatePlayer(s, id, (p) => ({
-        ...p,
-        resources: mutateResources(p.resources, { goods: 1 }),
-      }));
+      s = grantGoods(s, id, 1, 'action');
       if (militaryLow) {
         s = addLog(s, `${player.tribe} Raid hits a Low Military Track — +1 Goods, no Glory.`, 'bad');
         s = applyLoyaltyLoss(s, id, 1, 'Raid in Low zone');
@@ -779,10 +951,7 @@ function settleZoneUniques(
 
     // Skirmish always pays Glory; Low Military adds Goods.
     if (militaryLow) {
-      s = updatePlayer(s, id, (p) => ({
-        ...p,
-        resources: mutateResources(p.resources, { goods: 1 }),
-      }));
+      s = grantGoods(s, id, 1, 'action');
       s = addLog(s, `${player.tribe} Skirmishes a Low Military Track — +1 Glory, +1 Goods.`, 'good');
     } else {
       s = addLog(s, `${player.tribe} Skirmishes — +1 Glory.`, 'good');
@@ -857,12 +1026,46 @@ function awardChampion(state: GameState, res: TrackResolution): GameState {
   const delta: Record<string, number> = {};
   if (reward.faith) delta.faith = reward.faith;
   if (reward.warriors) delta.warriors = reward.warriors;
-  if (reward.goods) delta.goods = reward.goods;
 
   s = updatePlayer(s, res.championId, (p) => ({
     ...p,
     resources: mutateResources(p.resources, delta),
   }));
+  if (reward.goods) s = grantGoods(s, res.championId, reward.goods, 'champion');
+
+  // Levi II — The Tithe, paid out of the harvest the Champion just took in.
+  // Settled after the reward so there is something to tithe from.
+  //
+  // Levi must have Influence standing on Provision to collect: "for their
+  // service which they serve" (Numbers 18:21). Without that clause the
+  // prohibition costs a Moral tribe nothing at all — Levi was never going to
+  // Champion Provision — and the tithe is pure income. Requiring presence makes
+  // it what it should be: Levi spends real resources on a track it can never
+  // win, in exchange for a share of what the harvest brings in.
+  if (res.track === 'provision') {
+    const levite = s.players.find(
+      (p) =>
+        p.id !== res.championId &&
+        barredFromProvision(s, p.id) &&
+        s.tokens.some((t) => t.playerId === p.id && t.track === 'provision'),
+    );
+    if (levite) {
+      const due = Math.min(1, getPlayer(s, res.championId).resources.goods);
+      if (due > 0) {
+        s = updatePlayer(s, res.championId, (p) => ({
+          ...p,
+          resources: mutateResources(p.resources, { goods: -due }),
+        }));
+        s = grantGoods(s, levite.id, due, 'tithe');
+        s = addLog(
+          s,
+          `${getPlayer(s, res.championId).tribe} renders the tithe — ` +
+            `${levite.tribe} receives ${due} Goods.`,
+          'good',
+        );
+      }
+    }
+  }
 
   // Judah Othniel I
   if (champ.tribe === 'Judah' && champ.leaderLevel >= 1) {

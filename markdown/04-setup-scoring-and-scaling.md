@@ -108,10 +108,12 @@ and up to **two hours** for a first six-player game including teaching.
 5. Final tie: shared victory (or play one extra sudden-death round if preferred).
 
 ### End-of-Game Covenant Bonus / Penalty (recommended for prototype)
-- Covenant Meter 8–10 at game end: every player gains +1 Glory.
-- Covenant Meter 5–7: no change.
-- Covenant Meter 2–4: every player loses 1 Glory (minimum 0).
-- Covenant Meter 0–1: the game already ended under Broken Covenant rules. The 2 Loyalty each player lost at that moment **is** the penalty — apply **no** further Glory adjustment and score as normal.
+Keyed to the same four zones as the meter itself (`02-crisis-cards-and-covenant.md`):
+
+- Covenant Meter 8–10 (**Strength**) at game end: every player gains +1 Glory.
+- Covenant Meter 4–7 (**Warning**): no change.
+- Covenant Meter 1–3 (**Judgment**): every player loses 1 Glory (minimum 0).
+- Covenant Meter 0 (**Broken**): the game already ended under Broken Covenant rules. The 2 Loyalty each player lost at that moment **is** the penalty — apply **no** further Glory adjustment and score as normal.
 
 ### Champion Tracking
 Keep a simple tally (pencil & paper or extra tokens) of how many times each player became Champion. This is only needed for the rare fourth-level tie-breaker and for unlocking Leader upgrades during the game.
@@ -119,7 +121,11 @@ Keep a simple tally (pencil & paper or extra tokens) of how many times each play
 ---
 
 ## Scaling Notes
-- **2–3 players**: Tracks are easier to dominate; consider raising base thresholds by +1.
-- **4–7 players**: Core experience — no changes needed.
+- **Every table size** carries a +1 on the base threshold. See *Success threshold*
+  in `03-standard-actions-and-player-aid.md` for why: without it the tracks hold
+  too easily and the Cycle of the Judges stops turning.
+- **2–3 players**: Tracks are easier to dominate, so they take a **further +1** on
+  top of that — player count +2.
+- **4–7 players**: Core experience — no further changes needed.
 - **8–11 players**: Influence tokens become tighter; players will specialize more.
 - **Epic 12**: All tribes in play. Covenant Meter drops feel more dangerous. Recommend a larger shared supply of tokens and slightly longer rounds.

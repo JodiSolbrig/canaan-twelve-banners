@@ -31,8 +31,8 @@ Manasseh, and landless Levi is included as the Covenant guardian. See
 - **Influence Tokens** — placed on tracks to compete for Champion status
 
 ### Round Sequence
-1. Draw & reveal 1 Crisis card (active for the entire round)
-2. Players simultaneously or in turn order: Place Influence tokens (face-down) **and** take one Standard Action **or** Unique Action
+1. Collect income (generations 2+), then draw & reveal 1 Crisis card — or face the standing Oppressor
+2. Players in turn order: Place Influence tokens (face-down) **and** take one Standard Action **or** Unique Action
 3. Reveal all Influence → determine Champions of each track
 4. Resolve tracks (success or failure) → apply Covenant Meter changes and any Crisis effects
 5. Award Champion rewards + resolve end-of-round effects
@@ -45,7 +45,7 @@ Full table in `04-setup-scoring-and-scaling.md`.
 
 ### Tracks
 Three tracks exist: **Military** (Warriors), **Moral** (Faith), **Provision** (Goods).  
-A track succeeds when total Influence on it reaches the threshold: the **number of players**, **+1** at 2–3 players.
+A track succeeds when total Influence on it reaches the threshold: the **number of players +1**, and **+2** at 2–3 players.
 
 **Banners & Supply.** Any resource places a token on any track, but the resource
 you pay with decides what it is. Paying with the track's **affinity** resource
@@ -55,16 +55,17 @@ it costs you Loyalty if the track fails. Paying with anything else sends
 nothing. A track carried entirely by Supply succeeds with **no Champion**.
 
 Champion (most Banner Influence, ties by Loyalty then turn order) takes **+1 Glory**
-plus **+1** of the matching resource. Every other contributor takes **+1** of the
-matching resource as spoil.  
+plus **+1** of the matching resource. Every **Supply** contributor takes **+1** of
+the matching resource as spoil; Banner contributors take nothing extra, since they
+are already playing for the Champion reward.  
 Failure: Covenant **−1** (−2 in Judgment) and **−1 Loyalty** to every Banner.  
 Full details in `03-standard-actions-and-player-aid.md`.
 
 ### Standard Actions
 (See detailed list in `03-standard-actions-and-player-aid.md`)
 
-Players choose **one** of the following (or their Unique Action):
-- Place Influence
+After the free placement, players choose **one** of the following (or their Unique Action):
+- Place Influence *(again — commit twice)*
 - Recruit
 - Gather / Harvest
 - Pray / Seek the Lord
@@ -84,7 +85,7 @@ Thresholds create escalating pressure (Warning → Judgment → Broken Covenant)
 Full details in `02-crisis-cards-and-covenant.md`.
 
 ### The Cycle of the Judges
-The Covenant does not only fall. Reaching **Judgment (2–4)** sells Israel into the
+The Covenant does not only fall. Falling to **5 or below** sells Israel into the
 hand of an **Oppressor**, which replaces the Crisis card and worsens every round
 it is endured. Players may spend an action to **Cry Out**, paying Faith into a
 shared pool; when the Cry is met the oppression breaks, the Covenant is restored
@@ -109,7 +110,9 @@ Full details in `04-setup-scoring-and-scaling.md`.
 ### Scaling
 Designed for 2–11 players + Epic 12 Mode.  
 Core experience is strongest at 4–7 players.  
-Adjust track thresholds upward for very small groups.
+Small groups already take a further +1 on every threshold.
+
+**The playable prototype covers 2–6 players and does not implement Epic 12.**
 
 ---
 

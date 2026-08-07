@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { chooseBotAction } from './ai/bots';
+import { stepBot } from './ai/botStep';
 import { cloneTuning, DEFAULT_TUNING, type TuningConfig } from './config/tuning';
 import { TRIBE_BY_ID } from './data/gameData';
 import { createGame, currentActor, dispatch, type GameState, type PlayerAction } from './engine';
@@ -168,27 +169,7 @@ export default function App() {
 
     if (botTimer.current) window.clearTimeout(botTimer.current);
     botTimer.current = window.setTimeout(() => {
-      const action = chooseBotAction(state);
-      if (action) {
-        setState((prev) => {
-          if (!prev) return prev;
-          const beforeActor = currentActor(prev)?.id;
-          const beforePhase = prev.phase;
-          let next = dispatch(prev, action);
-          // If the action failed to progress, fall back to something that always
-          // does, so a bot can never stall the round.
-          if (
-            next.phase === beforePhase &&
-            currentActor(next)?.id === beforeActor
-          ) {
-            next =
-              beforePhase === 'placement'
-                ? dispatch(prev, { type: 'confirmPlacement', plan: {} })
-                : dispatch(prev, { type: 'standard', action: 'pass' });
-          }
-          return next;
-        });
-      }
+      setState((prev) => (prev ? stepBot(prev) : prev));
     }, state.tuningSnapshot.botThinkMs);
 
     return () => {

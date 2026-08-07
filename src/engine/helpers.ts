@@ -18,6 +18,7 @@ import type {
   ResourceSpend,
   SpendableResource,
   TrackId,
+  TribeId,
 } from './types';
 
 let logCounter = 0;
@@ -224,21 +225,38 @@ export function getTrackTotals(state: GameState): TrackTallies {
   };
 
   for (const p of state.players) {
-    // Dan Samson I — Nazirite Strength: if every Banner Dan planted this
-    // generation stands on a single track, they count double.
+    // Dan Samson I — Nazirite Strength: if Dan sent no Supply this generation,
+    // every Banner it planted counts double.
     //
-    // Samson never fought at the head of an army and never fought on two fronts;
-    // his whole strength went into one blow. Conditioning this on Dan's own
-    // concentration rather than on the absence of rivals matters: an earlier
-    // version keyed off being the *only* Banner on a track, which on contested
-    // Military almost never happened and left Dan the weakest tribe on the board.
+    // Samson is the least communal judge in the book. He never fought at the
+    // head of an army, never called out the tribes, and never took help; his
+    // whole strength went into one blow. So Dan's doubling is bought by
+    // refusing to Supply — the one thing in this game that means helping
+    // somebody else hold a track.
+    //
+    // The condition used to be "every Banner on a single track", which was a
+    // trap: measured over 2400 games the doubling itself was worth 3-4 points of
+    // win rate, but steering placement to guarantee it cost 4, so the card paid
+    // best to a player who ignored its own instruction. This version asks for a
+    // real trade instead — Supply is safe profit and a share of the spoil, and
+    // Dan gives it up to strike harder — and it can be played toward from any
+    // number of tracks. It took Dan from 14.7% to 23.5% and closed the table's
+    // spread from 16.4 points to 14.6, the tightest measured.
     if (p.leaderLevel >= 1 && p.tribe === 'Dan') {
-      const held = TRACKS.filter((t) => (banner[t][p.id] ?? 0) > 0);
-      const only = held[0];
-      if (held.length === 1 && only) {
-        const mine = banner[only][p.id] ?? 0;
-        total[only][p.id] = (total[only][p.id] ?? 0) + mine;
-        banner[only][p.id] = mine * 2;
+      const sentSupply = state.tokens.some(
+        (t) =>
+          t.playerId === p.id &&
+          !t.temporary &&
+          t.paidWith !== null &&
+          !isBannerToken(t),
+      );
+      if (!sentSupply) {
+        for (const track of TRACKS) {
+          const mine = banner[track][p.id] ?? 0;
+          if (mine <= 0) continue;
+          total[track][p.id] = (total[track][p.id] ?? 0) + mine;
+          banner[track][p.id] = mine * 2;
+        }
       }
     }
     // Judah Othniel II — armed during placement.
@@ -413,6 +431,74 @@ export function raiseCovenant(state: GameState, amount: number, reason: string):
   return s;
 }
 
+/**
+ * Where a gain of Goods came from. Asher's Rich Harvest doubles only what an
+ * action or a Championship paid; Zebulun's Profitable Venture doubles anything.
+ */
+export type GoodsSource =
+  | 'action'
+  | 'champion'
+  | 'spoil'
+  | 'income'
+  | 'zone'
+  /** Levi's due from a Provision Champion. */
+  | 'tithe';
+
+/** Which sources each tribe's once-per-game doubler will fire on. */
+const DOUBLER: Partial<Record<TribeId, { name: string; sources: GoodsSource[] }>> =
+  {
+    // "double the Goods you gain from any single action or Champion reward"
+    Asher: {
+      name: 'Rich Harvest',
+      sources: ['action', 'champion'],
+    },
+    // "after gaining Goods from any source, gain that many again"
+    Zebulun: {
+      name: 'Profitable Venture',
+      sources: ['action', 'champion', 'spoil', 'income', 'zone', 'tithe'],
+    },
+  };
+
+export function goodsDoublerOf(tribe: TribeId) {
+  return DOUBLER[tribe] ?? null;
+}
+
+/**
+ * The one way Goods are ever added to a player.
+ *
+ * Every gain has to pass through here, the way every positive Glory passes
+ * through `grantGlory`: a doubler that quietly missed one source would be a bug
+ * nobody could see. Spending Goods still goes through `mutateResources` — only
+ * gains can be doubled.
+ */
+export function grantGoods(
+  state: GameState,
+  playerId: string,
+  amount: number,
+  source: GoodsSource,
+): GameState {
+  if (amount <= 0) return state;
+  const p = getPlayer(state, playerId);
+  const doubler = goodsDoublerOf(p.tribe);
+  let gain = amount;
+  let s = state;
+
+  if (p.goodsDoublerArmed && doubler?.sources.includes(source)) {
+    gain = amount * 2;
+    s = updatePlayer(s, playerId, (pl) => ({ ...pl, goodsDoublerArmed: false }));
+    s = addLog(
+      s,
+      `${p.tribe} — ${doubler.name}: ${amount} Goods becomes ${gain}.`,
+      'good',
+    );
+  }
+
+  return updatePlayer(s, playerId, (pl) => ({
+    ...pl,
+    resources: mutateResources(pl.resources, { goods: gain }),
+  }));
+}
+
 export function grantGlory(
   state: GameState,
   playerId: string,
@@ -467,7 +553,6 @@ export function applyRoundIncome(state: GameState): GameState {
       let r = mutateResources(pl.resources, {
         faith: (inc.faith ?? 0) + pl.incomeBonus.faith,
         warriors: (inc.warriors ?? 0) + pl.incomeBonus.warriors,
-        goods: (inc.goods ?? 0) + pl.incomeBonus.goods,
       });
       if (inc.loyalty && r.loyalty < pl.startingLoyalty) {
         const gain = Math.min(inc.loyalty, pl.startingLoyalty - r.loyalty);
@@ -475,6 +560,7 @@ export function applyRoundIncome(state: GameState): GameState {
       }
       return { ...pl, resources: r };
     });
+    s = grantGoods(s, p.id, (inc.goods ?? 0) + p.incomeBonus.goods, 'income');
     const bonusLine = formatIncomeBonus(p.incomeBonus);
     s = addLog(
       s,

@@ -77,13 +77,13 @@ export const TRIBES: TribeDef[] = [
     playstyle: 'Natural group leader. Excels at becoming Champion.',
     uniqueName: 'Rally the Tribes',
     uniqueCost: 'Spend 1 Faith',
-    uniqueEffect: 'Give +1 temporary Influence to one other player this round.',
+    uniqueEffect: 'Give +1 temporary Influence (Supply) to one other player on a track you name.',
     color: TRIBE_COLORS.Judah,
     bias: BIAS.Judah,
     upgrades: [
       'Othniel I – Lion’s Rally: When Champion, +1 extra Glory.',
       'Othniel II – Wholehearted Charge: Military tokens +1 once/round.',
-      'Othniel III – First in Line: Once/game move 1 token after reveal.',
+      'Othniel III – Claim the Field: Once/game your Supply on a track stands up as Banners.',
     ],
     income: {
       faith: 1,
@@ -101,7 +101,7 @@ export const TRIBES: TribeDef[] = [
     playstyle: 'Aggressive combat specialist.',
     uniqueName: 'Raid',
     uniqueCost: 'Spend 1 Warrior',
-    uniqueEffect: 'Gain 1 Goods + 1 Glory. If Military is Low, lose 1 Loyalty instead of Glory.',
+    uniqueEffect: 'Gain 1 Goods + 1 Glory. If Military is Low, lose 1 Loyalty instead of Glory — settled at Reveal.',
     color: TRIBE_COLORS.Benjamin,
     bias: BIAS.Benjamin,
     upgrades: [
@@ -120,12 +120,12 @@ export const TRIBES: TribeDef[] = [
     playstyle: 'Covenant guardian.',
     uniqueName: 'Intercede',
     uniqueCost: 'Spend 1 Faith',
-    uniqueEffect: 'Raise Covenant Meter by 1 or protect it from the next drop.',
+    uniqueEffect: 'Raise Covenant Meter by 1, or cancel the next drop outright.',
     color: TRIBE_COLORS.Levi,
     bias: BIAS.Levi,
     upgrades: [
       'Phinehas I – Covenant Zeal: Moral Champion raises Covenant +1.',
-      'Phinehas II – Intercession: Spend 1 Faith to prevent 1 Covenant loss.',
+      'Phinehas II – The Tithe: Never Provision Champion; if present there, the Champion pays you 1 Goods.',
       'Phinehas III – Turned Away Wrath: Once/game one track you held counts twice, cancelling a failure.',
     ],
     income: { faith: 2, label: '2 Faith', note: 'Priestly / Covenant' },
@@ -145,7 +145,7 @@ export const TRIBES: TribeDef[] = [
     upgrades: [
       'Deborah – Prophetic Voice: Moral Champion → +1 Faith.',
       'Abdon I – Many Sons: +1 Goods permanently when unlocked.',
-      'Abdon II – Landed Authority: Convert 2 Goods → 1 Faith/Warrior once/round.',
+      'Abdon II – Landed Authority: Convert 2 Goods → 1 Faith/Warrior once/round. Costs no action.',
     ],
     income: {
       goods: 1,
@@ -167,7 +167,7 @@ export const TRIBES: TribeDef[] = [
     color: TRIBE_COLORS.Manasseh,
     bias: BIAS.Manasseh,
     upgrades: [
-      'Gideon – Fleece Test: Peek one track modifier before placing.',
+      'Gideon – Spend Your Resilience: 1 Loyalty buys 2 Supply, once/round. Costs no placement.',
       'Jair – Thirty Towns: +1 Goods when Provision is High.',
       'Jephthah – Outcast’s Resolve: −1 Loyalty loss on failed investment.',
     ],
@@ -211,13 +211,13 @@ export const TRIBES: TribeDef[] = [
     playstyle: 'High-risk skirmisher.',
     uniqueName: 'Skirmish',
     uniqueCost: 'Spend 1 Warrior',
-    uniqueEffect: 'Gain 1 Glory. If Military is Low, also gain 1 Goods.',
+    uniqueEffect: 'Gain 1 Glory. If Military is Low, also gain 1 Goods — settled at Reveal.',
     color: TRIBE_COLORS.Simeon,
     bias: BIAS.Simeon,
     upgrades: [
       'Vengeful Strike: Military Champion → +1 Warrior.',
       'Furious Assault: Free Military token next round after failure.',
-      'Raid Leader: Convert Goods ↔ Warrior 1:1 once/round.',
+      'Raid Leader: Convert Goods ↔ Warrior 1:1 once/round. Costs no action.',
     ],
     income: { warriors: 2, label: '2 Warriors', note: 'Skirmisher' },
   },
@@ -236,7 +236,7 @@ export const TRIBES: TribeDef[] = [
     color: TRIBE_COLORS.Dan,
     bias: BIAS.Dan,
     upgrades: [
-      'Samson I – Nazirite Strength: If all your Banners are on one track, they count double.',
+      'Samson I – Nazirite Strength: Send no Supply and all your Banners count double.',
       'Samson II – Riddle & Cunning: Move 1 token after reveal, once/round.',
       'Samson III – Final Stand: Once/game spend 2 Warriors so one track you held counts twice.',
     ],
@@ -346,7 +346,7 @@ export const TRIBES: TribeDef[] = [
     color: TRIBE_COLORS.Zebulun,
     bias: BIAS.Zebulun,
     upgrades: [
-      'Sea Trader: Convert Faith ↔ Goods 1:1 once/round.',
+      'Sea Trader: Convert Faith ↔ Goods 1:1 once/round. Costs no action.',
       'Commerce Route: Provision Champion → +1 Glory.',
       'Profitable Venture: Once/game double Goods gained.',
     ],
@@ -392,14 +392,14 @@ export const CRISIS_CARDS: CrisisCardDef[] = [
     name: 'Iron Chariots of the North',
     flavor: 'Sisera had nine hundred iron chariots…',
     severity: 'Mild',
-    effect: 'Military Track tokens cost 1 extra Warrior to place this round (or −1 Influence if unpaid).',
+    effect: 'Military Track tokens cost 1 extra Warrior this round. An unpaid token contributes 0.',
   },
   {
     id: 4,
     name: 'The Cry of the Oppressed',
     flavor: 'The people of Israel cried out to the Lord…',
     severity: 'Mild-Positive',
-    effect: 'The first player to become Champion of any track this round gains +1 Faith.',
+    effect: 'The Military Champion gains +1 Faith (tracks resolve Military → Moral → Provision).',
   },
   {
     id: 5,

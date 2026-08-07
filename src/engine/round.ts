@@ -38,6 +38,7 @@ export function startRound(state: GameState): GameState {
       rescueArmed: false,
       alliance: null,
       peekedCrisis: null,
+      peekedTrack: null,
     })),
   };
 

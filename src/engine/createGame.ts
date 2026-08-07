@@ -4,7 +4,13 @@
 import { cloneTuning, type TuningConfig } from '../config/tuning';
 import { CRISIS_CARDS, TRIBE_BY_ID } from '../data/gameData';
 import { OPPRESSORS } from '../data/oppressors';
-import { addLog, mulberry32, resetIdCounters, shuffle } from './helpers';
+import {
+  addLog,
+  checkLeaderUnlocks,
+  mulberry32,
+  resetIdCounters,
+  shuffle,
+} from './helpers';
 import { startRound } from './round';
 import type { GameState, PlayerState, TribeId } from './types';
 
@@ -34,8 +40,6 @@ function makePlayer(
       glory: 0,
     },
     startingLoyalty: def.loyalty,
-    /** Soft cap for future placement limits; not enforced yet. */
-    influencePool: 10,
     championships: 0,
     leaderLevel: 0,
     oncePerGameUsed: {},
@@ -43,10 +47,8 @@ function makePlayer(
     standFirm: false,
     covenantProtect: false,
     holdTheLine: false,
-    /** Gad III — flag reserved; effect not wired. */
-    overcomerAvailable: true,
+    goodsDoublerArmed: false,
     freeMilitaryNextRound: 0,
-    /** Naphtali II — consumed in placement if set; never set yet. */
     pendingTempInfluenceGift: 0,
     alliance: null,
     incomeBonus: { faith: 0, warriors: 0, goods: 0 },
@@ -57,6 +59,7 @@ function makePlayer(
     judgeArmed: null,
     rescueArmed: false,
     peekedCrisis: null,
+    peekedTrack: null,
   };
 }
 
@@ -133,5 +136,12 @@ export function createGame(opts: SetupOptions): GameState {
     `Game begins — ${total} tribes. You are ${opts.humanTribe}.`,
     'info',
   );
+
+  // Settle the opening leader level before play starts. `checkLeaderUnlocks`
+  // otherwise only runs when Glory is granted, so a threshold of 0 left every
+  // tribe at level 0 until someone first scored — a level nobody could be at.
+  for (const p of state.players) {
+    state = checkLeaderUnlocks(state, p.id);
+  }
   return startRound(state);
 }

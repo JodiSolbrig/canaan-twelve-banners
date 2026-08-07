@@ -7,17 +7,25 @@
  * Prefer importing from this barrel rather than deep paths when adding UI/AI code.
  */
 import {
+  armGoodsDoubler,
+  applyLeaderTrade,
   applyPlaceInfluenceAction,
   applyStandardAction,
   applyUniqueAction,
+  spendResilience,
+  studyTrack,
 } from './actions';
 import { advanceActorOrPhase, applyPlacement } from './placement';
 import { applyJudgePower, JUDGE_POWER_WINDOW } from './judges';
 import {
   advanceToNextRound,
   applyAngelChoice,
+  applyClaimField,
   applyShiftToken,
+  applyWiseCounsel,
+  canClaimField,
   canRescue,
+  canWiseCounsel,
   canDeclareAlliance,
   canShiftToken,
   declareAlliance,
@@ -119,6 +127,54 @@ export function dispatch(state: GameState, action: PlayerAction): GameState {
     return s;
   }
 
+  if (action.type === 'leaderTrade') {
+    if (state.phase !== 'action') return state;
+    const actor = currentActor(state);
+    if (!actor) return state;
+    // A leader trade is free of the action, so the turn does not advance —
+    // the player still has their full action to take afterwards.
+    return applyLeaderTrade(state, actor.id, action).state;
+  }
+
+  if (action.type === 'armGoodsDoubler') {
+    if (state.phase !== 'action') return state;
+    const actor = currentActor(state);
+    if (!actor) return state;
+    // Free of the action, like a leader trade — the turn does not advance.
+    return armGoodsDoubler(state, actor.id).state;
+  }
+
+  if (action.type === 'studyTrack') {
+    if (state.phase !== 'placement') return state;
+    const actor = currentActor(state);
+    if (!actor) return state;
+    // Studied before you commit, and it does not spend the placement.
+    return studyTrack(state, actor.id, action.track).state;
+  }
+
+  if (action.type === 'spendResilience') {
+    if (state.phase !== 'placement') return state;
+    const actor = currentActor(state);
+    if (!actor) return state;
+    // Free of the placement — Manasseh still commits resources of its own.
+    return spendResilience(state, actor.id, action.track).state;
+  }
+
+  if (action.type === 'claimField') {
+    if (state.phase !== 'preResolve') return state;
+    const judah = state.players.find((p) => canClaimField(state, p.id));
+    if (!judah) return state;
+    return applyClaimField(state, judah.id, action.track).state;
+  }
+
+  if (action.type === 'wiseCounsel') {
+    if (state.phase !== 'preResolve') return state;
+    const issachar = state.players.find((p) => canWiseCounsel(state, p.id));
+    if (!issachar) return state;
+    return applyWiseCounsel(state, issachar.id, action.tokenId, action.toTrack)
+      .state;
+  }
+
   if (action.type === 'judgePower') {
     const actor = judgeActor(state);
     if (!actor) return state;
@@ -166,6 +222,21 @@ export function dispatch(state: GameState, action: PlayerAction): GameState {
 
 export { createGame } from './createGame';
 export { startRound } from './round';
+export {
+  availableLeaderTrade,
+  canArmGoodsDoubler,
+  canSpendResilience,
+  canStudyTrack,
+  LEADER_TRADES,
+} from './actions';
+export {
+  barredFromProvision,
+  canClaimField,
+  canWiseCounsel,
+  supplyOnTrack,
+} from './resolve';
+export { goodsDoublerOf } from './helpers';
+export type { LeaderTrade } from './actions';
 export {
   compareStandings,
   currentActor,

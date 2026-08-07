@@ -14,8 +14,27 @@ type Props = {
 
 export function TuningDrawer({ open, tuning, onClose, onApply }: Props) {
   const [draft, setDraft] = useState(() => cloneTuning(tuning));
+  /**
+   * The unlock field is edited as free text and only committed to the draft once
+   * it parses into three numbers.
+   *
+   * Binding the input straight to `leaderUnlockGlory.join(',')` made it
+   * uneditable: every keystroke on the way from "3,6,9" to "1,2,3" is an
+   * intermediate value with the wrong number of parts, so each one was rejected
+   * and the input snapped back with the caret adrift. Typing "1,2,3" over it
+   * actually produced "3,6,923".
+   */
+  const [unlockText, setUnlockText] = useState(() =>
+    tuning.leaderUnlockGlory.join(','),
+  );
 
   if (!open) return null;
+
+  const unlockValid =
+    unlockText.split(',').length === 3 &&
+    unlockText
+      .split(',')
+      .every((x) => x.trim() !== '' && Number.isFinite(Number(x.trim())));
 
   const set = <K extends keyof TuningConfig>(key: K, value: TuningConfig[K]) => {
     setDraft((d) => ({ ...d, [key]: value }));
@@ -115,14 +134,23 @@ export function TuningDrawer({ open, tuning, onClose, onApply }: Props) {
           Leader unlock Glory (comma: 3,6,9)
           <input
             type="text"
-            value={draft.leaderUnlockGlory.join(',')}
+            value={unlockText}
+            aria-invalid={!unlockValid}
             onChange={(e) => {
-              const parts = e.target.value.split(',').map((x) => Number(x.trim()));
-              if (parts.length === 3 && parts.every((n) => !Number.isNaN(n))) {
+              setUnlockText(e.target.value);
+              const parts = e.target.value
+                .split(',')
+                .map((x) => Number(x.trim()));
+              if (parts.length === 3 && parts.every((n) => Number.isFinite(n))) {
                 set('leaderUnlockGlory', parts as [number, number, number]);
               }
             }}
           />
+          {!unlockValid && (
+            <span className="field-note">
+              Needs three numbers, e.g. 3,6,9 — keeping the last valid set.
+            </span>
+          )}
         </label>
         <label>
           Free placement phase

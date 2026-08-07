@@ -69,7 +69,6 @@ export type PlayerState = {
   isHuman: boolean;
   resources: Resources;
   startingLoyalty: number;
-  influencePool: number;
   championships: number;
   leaderLevel: number; // 0–3 unlocked
   oncePerGameUsed: Record<string, boolean>;
@@ -80,8 +79,13 @@ export type PlayerState = {
   covenantProtect: boolean;
   /** Reduce covenant penalty on a failed track by 1 (Manasseh) */
   holdTheLine: boolean;
-  /** Gad Overcomer pending */
-  overcomerAvailable: boolean;
+  /**
+   * Asher III / Zebulun III — a once-per-game doubler, armed and waiting for the
+   * next gain of Goods it applies to. Arming spends the right; it then sits
+   * until it fires, so it can never be wasted, and the decision is *when* to
+   * commit rather than whether.
+   */
+  goodsDoublerArmed: boolean;
   /** Free military token next round (Simeon) */
   freeMilitaryNextRound: number;
   /**
@@ -113,7 +117,6 @@ export type PlayerState = {
    * A judge does not outlive their generation — "and whenever the judge died,
    * they turned back and were more corrupt than their fathers" (Judges 2:19).
    * The power lapses at the end of `judgePowerExpires`, spent or not.
-   * The powers themselves are not wired yet.
    */
   judgePower: OppressorId | null;
   /** Round after which an unspent `judgePower` lapses. */
@@ -127,6 +130,14 @@ export type PlayerState = {
   rescueArmed: boolean;
   /** Peeked crisis cards for UI */
   peekedCrisis: CrisisCardDef[] | null;
+  /**
+   * Issachar I — Understanding of Times. What one track looked like at the
+   * moment it was studied, during placement and before committing.
+   *
+   * A snapshot, not a live reading: tribes placing after you will change it, and
+   * the card promises what you saw, not what will be true at the Reveal.
+   */
+  peekedTrack: { track: TrackId; total: number; threshold: number } | null;
 };
 
 export type OppressorId =
@@ -364,4 +375,23 @@ export type PlayerAction =
   | { type: 'covenantRescue' }
   /** Naphtali III — name two tracks whose Influence each counts +1. */
   | { type: 'northernAlliance'; tracks: [TrackId, TrackId] }
+  /**
+   * A leader's standing trade (Zebulun I, Simeon III, Ephraim III) — once a
+   * round, on your turn, without spending the turn.
+   */
+  | {
+      type: 'leaderTrade';
+      from: SpendableResource;
+      to: SpendableResource;
+    }
+  /** Asher III / Zebulun III — arm the once-per-game Goods doubler. */
+  | { type: 'armGoodsDoubler' }
+  /** Issachar I — study one track's standing before you commit. */
+  | { type: 'studyTrack'; track: TrackId }
+  /** Manasseh I — spend 1 Loyalty for 2 Supply on a track. */
+  | { type: 'spendResilience'; track: TrackId }
+  /** Judah III — stand your Supply on a track up as Banners. */
+  | { type: 'claimField'; track: TrackId }
+  /** Issachar III — force another player's token onto a different track. */
+  | { type: 'wiseCounsel'; tokenId: string; toTrack: TrackId }
   | { type: 'advance' }; // for auto phases / human done

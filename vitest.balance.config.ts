@@ -9,5 +9,8 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['scripts/balance.test.ts'],
+    // A sample large enough to separate a two-point tuning change runs well past
+    // vitest's 5s default; BALANCE_GAMES=2400 takes about five.
+    testTimeout: 600_000,
   },
 });

@@ -1,7 +1,15 @@
 import { useEffect, useState } from 'react';
 import { formatTribeIncome, TRACK_LABELS, TRIBE_BY_ID } from '../data/gameData';
 import { OPPRESSOR_BY_ID } from '../data/oppressors';
-import { currentActor, getPlayer } from '../engine';
+import {
+  availableLeaderTrade,
+  canArmGoodsDoubler,
+  canSpendResilience,
+  canStudyTrack,
+  currentActor,
+  getPlayer,
+  goodsDoublerOf,
+} from '../engine';
 import { JUDGE_POWER_NEEDS_TRACK, JUDGE_POWER_WINDOW } from '../engine/judges';
 import type { GameState, PlacementPlan, PlayerAction, TrackId } from '../engine/types';
 import { HELP, RESOURCE_HELP } from './helpText';
@@ -54,6 +62,22 @@ export function HumanControls({ state, onAction, flashLeaderLevel = null }: Prop
   const [judgeTarget, setJudgeTarget] = useState('');
   const [placingMore, setPlacingMore] = useState(false);
   const freePlacement = state.tuningSnapshot.freePlacementPhase;
+  // Only offered on our own turn in the action phase, which is the window the
+  // engine accepts it in.
+  const leaderTrade =
+    isOurTurn && state.phase === 'action'
+      ? availableLeaderTrade(state, human.id)
+      : null;
+  const doubler =
+    isOurTurn && state.phase === 'action' && canArmGoodsDoubler(state, human.id)
+      ? goodsDoublerOf(human.tribe)
+      : null;
+  const canStudy =
+    isOurTurn && state.phase === 'placement' && canStudyTrack(state, human.id);
+  const canEndure =
+    isOurTurn &&
+    state.phase === 'placement' &&
+    canSpendResilience(state, human.id);
 
   useEffect(() => {
     if (state.phase !== 'action') setPlacingMore(false);
@@ -213,9 +237,66 @@ export function HumanControls({ state, onAction, flashLeaderLevel = null }: Prop
         </div>
       )}
 
+      {human.peekedTrack && (
+        <div className="peek-box">
+          Understanding of Times: {TRACK_LABELS[human.peekedTrack.track]} stood at{' '}
+          <strong>
+            {human.peekedTrack.total} of {human.peekedTrack.threshold}
+          </strong>{' '}
+          when you looked
+          {human.peekedTrack.total >= human.peekedTrack.threshold
+            ? ' — holding.'
+            : ` — ${human.peekedTrack.threshold - human.peekedTrack.total} short.`}
+        </div>
+      )}
+
       {isOurTurn && state.phase === 'placement' && (
         <div className="placement-controls">
           <div className="help-callout">{HELP.placementHint}</div>
+
+          {canEndure && (
+            <div className="field-row" style={{ marginBottom: '0.5rem' }}>
+              <Tip
+                wide
+                className="tip-below"
+                text="Spend Your Resilience — 1 Loyalty buys 2 Supply on any track, once a generation, without spending your placement. Loyalty is also the first tie-breaker at the end of the game."
+              >
+                <label style={{ cursor: 'help' }}>Endure (1 Loyalty)</label>
+              </Tip>
+              {TRACKS.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  className="btn"
+                  onClick={() => onAction({ type: 'spendResilience', track: t })}
+                >
+                  {TRACK_LABELS[t]}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {canStudy && (
+            <div className="field-row" style={{ marginBottom: '0.5rem' }}>
+              <Tip
+                wide
+                className="tip-below"
+                text="Understanding of Times — once a generation, look at how one track actually stands before you commit. What you see is a snapshot: tribes placing after you will change it."
+              >
+                <label style={{ cursor: 'help' }}>Study a track</label>
+              </Tip>
+              {TRACKS.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  className="btn"
+                  onClick={() => onAction({ type: 'studyTrack', track: t })}
+                >
+                  {TRACK_LABELS[t]}
+                </button>
+              ))}
+            </div>
+          )}
           <PlacementGrid
             plan={plan}
             onChange={setPlan}
@@ -589,6 +670,60 @@ export function HumanControls({ state, onAction, flashLeaderLevel = null }: Prop
                 </div>
               </div>
             )}
+
+          {leaderTrade && (
+            <div className="judge-box" style={{ marginTop: '0.5rem' }}>
+              <div className="judge-title">
+                {leaderTrade.name} — free of your action
+              </div>
+              <p className="judge-text">
+                Once each round, and it does not cost you your turn.
+              </p>
+              <div className="field-row">
+                {leaderTrade.trades.map((t) => {
+                  const affordable = human.resources[t.from] >= leaderTrade.rate;
+                  return (
+                    <button
+                      key={`${t.from}-${t.to}`}
+                      type="button"
+                      className="btn btn-primary"
+                      disabled={!affordable}
+                      onClick={() =>
+                        onAction({ type: 'leaderTrade', from: t.from, to: t.to })
+                      }
+                    >
+                      {leaderTrade.rate} {t.from} → 1 {t.to}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {doubler && (
+            <div className="judge-box" style={{ marginTop: '0.5rem' }}>
+              <div className="judge-title">{doubler.name} — once per game</div>
+              <p className="judge-text">
+                Arm it and your next gain of Goods is doubled. It waits rather
+                than expiring, so it cannot be wasted — the only question is
+                whether a bigger harvest is coming.
+              </p>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => onAction({ type: 'armGoodsDoubler' })}
+              >
+                Make ready
+              </button>
+            </div>
+          )}
+
+          {human.goodsDoublerArmed && (
+            <div className="peek-box">
+              {goodsDoublerOf(human.tribe)?.name} is armed — your next gain of
+              Goods is doubled.
+            </div>
+          )}
 
           {human.tribe === 'Judah' && (
             <div className="field-row" style={{ marginTop: '0.5rem' }}>

@@ -8,19 +8,27 @@
  * Read the numbers as *directional*. The bot is a simple heuristic, so tribe win
  * rates say as much about how well the bot plays a tribe as about the tribe.
  * Changing bot strategy moves these figures more than most rule changes do.
+ *
+ * The run is **reproducible**: identical code and `BALANCE_GAMES` give identical
+ * output, because the bot's coin flips draw from the game's seed rather than
+ * `Math.random()`. Before that they did not, and five identical 1200-game runs
+ * spread 1-2 points of win rate per tribe — wide enough to swallow most tuning
+ * changes whole. A different `BALANCE_GAMES` is a different sample of seeds, so
+ * check a change at two sizes before believing it.
  */
 import { it } from 'vitest';
 import { chooseBotAction } from '../src/ai/bots';
+import { stepBot } from '../src/ai/botStep';
 import { DEFAULT_TUNING, type TuningConfig } from '../src/config/tuning';
 import { createGame } from '../src/engine/createGame';
-import { currentActor, isBannerToken } from '../src/engine/helpers';
+import { isBannerToken } from '../src/engine/helpers';
 import { dispatch } from '../src/engine/index';
 import type { GameState, TrackId, TribeId } from '../src/engine/types';
 
 const TRACKS: TrackId[] = ['military', 'moral', 'provision'];
 const GAMES = Number(process.env.BALANCE_GAMES ?? 300);
 
-type TribeRow = { games: number; wins: number; glory: number; champs: number };
+type TribeRow = { games: number; wins: number; glory: number; champs: number; loyalty: number; res: number; topGlory: number };
 
 /** How far players actually get up the three-step leader progression. */
 type LeaderReach = [number, number, number, number]; // seats reaching level 0/I/II/III
@@ -74,7 +82,7 @@ function blank(): Stats {
 }
 
 function tribeRow(stats: Stats, tribe: TribeId): TribeRow {
-  stats.perTribe[tribe] ??= { games: 0, wins: 0, glory: 0, champs: 0 };
+  stats.perTribe[tribe] ??= { games: 0, wins: 0, glory: 0, champs: 0, loyalty: 0, res: 0, topGlory: 0 };
   return stats.perTribe[tribe]!;
 }
 
@@ -166,15 +174,7 @@ function playGame(seed: number, players: number, stats: Stats): void {
       continue;
     }
 
-    const action = chooseBotAction(s);
-    const before = s;
-    s = action ? dispatch(s, action) : s;
-    if (s.phase === before.phase && currentActor(s)?.id === currentActor(before)?.id) {
-      s =
-        before.phase === 'placement'
-          ? dispatch(before, { type: 'confirmPlacement', plan: {} })
-          : dispatch(before, { type: 'standard', action: 'pass' });
-    }
+    s = stepBot(s);
   }
 
   stats.games += 1;
@@ -182,11 +182,15 @@ function playGame(seed: number, players: number, stats: Stats): void {
   stats.gameRounds.push(s.round);
   if (s.brokenClock) stats.brokenGames += 1;
   if (s.oppression) stats.endedOppressed += 1;
+  const topG = Math.max(...s.players.map((x) => x.resources.glory));
   for (const p of s.players) {
     const row = tribeRow(stats, p.tribe);
     row.games += 1;
     row.glory += p.resources.glory;
     row.champs += p.championships;
+    row.loyalty += p.resources.loyalty;
+    row.res += p.resources.faith + p.resources.warriors + p.resources.goods;
+    if (p.resources.glory === topG) row.topGlory += 1;
     if (s.winners?.includes(p.id)) row.wins += 1;
     stats.seats += 1;
     stats.judgeships += p.judgeships;
@@ -245,12 +249,17 @@ it(`balance sample over ${GAMES} games`, () => {
     `  judgeships ${(stats.judgeships / stats.games).toFixed(2)}/game   avg rounds played ${(stats.gameRounds.reduce((a, b) => a + b, 0) / stats.games).toFixed(1)}`,
   );
   out.push('');
-  out.push('tribe          games    win%   avgGlory  avgChamps');
+  // topG% is how often the tribe reached the highest Glory at the table; conv%
+  // is how often it then survived the tie-break. Splitting the win rate this way
+  // separates "never got into contention" from "kept losing the decider", which
+  // the win rate alone conflates — Dan and Ephraim look alike on wins and are
+  // failing at opposite ends.
+  out.push('tribe          games    win%   avgGlory  avgChamps   topG%  conv%   Loy   res');
   for (const [tribe, r] of Object.entries(stats.perTribe).sort(
     (a, b) => b[1].wins / b[1].games - a[1].wins / a[1].games,
   )) {
     out.push(
-      `  ${tribe.padEnd(11)} ${String(r.games).padStart(5)}  ${pct(r.wins, r.games).padStart(6)}  ${(r.glory / r.games).toFixed(2).padStart(8)}  ${(r.champs / r.games).toFixed(2).padStart(9)}`,
+      `  ${tribe.padEnd(11)} ${String(r.games).padStart(5)}  ${pct(r.wins, r.games).padStart(6)}  ${(r.glory / r.games).toFixed(2).padStart(8)}  ${(r.champs / r.games).toFixed(2).padStart(9)}  ${pct(r.topGlory, r.games).padStart(6)} ${pct(r.wins, r.topGlory).padStart(6)}  ${(r.loyalty / r.games).toFixed(1).padStart(4)}  ${(r.res / r.games).toFixed(1).padStart(4)}`,
     );
   }
 

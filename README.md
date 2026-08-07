@@ -17,7 +17,13 @@ Open the URL Vite prints (usually `http://localhost:5173`).
 npm test        # rules-engine + design-data test suite
 npm run lint    # oxlint
 npm run build   # tsc -b && vite build
+npm run balance # 300 all-bot games; prints how the rules are behaving
 ```
+
+`npm run balance` is the tuning instrument, and it is only as good as the bot:
+anything the bot never plays, it cannot measure. Read `scripts/balance.test.ts`
+for the `BALANCE_*` environment overrides that sweep a dial without editing the
+shipped defaults.
 
 ## What you can do
 
@@ -52,33 +58,38 @@ covers **2–6 players** and does not implement Epic 12 (12 boards, special seat
 A game is **10 generations** at every player count. A round is a generation, not
 a season — see *Game Length* in `markdown/04-setup-scoring-and-scaling.md`.
 
+There is one seat at the table, so table-wide choices fall to you: **The Angel of
+the Lord** (Crisis 12) is resolved by the human player on everyone's behalf.
+**All 39 leader upgrades are wired**, so every one of the thirteen tribes plays
+as designed.
+
 ## Rules deviations
 
-Where the prototype knowingly differs from the design package. Everything not
-listed here is implemented as written.
+**There are none.** `markdown/` and `csv/` describe the game this engine plays.
 
-| Rule | Design source | Prototype behaviour | Why |
-|------|---------------|---------------------|-----|
-| **The Cycle of the Judges** | `02` §The Cycle of the Judges — new rule | Judgment summons an escalating Oppressor that replaces the Crisis; Crying Out with Faith breaks it, restores the Covenant to 8, and raises a Judge from the lowest-Glory player; a round of rest follows. | The Covenant only ever fell, making it a doom clock with no decision attached. Judges is a *cycle* — sin, oppression, crying out, deliverance, rest — and only the downswing was modelled. Off via `tuning.oppressionEnabled`. |
-| **Banners & Supply** | `03` §Banners & Supply — new rule, added after playtest review | The resource you pay with decides whether a token can claim Champion. Affinity = Banner (counts for Champion, exposed to the failure penalty); anything else = Supply (threshold only, no risk, shares the spoil). | The original rule made 1 Faith = 1 Warrior = 1 Goods, collapsing thirteen asymmetric tribes into "how many tokens can I afford". Now starting spreads and income define what each tribe can actually win. |
-| Gifted Influence | `01` — Judah's Rally, Naphtali's Swift Response | Gifted tokens are always **Supply** | Otherwise Rally hands out Championships. |
-| Simeon's free Military token | `01` — Furious Assault | **Banner**, placed automatically on top of the plan | It musters real warriors, and it is the payoff for having been beaten. |
-| Leader flat Influence bonuses | `01` — Othniel II, Ehud II, Samson I, Enduring Defense | Add **Banner** strength | All four are Military bonuses belonging to Military tribes; the bonus inherits the nature of the tokens it modifies. |
-| Round structure | `03` §Standard Actions — Place Influence is one of six actions, one action per round | Free placement phase **and** a full action each round (`tuning.freePlacementPhase`) | Keeps tracks contested at low player counts. Set the tuning flag to **No** to play the printed one-action round. |
-| Raid / Skirmish "Low zone" | `01` — Benjamin, Simeon | The Warrior is spent on your turn; the Low-zone outcome settles after Reveal | Checking the zone mid-round would read opponents' face-down tokens and make the result depend on seat order. |
-| Iron Chariots unpaid token | `02` card 3 — "count as –1 Influence" | The token contributes **0** | Read as "reduce this token's Influence by 1". A true −1 would make an unpaid token worse than not placing at all. |
-| Ephraim, Abdon I | `01` — "+1 Goods permanently to your starting total" | +1 Goods to **per-round income**, permanently | The only reading of "permanently" that does anything, given round income exists. |
-| Benjamin, Ehud III | `01` — "a free Recruit action" | The *action* is free; its cost is still paid (1 Goods → 2 Warriors, else the Faith mode) | Granting 2 Warriors outright was strictly better than the action it names. |
-| Reuben, Firstborn Advance | `01` — "place 1 token after seeing one other player's placement" | Reuben places **last** in the placement phase | Placement is face down, so "seeing" one placement could only mean seeing the *weight* of it. Placing last delivers exactly that against the whole table, without exposing anyone's composition. |
-| Naphtali, Swift Response | `01` — "give 1 temporary Influence to another player next round" | Naphtali names the recipient **and the track** at its next placement | The card leaves both unstated, and a gift that lands on a track of nobody's choosing is a gift to no one. |
-| Naphtali, Northern Alliance | `01` — "two of your tokens on different tracks both count as +1" | Name two tracks after the reveal; your Influence on each counts 1 more, Banner included where you already hold one | Tokens are interchangeable, so naming tracks is the same rule stated in terms the engine can apply. It cannot conjure Influence onto a track you never turned out for. |
-| Reuben, Bold Claim | `01` — "invested the second-most" | Measured in **Banner** strength, and it fires automatically the first generation it can | Championship is decided on Banners, so second place is too. The bonus is free and carries no decision, so prompting for it would be noise. |
-| Judah, Rally the Tribes | `01` — no track named | The giver picks the track; defaults to the recipient's affinity | The rules leave the track unspecified. |
-| Levi, Intercede (protect) | `01` — "protect it from the next drop" | Cancels the drop entirely, including a Judgment drop of 2 | "Protect from" reads as prevention, not reduction. |
-| Judgment discard | `02` — "the player with the lowest Loyalty" | **Every** player tied for lowest discards | Otherwise who pays depends on internal player order. |
-| Day of Midian zones | `02` card 13 | Doubles the Military **success** threshold only; Low/High zones still measure against the base | Stops a one-round success modifier from silently retuning Raid, Skirmish, Gad's Enduring Defense, Jair, and Asher. |
-| Cry of the Oppressed | `02` card 4 — "the first player to become Champion" | Tracks resolve Military → Moral → Provision, so this is the Military Champion | Simultaneous resolution has no natural "first". |
-| Angel of the Lord | `02` card 12 | The human player chooses for the table | Single-seat prototype. |
+That is a deliberate policy, not a happy accident. The engine is the authority on
+what the game *is*: when the two disagree, the design package gets corrected and
+the reasoning goes with it, rather than a deviation being logged and the docs
+left wrong. Everything that was once listed here — gifted Influence counting as
+Supply, Iron Chariots contributing 0, Levi's Intercede cancelling a drop outright,
+the reading of Abdon's "permanently", and a dozen more — now lives in the design
+files as the rule, with the argument attached.
+
+The one thing that could put a row back is a *new* rule invented at the keyboard
+and not yet written down. Two of the biggest already went the other way: **The
+Cycle of the Judges** (`02`) and **Banners & Supply** (`03`) were both born in the
+prototype and folded into the design package as full sections.
+
+Where to look for the reasoning behind a rule that reads oddly:
+
+| Question | Answer lives in |
+|---|---|
+| Why is the threshold player count +1? | `03` §Success threshold |
+| What counts as a Banner when nobody paid a resource? | `03` §Tokens nobody paid a resource for |
+| Why do Raid and Skirmish wait for the Reveal? | `01`, after the tribe table |
+| What applies itself, and what must I spend? | `01`, after the leader progressions |
+| Why do the leader trades cost no action? | `01` §Leader trades |
+| Why is the Cry priced where it is? | `02` §Crying Out, and `src/config/tuning.ts` |
 
 ## Prototype notes
 
@@ -89,8 +100,15 @@ listed here is implemented as written.
   the Level III covenant rescue, and every Judge power. Only genuinely passive
   bonuses with no decision attached still apply themselves — Othniel II, Ehud II,
   Nazirite Strength, and Gad's Enduring Defense.
-- Some leader upgrades are **Planned** (shown in UI, not fully wired). Active ones
-  are labeled in the Leader panel — see `src/data/leaderImpl.ts`.
+- **All 39 leader upgrades** are wired. Three were rewritten rather than
+  implemented — Judah III, Manasseh I and Levi II each duplicated something the
+  game already did or did nothing at all; `src/engine/README.md` records what
+  changed and why. `src/data/leaderImpl.ts` is the authority.
+- Several abilities are **free of your turn** — the leader trades (Zebulun's Sea
+  Trader, Simeon's Raid Leader, Ephraim's Landed Authority), arming a Goods
+  doubler (Asher III, Zebulun III), Issachar's study and Manasseh's Resilience
+  during placement, and a Judge one-shot that fires on your turn. Take them
+  *and* your full action.
 - Defaults for Champion rewards, track thresholds, and Low/High zones live in
   `src/config/tuning.ts`; the design package documents the same numbers in
   `markdown/03-standard-actions-and-player-aid.md`.

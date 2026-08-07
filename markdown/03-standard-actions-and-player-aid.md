@@ -2,7 +2,16 @@
 
 ## Standard Tribe Actions
 
-Available to every tribe every round. You may perform **one** standard action **or** your Unique Action, unless a card/upgrade says otherwise.
+Each generation you get a **free Influence placement** and then **one** standard
+action **or** your Unique Action, unless a card or upgrade says otherwise. Place
+Influence also appears in the list below, so a tribe that wants to commit twice
+can spend its action on a second placement.
+
+> **The printed one-action round.** The alternative is to drop the free placement
+> and make Place Influence purely one of the six choices. It is a tighter, more
+> agonising game, and at 2–4 players it leaves the tracks badly under-contested —
+> which is why the free placement is the default here. `tuning.freePlacementPhase`
+> switches between them.
 
 1. **Place Influence**  
    Spend any combination of resources to place Influence tokens on the tracks.  
@@ -40,6 +49,9 @@ Available to every tribe every round. You may perform **one** standard action **
 **Notes**
 - Unique Actions (printed on your Tribe Board) replace the standard action for that round unless the card specifically says otherwise.
 - Some Leader upgrades and Crisis cards modify these actions.
+- Two things are **free of your action**: a Judge one-shot whose window is *on
+  your turn*, and a leader trade (Sea Trader, Raid Leader, Landed Authority).
+  Take either and you still have your full action.
 - You may always pass (do nothing).
 
 ---
@@ -87,6 +99,31 @@ wins the game — but Banners are exposed. Supply is safe, profitable, and helps
 Israel, and it will never win you anything. Every placement is a choice between
 the good of the tribes and the glory of your own house.
 
+### Tokens nobody paid a resource for
+
+A few abilities put a token on a track without a resource being spent on it, so
+there is no affinity to read. What such a token counts as follows from **what it
+is**, not from whose board it came off:
+
+| Token | Counts as | Why |
+|-------|-----------|-----|
+| **Gifted** — Judah's Rally, Barak's Swift Response | **Supply** | You are sending help to another tribe, not planting their banner for them. Were it otherwise, Rally would hand out Championships. |
+| **Summoned** — Deborah & Barak's judge power | **Supply** | She rallies the tribes; she does not plant their banners. |
+| **Found** — Reuben's Pathfinder | **Supply** | A path opened is not a muster. |
+| **Mustered** — Simeon's Furious Assault | **Banner** | It turns out actual warriors, and it is the payoff for having been beaten on that very track. It is placed for you, on top of whatever you planned. |
+| **Endured** — Manasseh's Spend Your Resilience | **Supply** | Loyalty bought it, not Warriors, Faith or Goods. Nothing was mustered; the tribe simply held on. Were it a Banner, Manasseh could buy Championships with Loyalty and step outside the resource economy entirely. |
+
+**One ability changes what a token already is.** Judah's Claim the Field (Othniel
+III) stands your Supply on a named track up as Banners after the reveal — the
+only rule in the game that rewrites a token's nature rather than its position.
+It cuts both ways: what it promotes now counts toward Champion *and* now takes
+the Loyalty penalty if the track fails.
+
+**Flat Influence bonuses from a leader upgrade add Banner strength** — Othniel II
+(Wholehearted Charge), Ehud II (Hidden Dagger), Samson I (Nazirite Strength) and
+Gad's Enduring Defense. All four are Military bonuses belonging to Military
+tribes: a bonus inherits the nature of the tokens it modifies.
+
 ---
 
 ## Track Thresholds & Champion Rewards
@@ -96,21 +133,38 @@ A track **succeeds** when the total Influence on it is at least the threshold:
 
 | Players | Threshold |
 |---------|-----------|
-| 2–3     | player count **+1** |
-| 4–11    | player count |
+| 2–3     | player count **+2** |
+| 4–11    | player count **+1** |
 
-Crisis cards may raise this for a single round (Midianite Swarms, The Ammonite
-Claim, The Day of Midian).
+The **+1 at every table size** is what keeps the Covenant falling. Set against a
+table that turns out its full strength — Banners on the tracks it wants and
+Supply on the ones it cannot lose — a bare player-count threshold is held about
+nine times in ten, the meter drifts to the ceiling, and the Cycle of the Judges
+never fires. Measured over 300 games, +0 gave 90/82/81 track success and 0.48
+oppressions a game; +1 gives 79/67/64 and 0.93. The dial is
+`tuning.thresholdBonus` if you want to feel the difference.
+
+Crisis cards may raise it further for a single round (Midianite Swarms, The
+Ammonite Claim, The Day of Midian), and an Oppressor raises it on the track it
+presses by its current severity.
 
 ### Zones
-Measured against the **unmodified** threshold, so a one-round success modifier
-never changes what counts as a Low or High track:
 
 | Total Influence | Zone |
 |-----------------|------|
 | below threshold | **Low** |
 | threshold to threshold+1 | **Normal** |
 | threshold+2 or more | **High** |
+
+Zones are measured against **the threshold the track actually faced this round**,
+including any Crisis or Oppressor increase — a track that came up short against a
+harder bar was genuinely Low.
+
+The one exception is **The Day of Midian**, which doubles what Military must beat.
+Doubling is a different order of change from +1, and letting it move the bands as
+well would silently retune every ability that reads a zone — Raid, Skirmish,
+Enduring Defense, Jair, Blessed Abundance — for that round. It raises the bar
+without moving the bands.
 
 ### Champion rewards
 The player with the most **Banner** Influence on a track is its Champion (ties
@@ -154,7 +208,7 @@ Faith • Warriors • Goods • Loyalty • Glory • Influence Tokens
 5. Move the Covenant, settle the cycle, score Champion rewards and spoil  
 6. Clean up → next generation
 
-**Standard Actions (choose one)**  
+**Standard Actions (place Influence free, then choose one)**  
 • **Place Influence** — 1 Faith/Warrior/Goods = 1 token  
 • **Recruit** — 1 Goods → 2 Warriors  *or*  commit 1 Faith → +1 Warrior  
 • **Gather** — 1 Warrior or 1 Faith → 2 Goods  
@@ -165,7 +219,7 @@ Faith • Warriors • Goods • Loyalty • Glory • Influence Tokens
 
 **Tracks & affinity**  
 Military ← **Warriors** • Moral ← **Faith** • Provision ← **Goods**  
-Threshold = player count (+1 at 2–3 players)
+Threshold = player count **+1** (**+2** at 2–3 players)
 
 **Banner** (affinity resource) — counts for threshold **and** Champion; loses 1 Loyalty on failure  
 **Supply** (any other resource) — counts for threshold only; risks nothing  
@@ -181,10 +235,11 @@ Every **Supply** contributor: +1 matching resource (spoil).
 (1 deeper per failure while in Judgment)
 
 **Covenant Meter** (starts at 8)  
-8–10: Stable  
-5–7: Warning (lose 1 Loyalty unless ≥1 track succeeded)  
-2–4: Judgment (failures drop meter by 2; lowest Loyalty discards 1 resource)  
-0–1: Broken (major Loyalty loss + final-round clock)
+8–10: Covenant Strength  
+4–7: Warning (lose 1 Loyalty unless ≥1 track held)  
+1–3: Judgment (failures drop meter by 2; everyone tied for lowest Loyalty discards 1 resource)  
+0: Broken (lose 2 Loyalty each + final-generation clock)  
+**At 5 or below**, Israel is sold into the hand of an Oppressor.
 
 **Winning**  
 Highest Glory at game end. Loyalty is the primary tie-breaker.
