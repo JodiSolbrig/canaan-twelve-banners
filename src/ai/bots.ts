@@ -414,18 +414,17 @@ function planPlacement(state: GameState, playerId: string): PlacementPlan {
 
   const primary = def.bias;
   const primaryRes = TRACK_AFFINITY_RESOURCE[primary];
-  // Dan used to be special-cased here: Nazirite Strength doubles its Banners
-  // only while they all stand on one track, so the bot put Dan all-in on
-  // Military and never let it contest a second. Measured over 2400 games that
-  // was costing Dan about five points of win rate — concentrating scored 10.6%
-  // against 15.6% for playing like everyone else, and the table's spread closed
-  // from 20.9 to 16.4 once the special case went. Splitting the two halves of it
-  // showed the damage is the concentration, not the all-in: keeping the single
-  // track but spending only the normal budget recovered barely a point.
+  // Dan used to be special-cased here: the old Nazirite Strength doubled its
+  // Banners only while they all stood on one track, so the bot put Dan all-in on
+  // Military and never let it contest a second. Over 2400 games that cost Dan
+  // about five points of win rate, and the card has since been rewritten to ask
+  // for restraint in Supply rather than concentration in Banners — so there is
+  // nothing left to special-case, and Dan plans like any other tribe.
   //
-  // So Dan now plans like any other tribe, and Nazirite Strength will rarely
-  // fire. That is a finding about the card, not a gap in the bot: as written it
-  // asks for a line that loses. See the note in `01-tribes-and-leaders.md`.
+  // The bot deliberately does *not* steer for the new condition either. Letting
+  // it keep sending Supply and take the doubling only on the generations it
+  // could not afford any measured better for the table as a whole (spread 14.6
+  // against 16.7) than making it hoard for the trigger.
   if (banners > 0) {
     banners -= add(primary, primaryRes, Math.max(1, Math.ceil(banners * 0.7)));
 

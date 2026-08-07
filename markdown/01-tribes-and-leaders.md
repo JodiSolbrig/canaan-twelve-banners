@@ -65,18 +65,22 @@ face-down tokens, and it would make your result depend on where you sat.
 3. **Raid Leader**: Once per round, convert 1 Goods into 1 Warrior or vice versa at no loss. **This costs no action** — trade and still take your turn.
 
 ### Dan — Samson
-1. **Samson I – Nazirite Strength**: If all your Banners are on a single track, they count double.
+1. **Samson I – Nazirite Strength**: If you placed no Supply this generation, every Banner you placed counts double.
 
-> **Under review — the condition, not the effect.** Measured over 2400 games, the
-> doubling itself is Dan's strongest upgrade: switching it off costs 3.3 points of
-> win rate when Dan plays normally and 4.3 when it plays for the condition. The
-> problem is what the condition asks for. *Guaranteeing* the trigger — never
-> bannering a second track — costs 3.9 points (14.7% down to 10.8%) and buys only
-> 1 point of extra Nazirite value. Left alone the condition still holds in 30.7%
-> of Dan's generations anyway, because Dan can rarely afford a second Banner
-> track: it averages 1.76 tracks bannered. So the card pays best to a player who
-> ignores its instruction and lets it fire by accident, which is the wrong way
-> round. It wants a condition Dan can pursue without wrecking its placement.  
+> **Why the condition is "no Supply".** Samson is the least communal judge in the
+> book: he never fought at the head of an army, never called out the tribes, and
+> never took help. Supply is the one placement in this game that means helping
+> somebody else hold a track, so Dan buys its doubling by refusing to send any.
+> It is a real trade every generation — Supply is safe profit and a share of the
+> spoil — and unlike the old wording it can be played toward from any number of
+> tracks.
+>
+> The card used to read *"if all your Banners are on a single track"*. Measured
+> over 2400 games that was a trap: the doubling itself was worth 3–4 points of
+> win rate, but steering placement to guarantee it cost 4, so the card paid best
+> to a player who ignored its own instruction. The rewrite took Dan from 14.7% to
+> 23.5% and closed the whole table's spread from 16.4 points to 14.6.
+
 2. **Samson II – Riddle & Cunning**: Once per round, you may move 1 of your tokens after all others are revealed.  
 3. **Samson III – Final Stand**: Once per game, spend 2 Warriors so one track you held counts twice, cancelling a failed track.
 

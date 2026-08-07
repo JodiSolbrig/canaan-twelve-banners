@@ -236,7 +236,7 @@ export const TRIBES: TribeDef[] = [
     color: TRIBE_COLORS.Dan,
     bias: BIAS.Dan,
     upgrades: [
-      'Samson I – Nazirite Strength: If all your Banners are on one track, they count double.',
+      'Samson I – Nazirite Strength: Send no Supply and all your Banners count double.',
       'Samson II – Riddle & Cunning: Move 1 token after reveal, once/round.',
       'Samson III – Final Stand: Once/game spend 2 Warriors so one track you held counts twice.',
     ],
