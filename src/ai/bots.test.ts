@@ -196,3 +196,51 @@ describe('stepBot — free actions must not cost the turn', () => {
     ).toBe(true);
   });
 });
+
+describe('a refused free action must not spin', () => {
+  it('never proposes a Faith leader trade while Micah’s Idol bars it', () => {
+    // Zebulun's Sea Trader wants faith -> goods. Under Crisis 7 the engine
+    // refuses it, and a refusal never sets the once-per-round flag — so the bot
+    // offering it again was an unbounded loop, 300+ dispatches a game.
+    let s = scenario({
+      tribes: ['Levi', 'Zebulun'],
+      phase: 'action',
+      crisisId: 7,
+      round: 3,
+    });
+    const bot = idAt(s, 1);
+    s = patchPlayer(s, bot, { leaderLevel: 1 });
+    s = setResources(s, bot, { faith: 6, goods: 6, warriors: 3 });
+    s = { ...s, currentActorIndex: 1 };
+
+    const action = chooseBotAction(s);
+    expect(action?.type === 'leaderTrade' && action.from === 'faith').toBe(false);
+  });
+
+  it('stepBot forces the turn on when a free action is refused', () => {
+    // Belt and braces: even if some future free action is offered and refused,
+    // the seat has to move rather than be asked the same question forever.
+    let s = scenario({
+      tribes: ['Levi', 'Zebulun'],
+      phase: 'action',
+      crisisId: 7,
+      round: 3,
+    });
+    const bot = idAt(s, 1);
+    s = patchPlayer(s, bot, { leaderLevel: 1 });
+    s = setResources(s, bot, { faith: 6, goods: 6, warriors: 3 });
+    s = { ...s, currentActorIndex: 1 };
+
+    let cur = s;
+    for (let i = 0; i < 12; i++) {
+      const next = stepBot(cur);
+      if (next.phase !== 'action' || currentActor(next)?.id !== bot) {
+        cur = next;
+        break;
+      }
+      expect(next).not.toBe(cur);
+      cur = next;
+    }
+    expect(cur.phase !== 'action' || currentActor(cur)?.id !== bot).toBe(true);
+  });
+});

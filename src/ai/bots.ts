@@ -506,9 +506,15 @@ function chooseAction(state: GameState, playerId: string): PlayerAction {
     const want: SpendableResource = state.oppression
       ? 'faith'
       : TRACK_AFFINITY_RESOURCE[def.bias];
-    // Never trade down to nothing: a rate's worth plus one stays in hand.
+    // Never trade down to nothing: a rate's worth plus one stays in hand. And
+    // never offer a trade the engine will refuse — Micah's Idol bars paying
+    // Faith away, and a rejected trade never sets its once-per-round flag, so
+    // proposing one again next tick loops forever.
+    const idolBarsFaith = state.activeCrisis?.id === 7;
     const affordable = trade.trades.filter(
-      (t) => p.resources[t.from] >= trade.rate + 1,
+      (t) =>
+        p.resources[t.from] >= trade.rate + 1 &&
+        !(idolBarsFaith && t.from === 'faith'),
     );
     const pick =
       affordable.find((t) => t.to === want) ??

@@ -28,6 +28,38 @@ export function isFreeOfTheTurn(action: PlayerAction): boolean {
   );
 }
 
+
+/**
+ * Whether a move actually changed the acting player's position, as opposed to
+ * being refused and leaving only a log line behind.
+ */
+function madeProgress(
+  before: GameState,
+  after: GameState,
+  playerId: string | undefined,
+): boolean {
+  if (!playerId) return false;
+  if (after.tokens.length !== before.tokens.length) return true;
+  const a = before.players.find((p) => p.id === playerId);
+  const b = after.players.find((p) => p.id === playerId);
+  if (!a || !b) return true;
+  return (
+    a.resources.faith !== b.resources.faith ||
+    a.resources.warriors !== b.resources.warriors ||
+    a.resources.goods !== b.resources.goods ||
+    a.resources.loyalty !== b.resources.loyalty ||
+    a.resources.glory !== b.resources.glory ||
+    a.goodsDoublerArmed !== b.goodsDoublerArmed ||
+    a.peekedTrack !== b.peekedTrack ||
+    a.judgePower !== b.judgePower ||
+    a.judgeArmed !== b.judgeArmed ||
+    Object.keys(a.oncePerRoundUsed).length !==
+      Object.keys(b.oncePerRoundUsed).length ||
+    Object.keys(a.oncePerGameUsed).length !==
+      Object.keys(b.oncePerGameUsed).length
+  );
+}
+
 /**
  * Apply one bot decision to `state` and return the result.
  *
@@ -41,7 +73,14 @@ export function stepBot(state: GameState): GameState {
   const beforeActor = currentActor(state)?.id;
   const next = dispatch(state, action);
 
-  if (isFreeOfTheTurn(action)) return next;
+  // A free action that changed nothing was refused, and refusing it again next
+  // tick would spin: it never advances the seat and never sets the flag that
+  // would stop it being chosen. Exempting free actions from the stall guard is
+  // what made Zebulun's blocked Sea Trader loop 300+ times a game, so the exemption
+  // is conditional on the move having actually done something.
+  if (isFreeOfTheTurn(action) && madeProgress(state, next, beforeActor)) {
+    return next;
+  }
 
   // A move that was meant to end the turn and did not is a rejected one, so
   // fall back to something that always progresses. Keep `next`, not `state`:
